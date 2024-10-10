@@ -97,44 +97,44 @@ private:
 // Second byte is address within bank
 namespace ICM20948_REG {
 
-	static const ICM20948_REGISTER_t BANK = {0xff,0x7f};
-	static const ICM20948_REGISTER_t WHO_AM_I = {0,0x00};
-	static const ICM20948_REGISTER_t USER_CTL = {0,0x03};
-	static const ICM20948_REGISTER_t FIFO_EN_2 = {0,0x67};
-	static const ICM20948_REGISTER_t PWR_MGMT_1 = {0,0x06};
+	constexpr ICM20948_REGISTER_t BANK = {0xff,0x7f};
+	constexpr ICM20948_REGISTER_t WHO_AM_I = {0,0x00};
+	constexpr ICM20948_REGISTER_t USER_CTL = {0,0x03};
+	constexpr ICM20948_REGISTER_t FIFO_EN_2 = {0,0x67};
+	constexpr ICM20948_REGISTER_t PWR_MGMT_1 = {0,0x06};
 
-	static const ICM20948_REGISTER_t ACCEL_XOUT_H = {0,0x2d};
-	static const ICM20948_REGISTER_t ACCEL_XOUT_L = {0,0x2e};
-	static const ICM20948_REGISTER_t ACCEL_YOUT_H = {0,0x2f};
-	static const ICM20948_REGISTER_t ACCEL_YOUT_L = {0,0x30};
-	static const ICM20948_REGISTER_t ACCEL_ZOUT_H = {0,0x31};
-	static const ICM20948_REGISTER_t ACCEL_ZOUT_L = {0,0x32};
+	constexpr ICM20948_REGISTER_t ACCEL_XOUT_H = {0,0x2d};
+	constexpr ICM20948_REGISTER_t ACCEL_XOUT_L = {0,0x2e};
+	constexpr ICM20948_REGISTER_t ACCEL_YOUT_H = {0,0x2f};
+	constexpr ICM20948_REGISTER_t ACCEL_YOUT_L = {0,0x30};
+	constexpr ICM20948_REGISTER_t ACCEL_ZOUT_H = {0,0x31};
+	constexpr ICM20948_REGISTER_t ACCEL_ZOUT_L = {0,0x32};
 
-	static const ICM20948_REGISTER_t GYRO_XOUT_H = {0,0x33};
-	static const ICM20948_REGISTER_t GYRO_XOUT_L = {0,0x34};
-	static const ICM20948_REGISTER_t GYRO_YOUT_H = {0,0x35};
-	static const ICM20948_REGISTER_t GYRO_YOUT_L = {0,0x36};
-	static const ICM20948_REGISTER_t GYRO_ZOUT_H = {0,0x37};
-	static const ICM20948_REGISTER_t GYRO_ZOUT_L = {0,0x38};
+	constexpr ICM20948_REGISTER_t GYRO_XOUT_H = {0,0x33};
+	constexpr ICM20948_REGISTER_t GYRO_XOUT_L = {0,0x34};
+	constexpr ICM20948_REGISTER_t GYRO_YOUT_H = {0,0x35};
+	constexpr ICM20948_REGISTER_t GYRO_YOUT_L = {0,0x36};
+	constexpr ICM20948_REGISTER_t GYRO_ZOUT_H = {0,0x37};
+	constexpr ICM20948_REGISTER_t GYRO_ZOUT_L = {0,0x38};
 
-	static const ICM20948_REGISTER_t TEMP_OUT_H = {0,0x39};
-	static const ICM20948_REGISTER_t TEMP_OUT_L = {0,0x3a};
+	constexpr ICM20948_REGISTER_t TEMP_OUT_H = {0,0x39};
+	constexpr ICM20948_REGISTER_t TEMP_OUT_L = {0,0x3a};
 
-	static const ICM20948_REGISTER_t FIFO_RW = {0,0x72};
+	constexpr ICM20948_REGISTER_t FIFO_RW = {0,0x72};
 
-	static const ICM20948_REGISTER_t I2C_MST_CTRL = {3,0x01};
-	static const ICM20948_REGISTER_t I2C_SLV0_ADDR = {3,0x03};
-	static const ICM20948_REGISTER_t I2C_SLV0_REG = {3,0x04};
-	static const ICM20948_REGISTER_t I2C_SLV0_CTRL = {3,0x05};
-	static const ICM20948_REGISTER_t I2C_SLV0_DO = {3,0x06};
+	constexpr ICM20948_REGISTER_t I2C_MST_CTRL = {3,0x01};
+	constexpr ICM20948_REGISTER_t I2C_SLV0_ADDR = {3,0x03};
+	constexpr ICM20948_REGISTER_t I2C_SLV0_REG = {3,0x04};
+	constexpr ICM20948_REGISTER_t I2C_SLV0_CTRL = {3,0x05};
+	constexpr ICM20948_REGISTER_t I2C_SLV0_DO = {3,0x06};
 
-	static const ICM20948_REGISTER_t EXT_SLV_SENS_DATA_00 = {0,0x3b};
+	constexpr ICM20948_REGISTER_t EXT_SLV_SENS_DATA_00 = {0,0x3b};
 }
 
 // Constants for registers in the AK09916 magnetometer in the IMU
 namespace AK09916_REG {
-	static const uint8_t CNTL2 = 0x31;
-	static const uint8_t MEAS = 0x11;
+	constexpr uint8_t CNTL2 = 0x31;
+	constexpr uint8_t MEAS = 0x11;
 }
 
 #endif /* ICM20948_DRIVER_H_ */
