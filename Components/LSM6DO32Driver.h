@@ -115,44 +115,44 @@ private:
 // Second byte is address within bank
 namespace LSM6DSO32_REG {
 
-	static const LSM6DSO32_REGISTER_t FIFO_CTRL2 = 0x08;
-	static const LSM6DSO32_REGISTER_t FIFO_CTRL3 = 0x09;
-	static const LSM6DSO32_REGISTER_t FIFO_CTRL4 = 0x0A;
+	constexpr LSM6DSO32_REGISTER_t FIFO_CTRL2 = 0x08;
+	constexpr LSM6DSO32_REGISTER_t FIFO_CTRL3 = 0x09;
+	constexpr LSM6DSO32_REGISTER_t FIFO_CTRL4 = 0x0A;
 
-	static const LSM6DSO32_REGISTER_t WHO_AM_I  = 0x0F;
+	constexpr LSM6DSO32_REGISTER_t WHO_AM_I  = 0x0F;
 
-	static const LSM6DSO32_REGISTER_t CTRL1_XL  = 0x10;
-	static const LSM6DSO32_REGISTER_t CTRL2_G   = 0x11;
+	constexpr LSM6DSO32_REGISTER_t CTRL1_XL  = 0x10;
+	constexpr LSM6DSO32_REGISTER_t CTRL2_G   = 0x11;
 
-	static const LSM6DSO32_REGISTER_t STATUS_REG    = 0x1E;
+	constexpr LSM6DSO32_REGISTER_t STATUS_REG    = 0x1E;
 
-	static const LSM6DSO32_REGISTER_t OUT_TEMP_L    = 0x20;
-	static const LSM6DSO32_REGISTER_t OUT_TEMP_H    = 0x21;
+	constexpr LSM6DSO32_REGISTER_t OUT_TEMP_L    = 0x20;
+	constexpr LSM6DSO32_REGISTER_t OUT_TEMP_H    = 0x21;
 
-	static const LSM6DSO32_REGISTER_t OUTX_L_G    = 0x22;
-	static const LSM6DSO32_REGISTER_t OUTX_H_G    = 0x23;
-	static const LSM6DSO32_REGISTER_t OUTY_L_G    = 0x24;
-	static const LSM6DSO32_REGISTER_t OUTY_H_G    = 0x25;
-	static const LSM6DSO32_REGISTER_t OUTZ_L_G    = 0x26;
-	static const LSM6DSO32_REGISTER_t OUTZ_H_G    = 0x27;
+	constexpr LSM6DSO32_REGISTER_t OUTX_L_G    = 0x22;
+	constexpr LSM6DSO32_REGISTER_t OUTX_H_G    = 0x23;
+	constexpr LSM6DSO32_REGISTER_t OUTY_L_G    = 0x24;
+	constexpr LSM6DSO32_REGISTER_t OUTY_H_G    = 0x25;
+	constexpr LSM6DSO32_REGISTER_t OUTZ_L_G    = 0x26;
+	constexpr LSM6DSO32_REGISTER_t OUTZ_H_G    = 0x27;
 
-	static const LSM6DSO32_REGISTER_t OUTX_L_A    = 0x28;
-	static const LSM6DSO32_REGISTER_t OUTX_H_A    = 0x29;
-	static const LSM6DSO32_REGISTER_t OUTY_L_A    = 0x2A;
-	static const LSM6DSO32_REGISTER_t OUTY_H_A    = 0x2B;
-	static const LSM6DSO32_REGISTER_t OUTZ_L_A    = 0x2C;
-	static const LSM6DSO32_REGISTER_t OUTZ_H_A    = 0x2D;
+	constexpr LSM6DSO32_REGISTER_t OUTX_L_A    = 0x28;
+	constexpr LSM6DSO32_REGISTER_t OUTX_H_A    = 0x29;
+	constexpr LSM6DSO32_REGISTER_t OUTY_L_A    = 0x2A;
+	constexpr LSM6DSO32_REGISTER_t OUTY_H_A    = 0x2B;
+	constexpr LSM6DSO32_REGISTER_t OUTZ_L_A    = 0x2C;
+	constexpr LSM6DSO32_REGISTER_t OUTZ_H_A    = 0x2D;
 
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_TAG = 0x78;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_TAG = 0x78;
 
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_X_L = 0x79;
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_X_H = 0x7A;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_X_L = 0x79;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_X_H = 0x7A;
 
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Y_L = 0x7B;
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Y_H = 0x7C;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Y_L = 0x7B;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Y_H = 0x7C;
 
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Z_L = 0x7D;
-	static const LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Z_H = 0x7E;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Z_L = 0x7D;
+	constexpr LSM6DSO32_REGISTER_t FIFO_DATA_OUT_Z_H = 0x7E;
 
 
 }
