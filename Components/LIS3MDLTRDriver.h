@@ -71,25 +71,25 @@ private:
 // Constant addresses for registers in the LIS3MDLTR magnetometer
 namespace LIS3MDLTR_REG {
 
-	static const LIS3MDLTR_REGISTER_t WHO_AM_I  = 0x0F;
+	constexpr LIS3MDLTR_REGISTER_t WHO_AM_I  = 0x0F;
 
-	static const LIS3MDLTR_REGISTER_t CTRL_REG1  = 0x20;
-	static const LIS3MDLTR_REGISTER_t CTRL_REG2  = 0x21;
-	static const LIS3MDLTR_REGISTER_t CTRL_REG3  = 0x22;
-	static const LIS3MDLTR_REGISTER_t CTRL_REG4  = 0x23;
-	static const LIS3MDLTR_REGISTER_t CTRL_REG5  = 0x24;
+	constexpr LIS3MDLTR_REGISTER_t CTRL_REG1  = 0x20;
+	constexpr LIS3MDLTR_REGISTER_t CTRL_REG2  = 0x21;
+	constexpr LIS3MDLTR_REGISTER_t CTRL_REG3  = 0x22;
+	constexpr LIS3MDLTR_REGISTER_t CTRL_REG4  = 0x23;
+	constexpr LIS3MDLTR_REGISTER_t CTRL_REG5  = 0x24;
 
-	static const LIS3MDLTR_REGISTER_t STATUS_REG    = 0x27;
+	constexpr LIS3MDLTR_REGISTER_t STATUS_REG    = 0x27;
 
-	static const LIS3MDLTR_REGISTER_t OUT_TEMP_L    = 0x2E;
-	static const LIS3MDLTR_REGISTER_t OUT_TEMP_H    = 0x2F;
+	constexpr LIS3MDLTR_REGISTER_t OUT_TEMP_L    = 0x2E;
+	constexpr LIS3MDLTR_REGISTER_t OUT_TEMP_H    = 0x2F;
 
-	static const LIS3MDLTR_REGISTER_t OUTX_L    = 0x28;
-	static const LIS3MDLTR_REGISTER_t OUTX_H    = 0x29;
-	static const LIS3MDLTR_REGISTER_t OUTY_L    = 0x2A;
-	static const LIS3MDLTR_REGISTER_t OUTY_H    = 0x2B;
-	static const LIS3MDLTR_REGISTER_t OUTZ_L    = 0x2C;
-	static const LIS3MDLTR_REGISTER_t OUTZ_H    = 0x2D;
+	constexpr LIS3MDLTR_REGISTER_t OUTX_L    = 0x28;
+	constexpr LIS3MDLTR_REGISTER_t OUTX_H    = 0x29;
+	constexpr LIS3MDLTR_REGISTER_t OUTY_L    = 0x2A;
+	constexpr LIS3MDLTR_REGISTER_t OUTY_H    = 0x2B;
+	constexpr LIS3MDLTR_REGISTER_t OUTZ_L    = 0x2C;
+	constexpr LIS3MDLTR_REGISTER_t OUTZ_H    = 0x2D;
 
 }
 
