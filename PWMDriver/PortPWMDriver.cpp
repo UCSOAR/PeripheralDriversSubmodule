@@ -98,7 +98,7 @@ int main()
     SystemClock_Config();
 
     // Initialize the timer and PWM with a clock frequency of 64 MHz
-    PWM<TIM_TypeDef, TIM_CHANNEL_1> pwm(TIM2, 64000000); // 64 MHz clock
+    PWM<TIM_TypeDef, TIM_CHANNEL_1> pwm(TIM8, 64000000); // 64 MHz clock
     pwm.start();
     pwm.rotateToAngle(135); // Rotate to 135 degrees
 
