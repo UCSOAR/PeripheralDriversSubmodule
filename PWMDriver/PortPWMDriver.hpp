@@ -56,6 +56,7 @@ public:
     // End the PWM 
     void stop() { HAL_TIM_PWM_Stop(&htim_, timCh_); }
 
+    // Sets the capture control register, ideally not configured manually as it is calculated in setDutyCycle() 
     void setCCR(uint32_t ccr){
     	__HAL_TIM_SET_COMPARE(&htim_, timCh_, ccr);
     }
@@ -65,6 +66,7 @@ public:
     return 0;
     }
 
+    // Sets the auto-reload register value, ideally 1000 for high resolution
     void setARR(uint32_t arr)
     {
         __HAL_TIM_SET_AUTORELOAD(&htim_, arr);
@@ -75,6 +77,7 @@ public:
         return __HAL_TIM_GET_AUTORELOAD(&htim_);
     }
 
+    // Sets the prescaler value for the clock, configure based on specifed clock frequency (formula at top)
     void setPSC(uint32_t psc)
     {
         __HAL_TIM_SET_PRESCALER(&htim_, psc);
@@ -102,6 +105,7 @@ public:
         return true;
     }
 
+    // Specifies a number of degrees from 0-270 as an angle for the servo to rotate to
     bool rotate(uint16_t degrees)
     {
         if (degrees > 270)
