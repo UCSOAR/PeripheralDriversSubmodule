@@ -1,95 +1,92 @@
-#ifndef PWM_DRIVER_HPP
-#define PWM_DRIVER_HPP
-
-#include "stm32f4xx_hal.h"
-
-#define PCLK1_CLK_FREQ 64000000
-
-/*
- * Calculations:
- *
- * Fclk = 64 MHz = 64,000,000 Hz
- * Freq = X
- * Fclk / ((PSC-1) * (ARR)) = Freq
- * PSC = (Fclk / (Freq * ARR)) + 1
+/**
+ ******************************************************************************
+ * File Name          : PWMController.hpp
+ * Description        : PWM Controller
+ * Useful References  : https://deepbluembedded.com/stm32-pwm-example-timer-pwm-mode-tutorial/
+ ******************************************************************************
  */
 
-class PWM
+#ifndef PortPWMDriver_HPP
+#define PortPWMDriver_HPP
+#include "stm32f4xx_hal_tim.h"
+
+// PCLK1_CLOCK_FREQ is specified by user in clock configuration by APB2 or ABP1 Timer Clocks in MHz (Dependant on Board Specifications)
+
+/*
+ * Calculations (example):
+ *
+ * PCLK1_CLOCK_FREQ = 24 MHz = 24,000,000 Hz
+ * Freq = X (Ideally 50Hz to obtain period of 20ms for PWM)
+ * Fclk / ((PSC) * (ARR)) = Freq (Therefore set PSC as 480 and ARR as 1000)
+ * 24000000 / (480 * 1000) = 50
+ */
+
+class PWMController
 {
-private:
-    TIM_HandleTypeDef htim;
-    uint32_t pclk_freq;
-    uint32_t duty_cycle;
-    uint32_t pwm_freq;
-    uint32_t channel;
-
 public:
-    PWM(TIM_TypeDef *instance, uint32_t pclk_freq, uint32_t channel)
-        : pclk_freq(pclk_freq), duty_cycle(0), channel(channel)
+    // Constructor accepts a timer in the form htimx, and an integer for channel. e.g (htim1, 2)
+    PWMController(TIM_HandleTypeDef &htim, uint8_t ch) : htim_(htim), ch_(ch)
     {
-        htim.Instance = instance;
-        htim.Init.Prescaler = 64 - 1; // Prescaler value
-        htim.Init.CounterMode = TIM_COUNTERMODE_UP;
-        htim.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-        htim.Init.Period = 10000; // Fixed ARR value
 
-        HAL_TIM_PWM_Init(&htim);
-
-        // Calculate the PWM frequency
-        pwm_freq = pclk_freq / ((htim.Init.Period + 1) * (htim.Init.Prescaler + 1));
+        // Set the timer channel variable (bitwise)
+        // 
+        switch (ch_)
+        {
+        case 1:
+            timCh_ = TIM_CHANNEL_1;
+            break;
+        case 2:
+            timCh_ = TIM_CHANNEL_2;
+            break;
+        case 3:
+            timCh_ = TIM_CHANNEL_3;
+            break;
+        case 4:
+            timCh_ = TIM_CHANNEL_4;
+            break;
+        default:
+            timCh_ = 0;
+            break;
+        }
     }
 
-    void start()
-    {
-        HAL_TIM_PWM_Start(&htim, channel);
+    // --------------------------------------
+    // Start the PWM
+    void start() { HAL_TIM_PWM_Start(&htim_, timCh_); }
+    // End the PWM 
+    void stop() { HAL_TIM_PWM_Stop(&htim_, timCh_); }
+
+    void setCCR(uint32_t ccr){
+    	__HAL_TIM_SET_COMPARE(&htim_, timCh_, ccr);
     }
 
-    void stop()
-    {
-        HAL_TIM_PWM_Stop(&htim, channel);
-    }
-
-    void setCCR(uint32_t ccr)
-    {
-        __HAL_TIM_SET_COMPARE(&htim, channel, ccr);
-    }
-
-    uint32_t getCCR()
-    {
-        return __HAL_TIM_GET_COMPARE(&htim, channel);
+    uint32_t getCCR(){
+    __HAL_TIM_GET_COMPARE(&htim_, timCh_);
+    return 0;
     }
 
     void setARR(uint32_t arr)
     {
-        __HAL_TIM_SET_AUTORELOAD(&htim, arr);
+        __HAL_TIM_SET_AUTORELOAD(&htim_, arr);
     }
 
     uint32_t getARR()
     {
-        return __HAL_TIM_GET_AUTORELOAD(&htim);
+        return __HAL_TIM_GET_AUTORELOAD(&htim_);
     }
 
     void setPSC(uint32_t psc)
     {
-        __HAL_TIM_SET_PRESCALER(&htim, psc);
+        __HAL_TIM_SET_PRESCALER(&htim_, psc);
     }
 
-    uint32_t getPSC()
+    int32_t getPSC()
     {
-        return htim.Init.Prescaler;
+        return htim_.Init.Prescaler;
     }
 
-    float getDutyCycle()
-    {
-        return (getCCR() * 100.0f) / getARR();
-    }
-
-    void setFreq(uint32_t freq)
-    {
-        uint32_t arr = getARR();
-        uint32_t prescaler_value = (pclk_freq / (freq * arr)) - 1;
-        setPSC(prescaler_value);
-    }
+    // returns a value between 0-100 corresponding to the duty cycle %, e.g. 25 is 25%
+    float getDutyCycle() { return (getCCR() * 100) / getARR(); }
 
     bool setDutyCycle(float duty)
     {
@@ -98,11 +95,30 @@ public:
             return false;
         }
 
-        uint32_t calCCR = getARR() * (duty / 100.0f);
+        uint32_t calCCR = getARR() * (duty / 100.0);
+
         setCCR(calCCR);
 
         return true;
     }
-};
 
-#endif // PWM_DRIVER_HPP
+    bool rotate(uint16_t degrees)
+    {
+        if (degrees > 270)
+        {
+            return false;
+        }
+
+        // Calculate duty cycle based on degrees (0-270)
+        float duty = (degrees / 270.0) * 20;
+        return setDutyCycle(duty);
+
+    }
+
+    private:
+        TIM_HandleTypeDef & htim_;
+        uint8_t ch_;
+        uint8_t timCh_;
+    };
+
+#endif // PPortPWMDriver_HPP
