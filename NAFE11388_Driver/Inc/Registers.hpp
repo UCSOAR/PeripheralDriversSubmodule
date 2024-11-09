@@ -15,6 +15,9 @@
  ************************************/
 #include <stdint.h>
 
+/**
+ * See page 73 of the datasheet
+ */
 namespace NAFE11388::Registers {
 	/************************************
 	 * CONSTANTS
@@ -39,8 +42,31 @@ namespace NAFE11388::Registers {
 	}
 
 	namespace CH_CONFIG {
+		/**
+		 * HV_AIP[3:0] = CH_CONFIG0[15:12]
+		 * HV_AIN[3:0] = CH_CONFIG0[11:8]
+		 * CH_GAIN[2:0] = CH_CONFIG0[7:5]
+		 * HV_SEL = CH_CONFIG0[4]
+		 * LVSIG_IN[2:0] = CH_CONFIG0[3:1]
+		 * TCC_OFF = CH_CONFIG0[0]
+		 */
 		constexpr uint8_t CH_CONFIG0 = 0x20;
+
+		/**
+		 * CH_CAL_GAIN_OFFSET[3:0] = CH_CONFIG1[15:12]
+		 * CH_THRS[3:0] = CH_CONFIG1[11:8]
+		 * ADC_DATA_RATE[4:0] = CH_CONFIG1[7:3]
+		 * ADC_SINC[2:0] = CH_CONFIG1[2:0]
+		 */
 		constexpr uint8_t CH_CONFIG1 = 0x21;
+
+		/**
+		 * CH_DELAY[5:0] = CH_CONFIG2[15:10]
+		 * ADC_NORMAL_SETTLING = CH_CONFIG2[9]
+		 * ADC_FILTER_RESET = CH_CONFIG2[8]
+		 * CH_CHOP = CH_CONFIG2[7]
+		 * CH_CONFIG2[6:0] (RESERVED)
+		 */
 		constexpr uint8_t CH_CONFIG2 = 0x22;
 	}
 

@@ -29,14 +29,14 @@
  * FUNCTION DEFINITIONS
  ************************************/
 namespace NAFE11388 {
-	bool Driver::write_register(uint8_t reg_addr, uint16_t value) {
+	bool Driver::write_register(uint8_t reg_addr, uint16_t value) const {
 		HAL_GPIO_WritePin(this->gpio_port, this->gpio_pin, GPIO_PIN_RESET);
 
 		if (!HAL_SPI_Transmit(this->spi_handle, &reg_addr, 1, this->max_delay)) {
 			return false;
 		}
 
-		if (!HAL_SPI_Transmit(this->spi_handle, &value, 1, this->max_delay)) {
+		if (!HAL_SPI_Transmit(this->spi_handle, &value, 2, this->max_delay)) {
 			return false;
 		}
 
@@ -45,7 +45,7 @@ namespace NAFE11388 {
 		return true;
 	}
 
-	bool Driver::read_register(uint8_t reg_addr, uint16_t &output) {
+	bool Driver::read_register(uint8_t reg_addr, uint16_t &output) const {
 		using namespace Bits;
 
 		set_bit(reg_addr, BitPositions::RW_L);
@@ -56,7 +56,7 @@ namespace NAFE11388 {
 			return false;
 		}
 
-		if (!HAL_SPI_Receive(this->spi_handle, &output, 1, this->max_delay)) {
+		if (!HAL_SPI_Receive(this->spi_handle, &output, 2, this->max_delay)) {
 			return false;
 		}
 
