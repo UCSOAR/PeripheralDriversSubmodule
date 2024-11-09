@@ -84,7 +84,6 @@ namespace OFFSET_COEF_Registers {
 	constexpr uint8_t OFFSET_COEF15 = 0x9F;
 }
 
-
 /**
  * Optional calibration registers
  */
