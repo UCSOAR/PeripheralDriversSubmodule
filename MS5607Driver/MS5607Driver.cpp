@@ -2,7 +2,7 @@
  * @file    MS5607Driver.cpp
  * @author  Noah
  * @date    Nov 16, 2024
- * @brief
+ * @brief	This driver gets pressure and temperature readings from the MS5607 barometers.
  ******************************************************************************** */
 /************************************ * INCLUDES ************************************/
 #include "MS5607Driver.hpp"
@@ -27,22 +27,11 @@ static uint8_t READ_BYTE_CMD = 0x00;
 static uint8_t RESET_CMD = 0x1E;
 /************************************ * FUNCTION DECLARATIONS ************************************/
 /************************************ * FUNCTION DEFINITIONS ************************************/
-MS5611_Driver::MS5607_Driver(){
 
-}
-
-void MS5607_Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_){
-	if(!initialized){
-		initialized = true;
-
-		cs_gpio = cs_gpio_;
-		cs_pin = cs_pin_;
-		hspi = hspi_;
-	}else{
-		SOAR_PRINT("Cannot initialize barometer driver twice");
-	}
-}
-
+/**
+ * @brief gets a single sample of barometer data
+ * @returns a barometer data structure consisting of a 'temp' and 'pressure' variable
+ */
 MS5607_DATA_t MS5607_Driver::getSample(){
 	/**
 	 * Variable Descriptions from MS5607-02BA03 Data Sheet:

@@ -2,7 +2,7 @@
  * @file    MS5611Driver.cpp
  * @author  root
  * @date    Nov 9, 2024
- * @brief
+ * @brief	This driver gets pressure and temperature readings from the MS5611 barometers.
  ******************************************************************************** */
 /************************************ * INCLUDES ************************************/
 #include "MS5611Driver.hpp"
@@ -27,22 +27,11 @@ static uint8_t READ_BYTE_CMD = 0x00;
 static uint8_t RESET_CMD = 0x1E;
 /************************************ * FUNCTION DECLARATIONS ************************************/
 /************************************ * FUNCTION DEFINITIONS ************************************/
-MS5611_Driver::MS5611_Driver(){
 
-}
-
-void MS5611_Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_){
-	if(!initialized){
-		initialized = true;
-
-		cs_gpio = cs_gpio_;
-		cs_pin = cs_pin_;
-		hspi = hspi_;
-	}else{
-		SOAR_PRINT("Cannot initialize barometer driver twice");
-	}
-}
-
+/**
+ * @brief gets a single sample of barometer data
+ * @returns a barometer data structure consisting of a 'temp' and 'pressure' variable
+ */
 MS5611_DATA_t MS5611_Driver::getSample(){
 	/**
 	 * Variable Descriptions from MS5607-02BA03 Data Sheet:
@@ -68,7 +57,6 @@ MS5611_DATA_t MS5611_Driver::getSample(){
 	 * P    - Temperature compensated pressure (10...1200mbar with 0.01mbar resolution)
 	 *          P = (D1 * SENS) - OFF = ((D1 * SENS)/2^21 - OFF)/2^15
 	 */
-	assert(initialized);
 
 	// Variables
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
@@ -199,7 +187,6 @@ MS5611_DATA_t MS5611_Driver::getSample(){
  */
 uint16_t MS5611_Driver::ReadCalibrationCoefficients(uint8_t PROM_READ_CMD)
 {
-	assert(initialized);
 
     uint8_t dataInBuffer;
 
