@@ -32,8 +32,13 @@ namespace NAFE11388 {
 	class Driver {
 	private:
 		SPI_HandleTypeDef *spi_handle;
-		GPIO_TypeDef *gpio_port;
-		uint16_t gpio_pin;
+
+		GPIO_TypeDef *cs_gpio_port;
+		uint16_t cs_gpio_pin;
+
+		GPIO_TypeDef *drdy_gpio_port;
+		uint16_t drdy_gpio_pin;
+
 		uint32_t max_timeout;
 
 		uint16_t channel_cfg_0;
@@ -41,10 +46,12 @@ namespace NAFE11388 {
 		uint16_t channel_cfg_2;
 
 	public:
-		Driver(SPI_HandleTypeDef *hqspi, GPIO_TypeDef *gpio_port, uint16_t gpio_pin, uint32_t max_timeout = HAL_MAX_DELAY) :
+		Driver(SPI_HandleTypeDef *hqspi, GPIO_TypeDef *cs_gpio_port, uint16_t cs_gpio_pin, GPIO_TypeDef *drdy_gpio_port, uint16_t drdy_gpio_pin, uint32_t max_timeout = HAL_MAX_DELAY) :
 			spi_handle(hqspi),
-			gpio_port(gpio_port),
-			gpio_pin(gpio_pin),
+			cs_gpio_port(cs_gpio_port),
+			cs_gpio_pin(cs_gpio_pin),
+			drdy_gpio_port(drdy_gpio_port),
+			drdy_gpio_pin(drdy_gpio_pin),
 			max_timeout(max_timeout),
 			channel_cfg_0(0),
 			channel_cfg_1(0),
@@ -69,6 +76,8 @@ namespace NAFE11388 {
 		void cfg_adc_filter_reset(uint8_t bits_1);
 
 		bool write_cfg() const;
+
+		bool wait_for_drdy(uint64_t countdown = 0xFFFFFFFFFFFFFFFF);
 	};
 }
 

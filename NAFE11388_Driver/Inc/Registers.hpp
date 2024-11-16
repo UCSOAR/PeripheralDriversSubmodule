@@ -70,66 +70,71 @@ namespace NAFE11388::Registers {
 		constexpr uint8_t CH_CONFIG2 = 0x22;
 	}
 
-	namespace GAIN_COEF {
-		constexpr uint8_t GAIN_COEF0 = 0x80;
-		constexpr uint8_t GAIN_COEF1 = 0x81;
-		constexpr uint8_t GAIN_COEF2 = 0x82;
-		constexpr uint8_t GAIN_COEF3 = 0x83;
-		constexpr uint8_t GAIN_COEF4 = 0x84;
-		constexpr uint8_t GAIN_COEF5 = 0x85;
-		constexpr uint8_t GAIN_COEF6 = 0x86;
-		constexpr uint8_t GAIN_COEF7 = 0x87;
-		constexpr uint8_t GAIN_COEF8 = 0x88;
-		constexpr uint8_t GAIN_COEF9 = 0x89;
-		constexpr uint8_t GAIN_COEF10 = 0x8A;
-		constexpr uint8_t GAIN_COEF11 = 0x8B;
-		constexpr uint8_t GAIN_COEF12 = 0x8C;
-		constexpr uint8_t GAIN_COEF13 = 0x8D;
-		constexpr uint8_t GAIN_COEF14 = 0x8E;
-		constexpr uint8_t GAIN_COEF15 = 0x8F;
-	}
+	/**
+	 * Likely not relevant for our purposes
+	 */
+//	namespace GAIN_COEF {
+//		constexpr uint8_t GAIN_COEF0 = 0x80;
+//		constexpr uint8_t GAIN_COEF1 = 0x81;
+//		constexpr uint8_t GAIN_COEF2 = 0x82;
+//		constexpr uint8_t GAIN_COEF3 = 0x83;
+//		constexpr uint8_t GAIN_COEF4 = 0x84;
+//		constexpr uint8_t GAIN_COEF5 = 0x85;
+//		constexpr uint8_t GAIN_COEF6 = 0x86;
+//		constexpr uint8_t GAIN_COEF7 = 0x87;
+//		constexpr uint8_t GAIN_COEF8 = 0x88;
+//		constexpr uint8_t GAIN_COEF9 = 0x89;
+//		constexpr uint8_t GAIN_COEF10 = 0x8A;
+//		constexpr uint8_t GAIN_COEF11 = 0x8B;
+//		constexpr uint8_t GAIN_COEF12 = 0x8C;
+//		constexpr uint8_t GAIN_COEF13 = 0x8D;
+//		constexpr uint8_t GAIN_COEF14 = 0x8E;
+//		constexpr uint8_t GAIN_COEF15 = 0x8F;
+//	}
 
 	/**
 	 * Offset coefficient registers
+	 * Likely not relevant for our purposes
 	 */
-	namespace OFFSET_COEF {
-		constexpr uint8_t OFFSET_COEF0 = 0x90;
-		constexpr uint8_t OFFSET_COEF1 = 0x91;
-		constexpr uint8_t OFFSET_COEF2 = 0x92;
-		constexpr uint8_t OFFSET_COEF3 = 0x93;
-		constexpr uint8_t OFFSET_COEF4 = 0x94;
-		constexpr uint8_t OFFSET_COEF5 = 0x95;
-		constexpr uint8_t OFFSET_COEF6 = 0x96;
-		constexpr uint8_t OFFSET_COEF7 = 0x97;
-		constexpr uint8_t OFFSET_COEF8 = 0x98;
-		constexpr uint8_t OFFSET_COEF9 = 0x99;
-		constexpr uint8_t OFFSET_COEF10 = 0x9A;
-		constexpr uint8_t OFFSET_COEF11 = 0x9B;
-		constexpr uint8_t OFFSET_COEF12 = 0x9C;
-		constexpr uint8_t OFFSET_COEF13 = 0x9D;
-		constexpr uint8_t OFFSET_COEF14 = 0x9E;
-		constexpr uint8_t OFFSET_COEF15 = 0x9F;
-	}
+//	namespace OFFSET_COEF {
+//		constexpr uint8_t OFFSET_COEF0 = 0x90;
+//		constexpr uint8_t OFFSET_COEF1 = 0x91;
+//		constexpr uint8_t OFFSET_COEF2 = 0x92;
+//		constexpr uint8_t OFFSET_COEF3 = 0x93;
+//		constexpr uint8_t OFFSET_COEF4 = 0x94;
+//		constexpr uint8_t OFFSET_COEF5 = 0x95;
+//		constexpr uint8_t OFFSET_COEF6 = 0x96;
+//		constexpr uint8_t OFFSET_COEF7 = 0x97;
+//		constexpr uint8_t OFFSET_COEF8 = 0x98;
+//		constexpr uint8_t OFFSET_COEF9 = 0x99;
+//		constexpr uint8_t OFFSET_COEF10 = 0x9A;
+//		constexpr uint8_t OFFSET_COEF11 = 0x9B;
+//		constexpr uint8_t OFFSET_COEF12 = 0x9C;
+//		constexpr uint8_t OFFSET_COEF13 = 0x9D;
+//		constexpr uint8_t OFFSET_COEF14 = 0x9E;
+//		constexpr uint8_t OFFSET_COEF15 = 0x9F;
+//	}
 
 	/**
 	 * Optional calibration registers
+	 * Likely not relevant for our purposes
 	 */
-	namespace OPT_COEF {
-		constexpr uint8_t OPT_COEF0 = 0xA0;
-		constexpr uint8_t OPT_COEF1 = 0xA1;
-		constexpr uint8_t OPT_COEF2 = 0xA2;
-		constexpr uint8_t OPT_COEF3 = 0xA3;
-		constexpr uint8_t OPT_COEF4 = 0xA4;
-		constexpr uint8_t OPT_COEF5 = 0xA5;
-		constexpr uint8_t OPT_COEF6 = 0xA6;
-		constexpr uint8_t OPT_COEF7 = 0xA7;
-		constexpr uint8_t OPT_COEF8 = 0xA8;
-		constexpr uint8_t OPT_COEF9 = 0xA9;
-		constexpr uint8_t OPT_COEF10 = 0xAA;
-		constexpr uint8_t OPT_COEF11 = 0xAB;
-		constexpr uint8_t OPT_COEF12 = 0xAC;
-		constexpr uint8_t OPT_COEF13 = 0xAD;
-	}
+//	namespace OPT_COEF {
+//		constexpr uint8_t OPT_COEF0 = 0xA0;
+//		constexpr uint8_t OPT_COEF1 = 0xA1;
+//		constexpr uint8_t OPT_COEF2 = 0xA2;
+//		constexpr uint8_t OPT_COEF3 = 0xA3;
+//		constexpr uint8_t OPT_COEF4 = 0xA4;
+//		constexpr uint8_t OPT_COEF5 = 0xA5;
+//		constexpr uint8_t OPT_COEF6 = 0xA6;
+//		constexpr uint8_t OPT_COEF7 = 0xA7;
+//		constexpr uint8_t OPT_COEF8 = 0xA8;
+//		constexpr uint8_t OPT_COEF9 = 0xA9;
+//		constexpr uint8_t OPT_COEF10 = 0xAA;
+//		constexpr uint8_t OPT_COEF11 = 0xAB;
+//		constexpr uint8_t OPT_COEF12 = 0xAC;
+//		constexpr uint8_t OPT_COEF13 = 0xAD;
+//	}
 
 	namespace CH_DATA {
 		constexpr uint8_t CH_DATA0 = 0x40;

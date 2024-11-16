@@ -29,7 +29,7 @@
  ************************************/
 namespace NAFE11388::Driver {
 	bool write_register(uint8_t reg_addr, uint16_t value) const {
-		HAL_GPIO_WritePin(this->gpio_port, this->gpio_pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(this->cs_gpio_port, this->cs_gpio_pin, GPIO_PIN_RESET);
 
 		if (!HAL_SPI_Transmit(this->spi_handle, &reg_addr, 1, this->max_delay)) {
 			return false;
@@ -39,7 +39,7 @@ namespace NAFE11388::Driver {
 			return false;
 		}
 
-		HAL_GPIO_WritePin(this->gpio_port, this->gpio_pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(this->cs_gpio_port, this->cs_gpio_pin, GPIO_PIN_SET);
 
 		return true;
 	}
@@ -50,7 +50,7 @@ namespace NAFE11388::Driver {
 		constexpr uint8_t RW_L = 13;
 		reg_addr |= 1 << RW_L;
 
-		HAL_GPIO_WritePin(this->gpio_port, this->gpio_pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(this->cs_gpio_port, this->cs_gpio_pin, GPIO_PIN_RESET);
 
 		if (!HAL_SPI_Transmit(this->spi_handle, &reg_addr, 1, this->max_delay)) {
 			return false;
@@ -60,7 +60,7 @@ namespace NAFE11388::Driver {
 			return false;
 		}
 
-		HAL_GPIO_WritePin(this->gpio_port, this->gpio_pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(this->cs_gpio_port, this->cs_gpio_pin, GPIO_PIN_SET);
 
 		return true;
 	}
@@ -71,6 +71,14 @@ namespace NAFE11388::Driver {
 		return this->write_register(CH_CONFIG0, this->channel_cfg_0)
 				&& this->write_register(CH_CONFIG1, this->channel_cfg_1)
 				&& this->write_register(CH_CONFIG2, this->channel_cfg_2);
+	}
+
+	bool wait_for_drdy(uint64_t countdown) {
+		for (uint64_t i = 0; i < countdown; i--) {
+			if (HAL_GPIO_ReadPin(this->drdy_gpio_port, this->drdy_gpio_pin) == GPIO_PIN_SET) {
+				return;
+			}
+		}
 	}
 
 	void cfg_hv_aip(uint8_t bits_3) {
