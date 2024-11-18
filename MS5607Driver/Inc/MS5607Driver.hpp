@@ -11,8 +11,6 @@
 #include "cmsis_os.h"
 /************************************ * MACROS AND DEFINES ************************************/
 /************************************ * TYPEDEFS ************************************/
-typedef uint8_t MS5607_REGISTER_t;
-
 struct MS5607_DATA_t{
 	int16_t temp;
 	uint32_t pressure;

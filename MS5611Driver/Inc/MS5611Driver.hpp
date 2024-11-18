@@ -11,8 +11,6 @@
 #include "cmsis_os.h"
 /************************************ * MACROS AND DEFINES ************************************/
 /************************************ * TYPEDEFS ************************************/
-typedef uint8_t MS5611_REGISTER_t;
-
 struct MS5611_DATA_t{
 	int16_t temp;
 	uint32_t pressure;
@@ -28,12 +26,14 @@ public:
 		hspi(hspi_), cs_gpio(cs_gpio_), cs_pin(cs_pin_){}
 
 	MS5611_DATA_t getSample();
+
 private:
-	//constants
+	// constants
 	GPIO_TypeDef* cs_gpio;
 	uint16_t cs_pin;
 	SPI_HandleTypeDef* hspi;
 
+	// helper functions
 	bool SetRegister(MS5611_REGISTER_t reg, uint8_t val);
 	uint16_t ReadCalibrationCoefficients(uint8_t PROM_READ_CMD);
 };

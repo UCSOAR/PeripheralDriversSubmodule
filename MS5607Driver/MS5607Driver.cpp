@@ -57,7 +57,6 @@ MS5607_DATA_t MS5607_Driver::getSample(){
 	 * P    - Temperature compensated pressure (10...1200mbar with 0.01mbar resolution)
 	 *          P = (D1 * SENS) - OFF = ((D1 * SENS)/2^21 - OFF)/2^15
 	 */
-	assert(initialized);
 
 	// Variables
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
@@ -188,8 +187,6 @@ MS5607_DATA_t MS5607_Driver::getSample(){
  */
 uint16_t MS5607_Driver::ReadCalibrationCoefficients(uint8_t PROM_READ_CMD)
 {
-	assert(initialized);
-
     uint8_t dataInBuffer;
 
     HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
