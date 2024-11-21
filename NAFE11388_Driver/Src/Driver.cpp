@@ -28,14 +28,14 @@
  * FUNCTION DEFINITIONS
  ************************************/
 namespace NAFE11388::Driver {
-	bool write_register(uint8_t reg_addr, uint16_t value) const {
+	bool write_reg(uint8_t reg_addr, uint8_t *value, uint8_t bytes) const {
 		HAL_GPIO_WritePin(this->cs_gpio_port, this->cs_gpio_pin, GPIO_PIN_RESET);
 
 		if (!HAL_SPI_Transmit(this->spi_handle, &reg_addr, 1, this->max_delay)) {
 			return false;
 		}
 
-		if (!HAL_SPI_Transmit(this->spi_handle, &value, 2, this->max_delay)) {
+		if (!HAL_SPI_Transmit(this->spi_handle, value, bytes, this->max_delay)) {
 			return false;
 		}
 
@@ -44,7 +44,7 @@ namespace NAFE11388::Driver {
 		return true;
 	}
 
-	bool read_register(uint8_t reg_addr, uint16_t &output) const {
+	bool read_reg(uint8_t reg_addr, uint8_t *output, uint8_t bytes) const {
 		using namespace NAFE11388::Bits;
 
 		constexpr uint8_t RW_L = 13;
@@ -56,7 +56,7 @@ namespace NAFE11388::Driver {
 			return false;
 		}
 
-		if (!HAL_SPI_Receive(this->spi_handle, &output, 2, this->max_delay)) {
+		if (!HAL_SPI_Receive(this->spi_handle, output, bytes, this->max_delay)) {
 			return false;
 		}
 
@@ -73,13 +73,15 @@ namespace NAFE11388::Driver {
 				&& this->write_register(CH_CONFIG2, this->channel_cfg_2);
 	}
 
-	bool wait_for_drdy(uint64_t countdown) {
-		for (uint64_t i = 0; i < countdown; i--) {
-			if (HAL_GPIO_ReadPin(this->drdy_gpio_port, this->drdy_gpio_pin) == GPIO_PIN_SET) {
-				return;
-			}
-		}
-	}
+//	bool wait_for_drdy(uint64_t countdown) const {
+//		for (uint64_t i = 0; i < countdown; i--) {
+//			if (HAL_GPIO_ReadPin(this->drdy_gpio_port, this->drdy_gpio_pin) == GPIO_PIN_SET) {
+//				return true;
+//			}
+//		}
+//
+//		return false;
+//	}
 
 	void cfg_hv_aip(uint8_t bits_3) {
 		bits_3 &= 0b111;

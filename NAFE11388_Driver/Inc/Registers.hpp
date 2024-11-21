@@ -22,24 +22,24 @@ namespace NAFE11388::Registers {
 	/************************************
 	 * CONSTANTS
 	 ************************************/
-	namespace CMD_CH {
-		constexpr uint8_t CMD_CH0 = 0x00;
-		constexpr uint8_t CMD_CH1 = 0x01;
-		constexpr uint8_t CMD_CH2 = 0x02;
-		constexpr uint8_t CMD_CH3 = 0x03;
-		constexpr uint8_t CMD_CH4 = 0x04;
-		constexpr uint8_t CMD_CH5 = 0x05;
-		constexpr uint8_t CMD_CH6 = 0x06;
-		constexpr uint8_t CMD_CH7 = 0x07;
-		constexpr uint8_t CMD_CH8 = 0x08;
-		constexpr uint8_t CMD_CH9 = 0x09;
-		constexpr uint8_t CMD_CH10 = 0x0A;
-		constexpr uint8_t CMD_CH11 = 0x0B;
-		constexpr uint8_t CMD_CH12 = 0x0C;
-		constexpr uint8_t CMD_CH13 = 0x0D;
-		constexpr uint8_t CMD_CH14 = 0x0E;
-		constexpr uint8_t CMD_CH15 = 0x0F;
-	}
+//	namespace CMD_CH {
+//		constexpr uint8_t CMD_CH0 = 0x00;
+//		constexpr uint8_t CMD_CH1 = 0x01;
+//		constexpr uint8_t CMD_CH2 = 0x02;
+//		constexpr uint8_t CMD_CH3 = 0x03;
+//		constexpr uint8_t CMD_CH4 = 0x04;
+//		constexpr uint8_t CMD_CH5 = 0x05;
+//		constexpr uint8_t CMD_CH6 = 0x06;
+//		constexpr uint8_t CMD_CH7 = 0x07;
+//		constexpr uint8_t CMD_CH8 = 0x08;
+//		constexpr uint8_t CMD_CH9 = 0x09;
+//		constexpr uint8_t CMD_CH10 = 0x0A;
+//		constexpr uint8_t CMD_CH11 = 0x0B;
+//		constexpr uint8_t CMD_CH12 = 0x0C;
+//		constexpr uint8_t CMD_CH13 = 0x0D;
+//		constexpr uint8_t CMD_CH14 = 0x0E;
+//		constexpr uint8_t CMD_CH15 = 0x0F;
+//	}
 
 	namespace CH_CONFIG {
 		/**
@@ -155,10 +155,10 @@ namespace NAFE11388::Registers {
 		constexpr uint8_t CH_DATA15 = 0x4F;
 	}
 
-	namespace CH_STATUS {
-		constexpr uint8_t CH_STATUS0 = 0x35;
-		constexpr uint8_t CH_STATUS1 = 0x36;
-	}
+//	namespace CH_STATUS {
+//		constexpr uint8_t CH_OVR = 0x35;
+//		constexpr uint8_t CH_UDR = 0x36;
+//	}
 }
 
 #endif /* SOARDRIVERS_NAFE11388_DRIVER_INC_NAFE11388_REGISTERS_HPP_ */
