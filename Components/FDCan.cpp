@@ -206,7 +206,7 @@ HAL_StatusTypeDef FDCanController::RegisterLogType(uint16_t msgIDStart,
  * @return HAL_OK on success
  */
 HAL_StatusTypeDef FDCanController::InitFilters() {
-  if (RegisterLogType(0x000, 0, 80) != HAL_OK) {
+  if (RegisterLogType(0x000, 0, 64) != HAL_OK) {
     return HAL_ERROR;
   }
   if (RegisterFilterRXFIFO(0x000, 0x7FF) != HAL_OK) {

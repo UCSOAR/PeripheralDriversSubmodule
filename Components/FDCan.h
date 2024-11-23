@@ -10,7 +10,7 @@
 
 #include "stm32h7xx.h"
 
-constexpr uint8_t NUM_FD_FILTERS = 2;
+constexpr uint8_t NUM_FD_FILTERS = 9;
 
 class FDCanController {
  public:
@@ -43,19 +43,18 @@ class FDCanController {
   FDCAN_HandleTypeDef *fdcan;
 
   uint8_t nextUnregisteredFilterID = 0;
-  uint8_t numRegisteredLogs;
-  LogRegister registeredLogs[NUM_FD_FILTERS];
+  uint8_t numRegisteredLogs = 0;
+  LogRegister registeredLogs[NUM_FD_FILTERS - 1];
 
   HAL_StatusTypeDef InitFilters();
 
   HAL_StatusTypeDef RegisterFilterRXBuf(uint16_t msgID, uint8_t rxBufferNum);
   HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
 
-  bool RXFlag = false;
+  volatile bool RXFlag = false;
 };
 
-static FDCanController *callbackcontroller;
-
+extern FDCanController *callbackcontroller;
 void RXMsgCallback(FDCAN_HandleTypeDef *hfdcan);
 
 void CANError();
