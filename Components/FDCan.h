@@ -27,11 +27,12 @@ class FDCanController {
 
   bool SendByLogIndex(const uint8_t *msg, uint16_t logIndex);
 
-  bool SendByLogIndex(const char *msg, uint32_t logIndex);
+  bool SendStringByLogIndex(const char *msg, uint16_t logIndex);
 
-  bool SendByMsgID(const uint8_t *msg, size_t len, uint32_t ID);
+  bool SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID);
 
-  uint16_t ReceiveFromRXBuf(uint8_t *out, uint16_t *msgID);
+  uint16_t ReceiveFirstLogFromRXBuf(uint8_t *out, uint16_t *msgID);
+  uint16_t ReceiveLogTypeFromRXBuf(uint8_t *out, uint16_t logIndexFilter);
 
   HAL_StatusTypeDef RegisterLogType(uint16_t msgIDStart, uint8_t rxBufStart,
                                     uint16_t length);
@@ -61,6 +62,8 @@ class FDCanController {
   HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
 
   volatile bool RXFlag = false;
+
+  bool readingRXBufSemaphore = false;
 };
 
 extern FDCanController *callbackcontroller;

@@ -33,7 +33,7 @@ FDCanController::~FDCanController() {
  * @param logIndex Index of the log type to be sent
  * @return Success
  */
-bool FDCanController::SendByLogIndex(const char *msg, uint32_t logIndex) {
+bool FDCanController::SendStringByLogIndex(const char *msg, uint16_t logIndex) {
   return SendByMsgID((const uint8_t *)msg, strlen(msg),
                      registeredLogs[logIndex].startingMsgID);
 }
@@ -46,7 +46,7 @@ bool FDCanController::SendByLogIndex(const char *msg, uint32_t logIndex) {
  * bytes
  * @return Success
  */
-bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint32_t ID) {
+bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID) {
   size_t framesToSend = (len - 1) / 64 + 1;
 
   if (ID >= 2048 - framesToSend) {
@@ -314,41 +314,61 @@ HAL_StatusTypeDef fastGetRXMsg(FDCAN_HandleTypeDef *fdcan, uint8_t buf,
  * into the out buffer.
  * @param out Output data. Must be the size of the maximum expected message
  * size, rounded with FDRoundDataSize().
- * @param msgID Output of the index of the log.
+ * @param logID Output of the index of the log.
  * @return Size in bytes of received message. If no message, returns 0 and out
  * is unmodified.
  */
-uint16_t FDCanController::ReceiveFromRXBuf(uint8_t *out, uint16_t *logID) {
+uint16_t FDCanController::ReceiveFirstLogFromRXBuf(uint8_t *out,
+                                                   uint16_t *logID) {
   if (!RXFlag) {
     return 0;
   }
   for (uint8_t i = 0; i < numRegisteredLogs; i++) {
-    const LogRegister &thisRegisteredLog = registeredLogs[i];
-    if (thisRegisteredLog.byteLength == 0) {
-      break;
-    }
-    if (HAL_FDCAN_IsRxBufferMessageAvailable(fdcan,
-                                             thisRegisteredLog.endingRXBuf)) {
-      // Received full log
-      // uint8_t data[FDRoundDataSize(thisRegisteredLog.byteLength)];
-      // memset(data,0x00,sizeof(data));
-      uint8_t *d = out;
-      for (uint8_t b = thisRegisteredLog.startingRXBuf;
-           b <= thisRegisteredLog.endingRXBuf; b++) {
-        // FDCAN_RxHeaderTypeDef rxh;
-        // HAL_FDCAN_GetRxMessage(fdcan, b, &rxh, d);
-        fastGetRXMsg(fdcan, b, d);
-        d += 64;
-      }
-
+    uint16_t len = ReceiveLogTypeFromRXBuf(out, i);
+    if (len > 0) {
       // data now contains entire multi-frame log, potentially padded with
       // some 0s
       // Received full log, do send or something
       *logID = i;
-      return thisRegisteredLog.byteLength;
+      return len;
     }
   }
   RXFlag = false;
+  return 0;
+}
+
+uint16_t FDCanController::ReceiveLogTypeFromRXBuf(uint8_t *out,
+                                                  uint16_t logIndexFilter) {
+  if (!RXFlag) {
+    return 0;
+  }
+
+  const LogRegister &thisRegisteredLog = registeredLogs[logIndexFilter];
+  if (thisRegisteredLog.byteLength == 0) {
+    return 0;
+  }
+  if (HAL_FDCAN_IsRxBufferMessageAvailable(fdcan,
+                                           thisRegisteredLog.endingRXBuf)) {
+    if (readingRXBufSemaphore) {
+      return 0;  // something else using the semaphore
+    }
+    readingRXBufSemaphore = true;
+
+    // Received full log
+    uint8_t *d = out;
+    for (uint8_t b = thisRegisteredLog.startingRXBuf;
+         b <= thisRegisteredLog.endingRXBuf; b++) {
+      fastGetRXMsg(fdcan, b, d);
+      d += 64;
+    }
+
+    readingRXBufSemaphore = false;
+    // data now contains entire multi-frame log, potentially padded with
+    // some 0s
+    // Received full log, do send or something
+    return thisRegisteredLog.byteLength;
+  }
+
   return 0;
 }
 
