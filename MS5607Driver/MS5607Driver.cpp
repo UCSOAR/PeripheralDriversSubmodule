@@ -8,21 +8,16 @@
 #include "MS5607Driver.hpp"
 /************************************ * PRIVATE MACROS AND DEFINES ************************************/
 /************************************ * VARIABLES ************************************/
-constexpr int TEMP_LOW = 2000;
-constexpr int TEMP_VERY_LOW = -1500;
-constexpr int CMD_SIZE = 1;
-constexpr int CMD_TIMEOUT = 150;
-
 // Barometer Commands (should not be modified, non-const due to HAL and C++ strictness)
 static uint8_t ADC_D1_512_CONV_CMD = 0x42;
 static uint8_t ADC_D2_512_CONV_CMD = 0x52;
 static uint8_t ADC_READ_CMD = 0x00;
-static uint8_t PROM_READ_SENS_CMD = 0xA2; // make sure these are the correct commands vv
+static uint8_t PROM_READ_SENS_CMD = 0xA2;
 static uint8_t PROM_READ_OFF_CMD = 0xA4;
 static uint8_t PROM_READ_TCS_CMD = 0xA6;
 static uint8_t PROM_READ_TCO_CMD = 0xA8;
 static uint8_t PROM_READ_TREF_CMD = 0xAA;
-static uint8_t PROM_READ_TEMPSENS_CMD = 0xAC; // ----------------- ^^
+static uint8_t PROM_READ_TEMPSENS_CMD = 0xAC;
 static uint8_t READ_BYTE_CMD = 0x00;
 static uint8_t RESET_CMD = 0x1E;
 /************************************ * FUNCTION DECLARATIONS ************************************/
@@ -61,14 +56,10 @@ MS5607_DATA_t MS5607_Driver::getSample(){
 	// Variables
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
-	uint8_t dataInBuffer;
 	MS5611_DATA_t data;
 
 	// Reset the barometer
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, &RESET_CMD, CMD_SIZE, CMD_TIMEOUT);
-	osDelay(4); // 2.8ms reload after Reset command
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+	resetBarometer();
 
 	// Read PROM for calibration coefficients
 	uint16_t c1Sens = ReadCalibrationCoefficients(PROM_READ_SENS_CMD);
@@ -84,58 +75,10 @@ MS5607_DATA_t MS5607_Driver::getSample(){
 	 * Finally, update the data globally if the mutex is available.
 	 */
 	/* Read Digital Pressure (D1) ----------------------------------------*/
-
-	// Tell the barometer to convert the pressure to a digital value with an over-sampling ratio of 512
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, &ADC_D1_512_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
-
-	osDelay(2); // 1.17ms max conversion time for an over-sampling ratio of 512
-
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-
-	HAL_SPI_Transmit(hspi, &ADC_READ_CMD, CMD_SIZE, CMD_TIMEOUT);
-
-	// Read the first byte (bits 23-16)
-	HAL_SPI_TransmitReceive(hspi, &READ_BYTE_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
-	pressureReading = dataInBuffer << 16;
-
-	// Read the second byte (bits 15-8)
-	HAL_SPI_TransmitReceive(hspi, &READ_BYTE_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
-	pressureReading += dataInBuffer << 8;
-
-	// Read the third byte (bits 7-0)
-	HAL_SPI_TransmitReceive(hspi, &READ_BYTE_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
-	pressureReading += dataInBuffer;
-
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+	pressureReading = getPressureReading();
 
 	/* Read Digital Temperature (D2) -------------------------------------*/
-
-	// Tell the barometer to convert the temperature to a digital value with an over-sampling ratio of 512
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, &ADC_D2_512_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
-
-	osDelay(2); // 1.17ms max conversion time for an over-sampling ratio of 512
-
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-
-	HAL_SPI_Transmit(hspi, &ADC_READ_CMD, CMD_SIZE, CMD_TIMEOUT);
-
-	// Read the first byte (bits 23-16)
-	HAL_SPI_TransmitReceive(hspi, &ADC_READ_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
-	temperatureReading = dataInBuffer << 16;
-
-	// Read the second byte (bits 15-8)
-	HAL_SPI_TransmitReceive(hspi, &ADC_READ_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
-	temperatureReading += dataInBuffer << 8;
-
-	// Read the third byte (bits 7-0)
-	HAL_SPI_TransmitReceive(hspi, &ADC_READ_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
-	temperatureReading += dataInBuffer;
-
-	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+	temperatureReading = getTemperatureReading();
 
 	/* Calculate First-Order Temperature and Parameters ------------------*/
 
@@ -147,7 +90,7 @@ MS5607_DATA_t MS5607_Driver::getSample(){
 
 	/* Calculate Second-Order Temperature and Pressure -------------------*/
 
-	if (temp < TEMP_LOW)    // If the temperature is below 20�C
+	if (temp < TEMP_LOW)    // If the temperature is below 20C
 	{
 		int32_t t2 = ((int64_t)dT * dT) >> 31;
 		int64_t off2 = 61 * (((int64_t)(temp - 2000) * (temp - 2000)) >> 4);
@@ -185,7 +128,7 @@ MS5607_DATA_t MS5607_Driver::getSample(){
  *                          coefficient. See the data sheet for the commands.
  * @return                  The read coefficient.
  */
-uint16_t MS5607_Driver::ReadCalibrationCoefficients(uint8_t PROM_READ_CMD)
+uint16_t MS5607_Driver::readCalibrationCoefficients(uint8_t PROM_READ_CMD)
 {
     uint8_t dataInBuffer;
 
@@ -206,7 +149,91 @@ uint16_t MS5607_Driver::ReadCalibrationCoefficients(uint8_t PROM_READ_CMD)
     return coefficient;
 }
 
+/**
+ * @brief   This function resets the barometer prior to sampling
+ */
+void MS5607_Driver::resetBarometer()
+{
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(hspi, &RESET_CMD, CMD_SIZE, CMD_TIMEOUT);
+	osDelay(4); // 2.8ms reload after Reset command
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+}
 
+/**
+ * @brief   This function reads and returns a 32-bit pressure reading from the barometer (without converting it to a workable format).
+ * @return                  The read pressure
+ */
+uint32_t MS5607_Driver::getPressureReading()
+{
+	uint32_t pressureReading = 0;    // Stores a 24 bit value
+	uint8_t dataInBuffer;
+
+	// Tell the barometer to convert the pressure to a digital value with an over-sampling ratio of 512
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(hspi, &ADC_D1_512_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+
+	osDelay(2); // 1.17ms max conversion time for an over-sampling ratio of 512
+
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+
+	HAL_SPI_Transmit(hspi, &ADC_READ_CMD, CMD_SIZE, CMD_TIMEOUT);
+
+	// Read the first byte (bits 23-16)
+	HAL_SPI_TransmitReceive(hspi, &READ_BYTE_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
+	pressureReading = dataInBuffer << 16;
+
+	// Read the second byte (bits 15-8)
+	HAL_SPI_TransmitReceive(hspi, &READ_BYTE_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
+	pressureReading += dataInBuffer << 8;
+
+	// Read the third byte (bits 7-0)
+	HAL_SPI_TransmitReceive(hspi, &READ_BYTE_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
+	pressureReading += dataInBuffer;
+
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+
+	return pressureReading;
+}
+
+/**
+ * @brief   This function reads and returns a 32-bit temperature reading from the barometer (without converting it to a workable format).
+ * @return                  The read temperature
+ */
+uint32_t MS5607_Driver::getTemperatureReading()
+{
+	uint32_t temperatureReading = 0;    // Stores a 24 bit value
+	uint8_t dataInBuffer;
+
+	// Tell the barometer to convert the temperature to a digital value with an over-sampling ratio of 512
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(hspi, &ADC_D2_512_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+
+	osDelay(2); // 1.17ms max conversion time for an over-sampling ratio of 512
+
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+
+	HAL_SPI_Transmit(hspi, &ADC_READ_CMD, CMD_SIZE, CMD_TIMEOUT);
+
+	// Read the first byte (bits 23-16)
+	HAL_SPI_TransmitReceive(hspi, &ADC_READ_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
+	temperatureReading = dataInBuffer << 16;
+
+	// Read the second byte (bits 15-8)
+	HAL_SPI_TransmitReceive(hspi, &ADC_READ_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
+	temperatureReading += dataInBuffer << 8;
+
+	// Read the third byte (bits 7-0)
+	HAL_SPI_TransmitReceive(hspi, &ADC_READ_CMD, &dataInBuffer, CMD_SIZE, CMD_TIMEOUT);
+	temperatureReading += dataInBuffer;
+
+	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+
+	return temperatureReading;
+
+}
 
 
 

@@ -10,6 +10,10 @@
 #include "SystemDefines.hpp"
 #include "cmsis_os.h"
 /************************************ * MACROS AND DEFINES ************************************/
+constexpr int TEMP_LOW = 2000;
+constexpr int TEMP_VERY_LOW = -1500;
+constexpr int CMD_SIZE = 1;
+constexpr int CMD_TIMEOUT = 150;
 /************************************ * TYPEDEFS ************************************/
 struct MS5607_DATA_t{
 	int16_t temp;
@@ -33,8 +37,10 @@ private:
 	uint16_t cs_pin;
 	SPI_HandleTypeDef* hspi;
 
-	bool SetRegister(MS5607_REGISTER_t reg, uint8_t val);
-	uint16_t ReadCalibrationCoefficients(uint8_t PROM_READ_CMD);
+	uint16_t readCalibrationCoefficients(uint8_t PROM_READ_CMD);
+	uint32_t getTemperatureReading();
+	uint32_t getPressureReading();
+	void resetBarometer();
 };
 
 /************************************ * FUNCTION DECLARATIONS ************************************/
