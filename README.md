@@ -2,7 +2,7 @@
 
 ## Project Description
 
-The **LSMDSO6 Driver** is a C++ library designed to simplify interaction with the LSMDSO6 sensor. This driver abstracts the complexity of the sensor's functionality, reducing the need to reference the datasheet for basic operations. It provides an intuitive interface to get your project up and running quickly.
+The **LSM6DSO_Driver** is a C++ library designed to simplify interaction with the LSMDSO6 sensor. This driver abstracts the complexity of the sensor's functionality, reducing the need to reference the datasheet for basic operations. It provides an intuitive interface to get your project up and running quickly.
 
 For a quick start, refer to the **[Quick Setup](#quick-setup)** section or check the `main_i2c_test.cpp` file for a usage example.  
 *Note: The provided example is not meant to be built directly, but rather to illustrate the steps required to initialize and use the driver.*
