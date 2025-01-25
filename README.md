@@ -33,7 +33,7 @@ For a quick start, refer to the **[Quick Setup](#quick-setup)** section or check
 6. Check if `maxSampFreqReached` is FALSE<sup>2, 3</sup> 
 7. Create a `IMU_OUT` struct to record the data
 8. Use `LSM6DSO_Driver.updStatus()` to check if data is available
-9. To read data use `LSM6DSO_Driver.readSensor(&*IMU_OUT*)`
+9. To read data use `LSM6DSO_Driver.readSensor(&IMU_OUT)`
 10. DONE!
 
 1 - if `isInitialized` is FALSE use `LSM6DSO_DRIVER.updConfigs(DRIVER_PARAMETER)` method and repeat step 5 
