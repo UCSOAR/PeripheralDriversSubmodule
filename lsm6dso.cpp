@@ -145,35 +145,46 @@
 		if(setSampFreq())
 			maxSampFreqReached = true;
 
-		/*Not needed for testings
-		settings.CTRL1_XL = configs.CTRL1_XL;
-		settings.CTRL2_G = configs.CTRL2_G;
-		settings.CTRL4_C = configs.CTRL4_C;
-		settings.CTRL5_C = configs.CTRL5_C;
-		settings.CTRL6_C = configs.CTRL6_C;
-		settings.CTRL7_G = configs.CTRL7_G;
-		settings.CTRL8_XL = configs.CTRL8_XL;
-		settings.CTRL10_C = configs.CTRL10_C;
+		if(settings.CTRL1_XL >>4 <= 0x6)
+			settings.CTRL6_C = 0x10;// Disable High Performance Mode if not needed (Accelerometer)
+		else
+			settings.CTRL6_C = 0x00;
 
-		settings.INT1_CTRL = configs.INT1_CTRL;
-		settings.WAKE_UP_DUR = configs.WAKE_UP_DUR;
-		settings.FREE_FALL = configs.FREE_FALL;
-		settings.MD1_CFG = configs.MD1_CFG;
-		settings.FIFO_CTRL4 = configs.FIFO_CTRL4;
-		*/
+		if(settings.CTRL1_XL >>4 <= 0x6)
+			settings.CTRL7_G = 0X80; // Disable High Performance Mode if not needed (Gyroscope
+
+		else
+			settings.CTRL7_G = 0x00;
+
 
 		uint8_t status = 0;
 		i2c.updDeviceAddr(LSM6DSO_ADDRESS);
 		i2c.numBytes = 1;
 
+		// Configure accel power mode
+		i2c.registerAddress = CTRL6_C_ADDR;
+		i2c.sendData[0] = settings.CTRL6_C;
+		status = i2c.writeReg();
+		if(status != HAL_OK){
+			return status;
+		}
 
+		// Configure gyro power mode
+		i2c.registerAddress = CTRL7_G_ADDR;
+		i2c.sendData[0] = settings.CTRL7_G;
+		status = i2c.writeReg();
+		if(status != HAL_OK){
+			return status;
+		}
+
+		// Configure accel sampling frequency
 		i2c.registerAddress = CTRL1_XL_ADDR;
 		i2c.sendData[0] = settings.CTRL1_XL;
 		status = i2c.writeReg();
 		if(status != HAL_OK){
 			return status;
 		}
-
+		// Configure gyro sampling frequency
 		i2c.registerAddress = CTRL2_G_ADDR;
 		i2c.sendData[0] = settings.CTRL2_G;
 		status = i2c.writeReg();
@@ -195,19 +206,6 @@
 			return status;
 		}
 
-		i2c.registerAddress = CTRL6_G_ADDR;
-		i2c.sendData[0] = settings.CTRL6_G;
-		status = i2c.writeReg();
-		if(status != HAL_OK){
-			return status;
-		}
-
-		i2c.registerAddress = CTRL7_G_ADDR;
-		i2c.sendData[0] = settings.CTRL7_G;
-		status = i2c.writeReg();
-		if(status != HAL_OK){
-			return status;
-		}
 
 		i2c.registerAddress = CTRL10_G_ADDR;
 		i2c.sendData[0] = settings.CTRL10_G;
@@ -359,4 +357,47 @@
 		 return result;
 	 }
 
+	 uint8_t LSM6DSO_Driver::updCTRL1_XL(uint8_t newVal){
+		 settings.CTRL1_XL = newVal;
+		 i2c.updDeviceAddr(LSM6DSO_ADDRESS);
+		 i2c.numBytes = 1;
+
+
+		 i2c.registerAddress = CTRL1_XL_ADDR;
+		 i2c.sendData[0] = settings.CTRL1_XL;
+		 return i2c.writeReg();
+	 }
+
+	 uint8_t LSM6DSO_Driver::updCTRL2_G(uint8_t newVal){
+		 settings.CTRL2_G = newVal;
+		 i2c.updDeviceAddr(LSM6DSO_ADDRESS);
+		 i2c.numBytes = 1;
+
+
+		 i2c.registerAddress = CTRL2_G_ADDR;
+		 i2c.sendData[0] = settings.CTRL2_G;
+		 return i2c.writeReg();
+	 }
+
+	 uint8_t LSM6DSO_Driver::updCTRL6_C(uint8_t newVal){
+		 settings.CTRL6_C = newVal;
+		 i2c.updDeviceAddr(LSM6DSO_ADDRESS);
+		 i2c.numBytes = 1;
+
+
+		 i2c.registerAddress = CTRL6_C_ADDR;
+		 i2c.sendData[0] = settings.CTRL6_C;
+		 return i2c.writeReg();
+	 }
+
+	 uint8_t LSM6DSO_Driver::updCTRL7_G(uint8_t newVal){
+		 settings.CTRL7_G = newVal;
+		 i2c.updDeviceAddr(LSM6DSO_ADDRESS);
+		 i2c.numBytes = 1;
+
+
+		 i2c.registerAddress = CTRL7_G_ADDR;
+		 i2c.sendData[0] = settings.CTRL7_G;
+		 return i2c.writeReg();
+	 }
 
