@@ -68,6 +68,144 @@ uint32_t MCPADCDriver::GetRegister24(REGISTER_t reg) {
   return (received[1] << 16) | (received[2] << 8) | received[3];
 }
 
+bool MCPADCDriver::SetVoltageReference(VOLT_REF ref) {
+  uint8_t c0 = GetRegister(CONFIG0);
+  return SetRegister(CONFIG0, (c0 & 0b01111111) | (ref << 7));
+}
+
+MCPADCDriver::VOLT_REF MCPADCDriver::GetVoltageReference() {
+  return (VOLT_REF)((GetRegister(CONFIG0) >> 7) & 0b1);
+}
+
+bool MCPADCDriver::SetClk(CLOCK clk) {
+  uint8_t c0 = GetRegister(CONFIG0);
+  return SetRegister(CONFIG0, (c0 & 0b11001111) | (clk << 4));
+}
+
+MCPADCDriver::CLOCK MCPADCDriver::GetClk() {
+  return (CLOCK)((GetRegister(CONFIG0) >> 4) & 0b11);
+}
+
+bool MCPADCDriver::SetCurrentSource(CS cs) {
+  uint8_t c0 = GetRegister(CONFIG0);
+  return SetRegister(CONFIG0, (c0 & 0b11110011) | (cs << 2));
+}
+
+MCPADCDriver::CS MCPADCDriver::GetCurrentSource() {
+  return (CS)((GetRegister(CONFIG0) >> 2) & 0b11);
+}
+
+bool MCPADCDriver::SetADCMode(ADC_MODE mode) {
+  uint8_t c0 = GetRegister(CONFIG0);
+  return SetRegister(CONFIG0, (c0 & 0b11111100) | (mode));
+}
+
+MCPADCDriver::ADC_MODE MCPADCDriver::GetADCMode() {
+  return (ADC_MODE)((GetRegister(CONFIG0)) & 0b11);
+}
+
+bool MCPADCDriver::SetPrescalar(PRESCALAR prescalar) {
+  uint8_t c1 = GetRegister(CONFIG1);
+  return SetRegister(CONFIG1, (c1 & 0b00111111) | (prescalar << 6));
+}
+
+MCPADCDriver::PRESCALAR MCPADCDriver::GetPrescalar() {
+  return (PRESCALAR)((GetRegister(CONFIG1) >> 6) & 0b11);
+}
+
+bool MCPADCDriver::SetOSR(uint8_t osrbits) {
+  uint8_t c1 = GetRegister(CONFIG1);
+  return SetRegister(CONFIG1, (c1 & 0b11000011) | (osrbits << 2));
+}
+
+uint8_t MCPADCDriver::GetOSR() {
+  return ((GetRegister(CONFIG1) >> 2) & 0b1111);
+}
+
+bool MCPADCDriver::SetCurrentBoost(CURRENTBOOST boost) {
+  uint8_t c2 = GetRegister(CONFIG2);
+  return SetRegister(CONFIG2, (c2 & 0b00111111) | (boost << 6));
+}
+
+MCPADCDriver::CURRENTBOOST MCPADCDriver::GetCurrentBoost() {
+  return (CURRENTBOOST)((GetRegister(CONFIG2) >> 6) & 0b11);
+}
+
+bool MCPADCDriver::SetGain(GAIN gain) {
+  uint8_t c2 = GetRegister(CONFIG2);
+  return SetRegister(CONFIG2, (c2 & 0b11000111) | (gain << 3));
+}
+
+MCPADCDriver::GAIN MCPADCDriver::GetGain() {
+  return (GAIN)((GetRegister(CONFIG2) >> 3) & 0b111);
+}
+
+bool MCPADCDriver::SetAutoZero(bool enabled) {
+  uint8_t c2 = GetRegister(CONFIG2);
+  return SetRegister(CONFIG2, (c2 & 0b11111011) | (enabled << 2));
+}
+
+bool MCPADCDriver::GetAutoZero() {
+  return (GAIN)((GetRegister(CONFIG2) >> 2) & 0b1);
+}
+
+bool MCPADCDriver::SetAutoRef(bool enabled) {
+  uint8_t c2 = GetRegister(CONFIG2);
+  return SetRegister(CONFIG2, (c2 & 0b11111101) | (enabled << 1));
+}
+
+bool MCPADCDriver::GetAutoRef() {
+  return (GAIN)((GetRegister(CONFIG2) >> 1) & 0b1);
+}
+
+bool MCPADCDriver::SetConvMode(CONV_MODE mode) {
+  uint8_t c3 = GetRegister(CONFIG3);
+  return SetRegister(CONFIG3, (c3 & 0b00111111) | (mode << 6));
+}
+
+MCPADCDriver::CONV_MODE MCPADCDriver::GetConvMode() {
+  return (CONV_MODE)((GetRegister(CONFIG3) >> 6) & 0b11);
+}
+
+bool MCPADCDriver::SetOutputMode(OUTPUT_MODE_t mode) {
+  uint8_t c3 = GetRegister(CONFIG3);
+  return SetRegister(CONFIG3, (c3 & 0b11001111) | (mode << 4));
+}
+
+MCPADCDriver::OUTPUT_MODE_t MCPADCDriver::GetOutputMode() {
+  return (OUTPUT_MODE_t)((GetRegister(CONFIG3) >> 4) & 0b11);
+}
+
+bool MCPADCDriver::SetCRC(CRC_FORMAT format) {
+  uint8_t c3 = GetRegister(CONFIG3);
+  return SetRegister(CONFIG3, (c3 & 0b11110111) | (format << 3));
+}
+
+MCPADCDriver::CRC_FORMAT MCPADCDriver::GetCRC() {
+  return (CRC_FORMAT)((GetRegister(CONFIG3) >> 3) & 0b1);
+}
+
+bool MCPADCDriver::SetCRCRead(bool enabled) {
+  uint8_t c3 = GetRegister(CONFIG3);
+  return SetRegister(CONFIG3, (c3 & 0b11111011) | (enabled << 2));
+}
+
+bool MCPADCDriver::GetCRCRead() { return ((GetRegister(CONFIG3) >> 2) & 0b1); }
+
+bool MCPADCDriver::SetOffCal(bool enabled) {
+  uint8_t c3 = GetRegister(CONFIG3);
+  return SetRegister(CONFIG3, (c3 & 0b11111101) | (enabled << 1));
+}
+
+bool MCPADCDriver::GetOffCal() { return ((GetRegister(CONFIG3) >> 1) & 0b1); }
+
+bool MCPADCDriver::SetGainCal(bool enabled) {
+  uint8_t c3 = GetRegister(CONFIG3);
+  return SetRegister(CONFIG3, (c3 & 0b11111110) | (enabled));
+}
+
+bool MCPADCDriver::GetGainCal() { return ((GetRegister(CONFIG3)) & 0b1); }
+
 uint32_t MCPADCDriver::GetRegister32(REGISTER_t reg) {
   uint8_t cmdByte = (address << 6) | ((reg & 0b1111) << 2) | 0b01;
   uint8_t data[5] = {cmdByte};
