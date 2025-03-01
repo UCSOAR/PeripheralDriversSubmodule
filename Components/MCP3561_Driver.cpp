@@ -23,15 +23,17 @@ bool MCPADCDriver::SetRegister8(REGISTER_t reg, uint8_t val) {
 
 bool MCPADCDriver::SetRegister16(REGISTER_t reg, uint16_t val) {
   uint8_t cmdByte = (address << 6) | ((reg & 0b1111) << 2) | 0b10;
-  uint8_t data[3] = {cmdByte, (uint8_t)((val >> 8) & 0xff), val & 0xff};
+  uint8_t data[3] = {cmdByte, static_cast<uint8_t>((val >> 8) & 0xff),
+                     static_cast<uint8_t>(val & 0xff)};
 
   return SendSPI(data, sizeof(data));
 }
 
 bool MCPADCDriver::SetRegister24(REGISTER_t reg, uint32_t val) {
   uint8_t cmdByte = (address << 6) | ((reg & 0b1111) << 2) | 0b10;
-  uint8_t data[4] = {cmdByte, (uint8_t)((val >> 16) & 0xff),
-                     (uint8_t)((val >> 8) & 0xff), val & 0xff};
+  uint8_t data[4] = {cmdByte, static_cast<uint8_t>((val >> 16) & 0xff),
+                     static_cast<uint8_t>((val >> 8) & 0xff),
+                     static_cast<uint8_t>(val & 0xff)};
 
   return SendSPI(data, sizeof(data));
 }
@@ -67,6 +69,24 @@ uint32_t MCPADCDriver::GetRegister24(REGISTER_t reg) {
   SendReceiveSPI(data, sizeof(received), received);
   return (received[1] << 16) | (received[2] << 8) | received[3];
 }
+
+bool MCPADCDriver::SetField(const FieldInfo field, uint32_t val) {
+  assert(field.writeable == true);
+  if (field == OUTPUT_MODE.Info()) {
+    outputModeCache = static_cast<OUTPUT_MODE_t::V>(val);
+  }
+  uint32_t reg = GetRegister(field.reg);
+  uint32_t mask = ((((uint32_t)1) << field.GetNumBits()) - 1) << field.lsbIndex;
+  return SetRegister(field.reg, (reg & ~mask) | (val << (field.lsbIndex)));
+}
+
+uint32_t MCPADCDriver::GetField(FieldInfo field) {
+  uint32_t reg = GetRegister(field.reg);
+  uint32_t mask = ((((uint32_t)1) << field.GetNumBits()) - 1) << field.lsbIndex;
+  return (reg & mask) >> field.lsbIndex;
+}
+
+uint32_t MCPADCDriver::ReadADC() { return GetRegister(ADCDATA); }
 
 uint32_t MCPADCDriver::GetRegister32(REGISTER_t reg) {
   uint8_t cmdByte = (address << 6) | ((reg & 0b1111) << 2) | 0b01;
@@ -138,7 +158,7 @@ uint32_t MCPADCDriver::GetRegister(REGISTER_t reg) {
 uint8_t MCPADCDriver::GetNumRegBits(REGISTER_t reg) {
   const static uint8_t bitTable[] = {0,  8,  8,  8,  8, 8, 8,  24,
                                      24, 24, 24, 24, 8, 8, 16, 16};
-  if (reg == 0) {
+  if (reg == ADCDATA) {
     switch (outputModeCache) {
       case OUTPUT_MODE_t::V::OM_24_BIT:
         return 24;
@@ -153,16 +173,14 @@ uint8_t MCPADCDriver::GetNumRegBits(REGISTER_t reg) {
   return bitTable[reg];
 }
 
-const bool MCPADCField::Set(uint32_t val, MCPADCDriver &driver) {
-  uint32_t reg = driver.GetRegister(getReg());
-  uint32_t mask = ((((uint32_t)1) << GetNumBits()) - 1) << getLsbIndex();
-  return driver.SetRegister(getReg(), (reg & ~mask) | (val << (getLsbIndex())));
+uint8_t MCPADCField::GetNumBits() { return Info().GetNumBits(); }
+
+bool MCPADCField::operator==(const MCPADCField &other) {
+  return this->getReg() == other.getReg() &&
+         this->getLsbIndex() == other.getLsbIndex() &&
+         this->getMsbIndex() == other.getMsbIndex();
 }
 
-const uint32_t MCPADCField::Get(MCPADCDriver &driver) {
-  uint32_t reg = driver.GetRegister(getReg());
-  uint32_t mask = ((((uint32_t)1) << GetNumBits()) - 1) << getLsbIndex();
-  return (reg & mask) >> getLsbIndex();
+const FieldInfo MCPADCField::Info() const {
+  return {getReg(), getMsbIndex(), getLsbIndex(), writeable()};
 }
-
-uint8_t MCPADCField::GetNumBits() { return getMsbIndex() - getLsbIndex() + 1; }

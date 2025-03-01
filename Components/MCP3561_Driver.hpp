@@ -20,12 +20,13 @@ class MCPADCDriver {
   bool SetRegister(REGISTER_t reg, uint32_t val);
   uint32_t GetRegister(REGISTER_t reg);
 
-  bool SetField(MCPADCField field, uint32_t val) {
-    return field.Set(val, *this);
-  };
-  uint32_t GetField(MCPADCField field) { return field.Get(*this); };
+  bool SetField(const FieldInfo field, uint32_t val);
+  uint32_t GetField(FieldInfo field);
 
-  ADC_MODE_t ADC_MODE;
+  uint32_t ReadADC();
+
+  static constexpr ADC_MODE_t ADC_MODE = ADC_MODE_t{};
+  static constexpr OUTPUT_MODE_t OUTPUT_MODE = OUTPUT_MODE_t{};
 
  protected:
  private:
