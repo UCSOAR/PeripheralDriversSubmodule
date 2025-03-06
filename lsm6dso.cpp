@@ -236,6 +236,14 @@
 	 bool LSM6DSO_Driver::get_isInitialized (void){
 		 return isInitialized;
 	 }
+	 float LSM6DSO_Driver::getAccelSense(void){
+		 return ACCEL_SENSITIVITY;
+	 }
+
+
+	 float LSM6DSO_Driver::getGyroSense(void){
+		 return GYRO_SENSITIVITY;
+	 }
 
 	 void LSM6DSO_Driver::processData(void){
 		 outputs.temp = 25.0 + (raw_data.temp / 256.0);
@@ -315,7 +323,7 @@
 			 settings.CTRL1_XL |= 0b0100;
 
 		 // Gyroscope Sampling Frequency
-		 settings.CTRL2_G &= 0x0f;
+		 settings.CTRL2_G = 0x00;
 		 if(parameters.gyroMinFreq == 0)
 			 settings.CTRL2_G |= 0x00;
 		 else if(parameters.gyroMinFreq <= 13)

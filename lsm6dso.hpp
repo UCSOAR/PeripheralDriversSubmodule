@@ -149,6 +149,18 @@ public:
 	*/
     bool get_isInitialized(void);
 
+    /**
+     * @brief Returns the value of the Accelerometer sensitivity factor
+     * @return Float containing the Accelerometer sensitivity factor
+    */
+    float getAccelSense(void);
+
+    /**
+     * @brief Returns the value of the Gyroscope sensitivity factor
+     * @return Float containing the Gyroscope sensitivity factor
+    */
+    float getGyroSense(void);
+
 	/**
 	 * @brief Updates the settings.
 	 * @details Based on the entered parameters, this function updates the settings of the sensor.
