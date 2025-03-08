@@ -6,6 +6,7 @@
  */
 
 #include "MCP3561_Driver.hpp"
+using namespace MCP3561Fields;
 
 MCPADCDriver::MCPADCDriver(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_gpio_,
                            uint16_t cs_pin_, uint8_t address)
@@ -78,7 +79,7 @@ uint32_t MCPADCDriver::GetRegister24(MCP3561_REGISTER_t reg) {
   return (received[1] << 16) | (received[2] << 8) | received[3];
 }
 
-bool MCPADCDriver::SetField(const FieldInfo field, uint32_t val) {
+bool MCPADCDriver::SetField(const MCP3561_FieldInfo field, uint32_t val) {
   assert(field.writeable == true);
   if (field == OUTPUT_MODE_t().Info()) {
     outputModeCache = static_cast<OUTPUT_MODE_t::V>(val);
@@ -88,7 +89,7 @@ bool MCPADCDriver::SetField(const FieldInfo field, uint32_t val) {
   return SetRegister(field.reg, (reg & ~mask) | (val << (field.lsbIndex)));
 }
 
-uint32_t MCPADCDriver::GetField(FieldInfo field) {
+uint32_t MCPADCDriver::GetField(MCP3561_FieldInfo field) {
   uint32_t reg = GetRegister(field.reg);
   uint32_t mask = ((((uint32_t)1) << field.GetNumBits()) - 1) << field.lsbIndex;
   return (reg & mask) >> field.lsbIndex;
@@ -194,6 +195,6 @@ bool MCPADCField::operator==(const MCPADCField &other) {
          this->getMsbIndex() == other.getMsbIndex();
 }
 
-const FieldInfo MCPADCField::Info() const {
+const MCP3561_FieldInfo MCPADCField::Info() const {
   return {getReg(), getMsbIndex(), getLsbIndex(), writeable()};
 }

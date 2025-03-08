@@ -20,8 +20,8 @@ class MCPADCDriver {
   bool SetRegister(MCP3561_REGISTER_t reg, uint32_t val);
   uint32_t GetRegister(MCP3561_REGISTER_t reg);
 
-  bool SetField(const FieldInfo field, uint32_t val);
-  uint32_t GetField(FieldInfo field);
+  bool SetField(const MCP3561_FieldInfo field, uint32_t val);
+  uint32_t GetField(MCP3561_FieldInfo field);
 
   uint32_t ReadADC();
 
@@ -50,7 +50,7 @@ class MCPADCDriver {
   uint32_t GetRegister24(MCP3561_REGISTER_t reg);
   uint32_t GetRegister32(MCP3561_REGISTER_t reg);
 
-  OUTPUT_MODE_t::V outputModeCache;
+  MCP3561Fields::OUTPUT_MODE_t::V outputModeCache;
 };
 
 #endif /* MCP3561_DRIVER_HPP_ */

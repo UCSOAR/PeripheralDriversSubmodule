@@ -42,13 +42,13 @@ typedef uint8_t BIT_INDEX;
 
 class MCPADCDriver;
 
-struct FieldInfo {
+struct MCP3561_FieldInfo {
   MCP3561_REGISTER_t reg;
   BIT_INDEX msbIndex;
   BIT_INDEX lsbIndex;
   const uint8_t GetNumBits() const;
   const bool writeable;
-  bool operator==(const FieldInfo &other) const;
+  bool operator==(const MCP3561_FieldInfo &other) const;
 };
 
 // Base class for a bit field within an MCP3561 register.
@@ -58,17 +58,17 @@ class MCPADCField {
  public:
   uint8_t GetNumBits();
   bool operator==(const MCPADCField &other);
-  const FieldInfo Info() const;
+  const MCP3561_FieldInfo Info() const;
   virtual const BIT_INDEX getLsbIndex() const { return 0; }
   virtual const BIT_INDEX getMsbIndex() const { return 0; }
   virtual const MCP3561_REGISTER_t getReg() const {
     return MCP3561_REGISTER_t::CONFIG0;
   }
-  operator FieldInfo() const { return Info(); }
+  operator MCP3561_FieldInfo() const { return Info(); }
 
   virtual bool writeable() const { return true; }
 };
-
+namespace MCP3561Fields {
 class VOLT_REF_t : public MCPADCField {
  public:
   enum V { VREF_INTERNAL = 1, VREF_EXTERNAL = 0 };
@@ -397,11 +397,14 @@ class CRC_CHECKSUM : public MCPADCField {
   MCP3561_FIELD_REGISTER(MCP3561_REGISTER_t::CRCCFG);
 };
 
-inline const uint8_t FieldInfo::GetNumBits() const {
+}  // namespace MCP3561Fields
+
+inline const uint8_t MCP3561_FieldInfo::GetNumBits() const {
   return msbIndex - lsbIndex + 1;
 }
 
-inline bool FieldInfo::operator==(const FieldInfo &other) const {
+inline bool MCP3561_FieldInfo::operator==(
+    const MCP3561_FieldInfo &other) const {
   if (other.lsbIndex == lsbIndex && other.msbIndex == msbIndex &&
       other.reg == reg) {
     return true;
