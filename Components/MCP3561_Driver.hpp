@@ -17,8 +17,8 @@ class MCPADCDriver {
   MCPADCDriver(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_gpio_,
                uint16_t cs_pin_, uint8_t address);
 
-  bool SetRegister(REGISTER_t reg, uint32_t val);
-  uint32_t GetRegister(REGISTER_t reg);
+  bool SetRegister(MCP3561_REGISTER_t reg, uint32_t val);
+  uint32_t GetRegister(MCP3561_REGISTER_t reg);
 
   bool SetField(const FieldInfo field, uint32_t val);
   uint32_t GetField(FieldInfo field);
@@ -38,17 +38,17 @@ class MCPADCDriver {
 
   bool SendSPI(const uint8_t *data, uint16_t length);
   bool SendReceiveSPI(const uint8_t *data, uint16_t length, uint8_t *output);
-  bool IsRegisterReserved(REGISTER_t reg);
+  bool IsRegisterReserved(MCP3561_REGISTER_t reg);
 
-  uint8_t GetNumRegBits(REGISTER_t reg);
+  uint8_t GetNumRegBits(MCP3561_REGISTER_t reg);
 
-  bool SetRegister8(REGISTER_t reg, uint8_t val);
-  bool SetRegister16(REGISTER_t reg, uint16_t val);
-  bool SetRegister24(REGISTER_t reg, uint32_t val);
-  uint8_t GetRegister8(REGISTER_t reg);
-  uint16_t GetRegister16(REGISTER_t reg);
-  uint32_t GetRegister24(REGISTER_t reg);
-  uint32_t GetRegister32(REGISTER_t reg);
+  bool SetRegister8(MCP3561_REGISTER_t reg, uint8_t val);
+  bool SetRegister16(MCP3561_REGISTER_t reg, uint16_t val);
+  bool SetRegister24(MCP3561_REGISTER_t reg, uint32_t val);
+  uint8_t GetRegister8(MCP3561_REGISTER_t reg);
+  uint16_t GetRegister16(MCP3561_REGISTER_t reg);
+  uint32_t GetRegister24(MCP3561_REGISTER_t reg);
+  uint32_t GetRegister32(MCP3561_REGISTER_t reg);
 
   OUTPUT_MODE_t::V outputModeCache;
 };
