@@ -56,8 +56,6 @@ struct FieldInfo {
 // constants.
 class MCPADCField {
  public:
-  const bool Set(uint32_t val, MCPADCDriver &driver);
-  const uint32_t Get(MCPADCDriver &driver);
   uint8_t GetNumBits();
   bool operator==(const MCPADCField &other);
   const FieldInfo Info() const;

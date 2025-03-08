@@ -25,9 +25,6 @@ class MCPADCDriver {
 
   uint32_t ReadADC();
 
-  static constexpr ADC_MODE_t ADC_MODE = ADC_MODE_t{};
-  static constexpr OUTPUT_MODE_t OUTPUT_MODE = OUTPUT_MODE_t{};
-
  protected:
  private:
   SPI_HandleTypeDef *hspi;

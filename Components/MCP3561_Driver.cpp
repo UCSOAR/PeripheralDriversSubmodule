@@ -9,7 +9,9 @@
 
 MCPADCDriver::MCPADCDriver(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_gpio_,
                            uint16_t cs_pin_, uint8_t address)
-    : hspi(hspi), cs_gpio(cs_gpio_), cs_pin(cs_pin_), address(address & 0b11) {}
+    : hspi(hspi), cs_gpio(cs_gpio_), cs_pin(cs_pin_), address(address & 0b11) {
+  SetField(OUTPUT_MODE_t(), OUTPUT_MODE_t::OM_24_BIT);
+}
 
 bool MCPADCDriver::SetRegister8(REGISTER_t reg, uint8_t val) {
   // CMD[7:6] = part address
@@ -72,7 +74,7 @@ uint32_t MCPADCDriver::GetRegister24(REGISTER_t reg) {
 
 bool MCPADCDriver::SetField(const FieldInfo field, uint32_t val) {
   assert(field.writeable == true);
-  if (field == OUTPUT_MODE.Info()) {
+  if (field == OUTPUT_MODE_t().Info()) {
     outputModeCache = static_cast<OUTPUT_MODE_t::V>(val);
   }
   uint32_t reg = GetRegister(field.reg);
