@@ -1,0 +1,14 @@
+void W25Q_Reset (void);
+uint32_t W25Q_ReadID (void);
+uint64_t W25Q_ReadUniqueID(void);
+void W25Q_ReadSFDP(uint8_t *rData);
+uint8_t W25Q_ReadStatus(int reg);
+void W25Q_WriteStatus(int reg, uint8_t status);
+void W25Q_Read(uint32_t block, uint16_t offset, uint32_t size, uint8_t *rData);
+void W25Q_FastRead(uint32_t block, uint16_t offset, uint32_t size, uint8_t *rData);
+void W25Q_Write_block(uint32_t block, uint16_t offset, uint32_t size, const uint8_t *data);
+void W25Q_Erase_Chip(void);
+void W25Q_Erase_Sector(uint16_t numsector);
+void write_enable(void);
+void write_disable(void);
+void delay_us(uint16_t us);
