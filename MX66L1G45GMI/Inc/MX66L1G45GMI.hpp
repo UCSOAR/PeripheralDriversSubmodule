@@ -29,5 +29,6 @@
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
+uint32_t MX66_ReadID (void);
 
 #endif /* MX66L1G45GMI_HPP_ */
