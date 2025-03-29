@@ -63,7 +63,7 @@ LIS3DH_DATA LIS3DH_DRIVER::convert_acceleration(LIS3DH_DATA values){
 	LIS3DH_DATA converted_data;
 
 	// sensitivity for normal mode = 4
-	uint8_t coefficient = 4*981/10;		// divide by 100 to get acceleration in m/s^2
+	uint8_t coefficient = 4*981/1000;		// divide by 100 to get acceleration in m/s^2
 
 	// convert values from 2's complement mg
 	converted_data.x = values.x*coefficient;
