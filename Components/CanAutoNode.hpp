@@ -1,3 +1,15 @@
+/*
+ * CanAutoNode.h
+ *
+ *  Created on: Jul 16, 2025
+ *      Author: Local user
+ */
+
+#ifndef AUTONODE_CANAUTONODE_HPP_
+#define AUTONODE_CANAUTONODE_HPP_
+
+
+
 #include "FDCan.h"
 
 
@@ -5,19 +17,18 @@ const uint32_t MAX_NODES_IN_NETWORK = 100;
 const uint32_t JOIN_REQUEST_ID = 0;
 const uint32_t ACK_ID = 1;
 const uint32_t UPDATE_ID = 2;
+const uint32_t KICK_REQUEST_ID = 3;
 
 class CanAutoNode {
-
 public:
+	CanAutoNode();
+	//CanAutoNode(FDCanController& contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
 
-	enum state {
-		UNINITIALIZED,
-		REQUESTED_WAITING_FOR_RESPONSE,
-		REQUESTED_FAILED_WAITING_TO_RETRY,
-		ACKED_WAITING_FOR_UPDATE,
-		READY,
-		ERROR
-	};
+	virtual ~CanAutoNode();
+	CanAutoNode& operator=(CanAutoNode &&other) = delete;
+	CanAutoNode(CanAutoNode &&other) = delete;
+	CanAutoNode& operator=(const CanAutoNode &other) = delete;
+
 
 	enum acknowledgementStatus {
 		ACK_GOOD,
@@ -25,42 +36,7 @@ public:
 		ACK_BOARD_ALREADY_EXISTS
 	};
 
-	CanAutoNode(FDCanController& contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
-    ~CanAutoNode();
-	CanAutoNode() = delete;
-
-	CanAutoNode(const CanAutoNode &) = delete;
-	CanAutoNode &operator=(const CanAutoNode &) = delete;
-
-
-	const state GetCurrentState() const;
-
-
-	bool TryRequestingJoiningNetwork();
-
-
-	bool CheckForAcknowledgement();
-	bool CheckForJoinRequest();
-	bool CheckForUpdate();
-
 protected:
-	FDCanController& controller;
-
-	state currentState = UNINITIALIZED;
-
-	uint32_t uniqueBoardID = HAL_GetDEVID();
-
-
-	bool RequestToJoinNetwork(uint16_t requestID);
-
-	bool ReceiveJoinRequest(uint8_t* msg);
-
-	bool ReceiveUpdate(uint8_t* msg);
-
-	bool SendAck(acknowledgementStatus status);
-
-	bool SendFullUpdate();
-
 	struct IDRange {
 		uint32_t start;
 		uint32_t end;
@@ -71,10 +47,9 @@ protected:
 		uint32_t uniqueID;
 	};
 
-	const IDRange idRange;
+	FDCanController* controller = nullptr;
+	Node thisNode = {0};
 
-	Node nodes[MAX_NODES_IN_NETWORK];
-	uint16_t nodesInNetwork = 0;
 
 	static uint32_t shift8to32(const uint8_t* in);
 	static uint16_t shift8to16(const uint8_t *in);
@@ -84,4 +59,14 @@ protected:
 	static Node nodeFromMsg(const uint8_t* msg);
 	static void msgFromNode(Node node, uint8_t* msgout);
 
+	Node nodes[MAX_NODES_IN_NETWORK];
+	uint16_t nodesInNetwork = 0;
+
+private:
+	CanAutoNode(const CanAutoNode &other) = delete;
+
+
+
 };
+
+#endif /* AUTONODE_CANAUTONODE_HPP_ */
