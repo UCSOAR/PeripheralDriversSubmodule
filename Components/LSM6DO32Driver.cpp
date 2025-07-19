@@ -25,9 +25,6 @@ void LSM6DO32_Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uin
 		return;
 	}
 
-
-
-
 }
 
 /* @brief Sets a single 8-bit register.
@@ -40,9 +37,9 @@ bool LSM6DO32_Driver::SetRegister(LSM6DSO32_REGISTER_t reg, uint8_t val) {
 
 	uint8_t data[2] = {(uint8_t)(0b00000000 | (reg&0x7F)),val};
 	CSLow();
-	HAL_StatusTypeDef r = HAL_SPI_Transmit(hspi, data, 2, 1000);
+	HAL_StatusTypeDef result = HAL_SPI_Transmit(hspi, data, 2, 1000);
 	CSHigh();
-	return r == HAL_OK;
+	return result == HAL_OK;
 
 }
 
@@ -53,9 +50,9 @@ bool LSM6DO32_Driver::SetRegister(LSM6DSO32_REGISTER_t reg, uint8_t val) {
 uint8_t LSM6DO32_Driver::GetRegister(LSM6DSO32_REGISTER_t reg) {
 	assert(initialized);
 	uint8_t data[2] = {(uint8_t)(0b10000000 | (reg&0x7F)),SPI_DUMMY_BYTE};
-	uint8_t incoming[2] = {0,0};
+	uint8_t incoming[2] = {0,0}; 				// first byte is dummy byte
 	CSLow();
-	HAL_SPI_TransmitReceive(hspi, data, incoming, 2, 1000);
+	HAL_SPI_TransmitReceive(hspi, data, incoming, 2, 1000); // second incoming byte is response
 	CSHigh();
 	return incoming[1];
 }
@@ -81,8 +78,10 @@ void LSM6DO32_Driver::GetMultipleRegisters(LSM6DSO32_REGISTER_t startreg, int nu
  * @param numReads Number of repetitive reads to perform.
  * @param out Buffer to receive data in. Must be numReads*6 long.
  */
-void LSM6DO32_Driver::ReadFIFOs(int numReads, uint8_t *out) {
+void LSM6DO32_Driver::SampleFIFOs(int numReads, uint8_t *out, size_t outBufferSize) {
 	assert(initialized);
+	assert(outBufferSize >= (size_t)numReads * 6);
+	
 	for(int i = 0; i < numReads; i++) {
 		GetMultipleRegisters(LSM6DSO32_REG::FIFO_DATA_OUT_X_L, 6, out+i*6);
 	}
