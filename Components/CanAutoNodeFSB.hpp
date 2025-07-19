@@ -6,8 +6,14 @@ class CanAutoNodeFSB : public CanAutoNode {
 
 public:
 
-	bool CheckForJoinRequest();
 
+
+	bool CheckMessages() override {
+		return CheckForJoinRequest();
+	}
+	bool KickNode(uint32_t uniqueBoardID);
+
+	bool Heartbeat();
 
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);
@@ -15,6 +21,8 @@ private:
 	bool SendAck(acknowledgementStatus status);
 
 	bool SendFullUpdate();
+
+	bool CheckForJoinRequest();
 
 
 

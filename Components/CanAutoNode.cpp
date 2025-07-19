@@ -36,6 +36,10 @@ CanAutoNode::Node CanAutoNode::nodeFromMsg(const uint8_t *msg) {
 
 }
 
+void CanAutoNode::shift32to8(uint32_t in, uint8_t *out) {
+	memcpy(out,&in,sizeof(in));
+}
+
 void CanAutoNode::msgFromNode(Node node, uint8_t *msgout) {
 
 	memcpy(msgout,&node.uniqueID,sizeof(node.uniqueID));
@@ -45,4 +49,17 @@ void CanAutoNode::msgFromNode(Node node, uint8_t *msgout) {
 }
 
 CanAutoNode::CanAutoNode() {
+}
+
+
+
+bool CanAutoNode::SendHeartbeat() {
+
+	HeartbeatInfo beat;
+	beat.senderBoardID = thisNode.uniqueID;
+
+	uint8_t msg[sizeof(HeartbeatInfo)] = {};
+	memcpy(msg,&beat,sizeof(msg));
+	return controller->SendByMsgID(msg, sizeof(msg), HEARTBEAT_ID);
+
 }
