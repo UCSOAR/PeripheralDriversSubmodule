@@ -45,10 +45,12 @@ public:
 	bool SetRegister(LIS3MDLTR_REGISTER_t reg, uint8_t val);
 	uint8_t GetRegister(LIS3MDLTR_REGISTER_t reg);
 	void GetMultipleRegisters(LIS3MDLTR_REGISTER_t startreg, int numBytes, uint8_t* out);
-	void ReadAllSensorRegs(uint8_t* out);
+	void GetMeasurements(uint8_t* out);
 
 	void EnableTemp();
 	void DisableTemp();
+
+	uint16_t GetTemp();
 
 	LIS3MDLTR_Driver(const LIS3MDLTR_Driver&) = delete;
 	LIS3MDLTR_Driver& operator=(const LIS3MDLTR_Driver&) = delete;

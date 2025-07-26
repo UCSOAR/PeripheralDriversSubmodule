@@ -109,7 +109,7 @@ const LIS3MDLTR_DATA_t LIS3MDLTR_Driver::GetDataFromBuf(const uint8_t *buf, bool
 /* @brief Reads all 8 sensor registers in order. (mag, temp)
  * @param out Raw bytes read from registers. Must be 8 bytes long
  */
-void LIS3MDLTR_Driver::ReadAllSensorRegs(uint8_t* out) {
+void LIS3MDLTR_Driver::GetMeasurements(uint8_t* out) {
 	GetMultipleRegisters(LIS3MDLTR_REG::OUTX_L, 8, out);
 }
 
@@ -141,4 +141,13 @@ void LIS3MDLTR_Driver::DisableTemp() {
 void LIS3MDLTR_Driver::CSHigh() {
 	assert(initialized);
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+}
+/* @brief Gets the temperature. Must have temperature enabled with EnableTemp.
+ * @return Temperature in Celsius.
+ */
+uint16_t GetTemp() {
+	uint8_t tempbyte[2];
+	GetMultipleRegisters(LIS3MDLTR_REG::OUT_TEMP_L,2,tempbyte);
+	uint16_t temp = (tempbyte[0])|(tempbyte[1]<<8);
+	return 25+temp/8;
 }
