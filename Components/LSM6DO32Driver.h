@@ -79,7 +79,7 @@ public:
 	bool SetRegister(LSM6DSO32_REGISTER_t reg, uint8_t val);
 	uint8_t GetRegister(LSM6DSO32_REGISTER_t reg);
 	void GetMultipleRegisters(LSM6DSO32_REGISTER_t startreg, int numBytes, uint8_t* out);
-	void ReadAllSensorRegs(uint8_t* out);
+	void ReadSensors(uint8_t* out);
 	void ReadFIFOs(int numReads, uint8_t* out);
 
 	void SetAccelODR(LSM6D032_SAMPLE_SPEED speed);
@@ -90,7 +90,7 @@ public:
 	LSM6DO32_Driver(const LSM6DO32_Driver&) = delete;
 	LSM6DO32_Driver& operator=(const LSM6DO32_Driver&) = delete;
 
-	const LSM6DSO32_DATA_t GetDataFromBuf(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
+	const LSM6DSO32_DATA_t ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
 
 	void SetCSPin(GPIO_TypeDef* gpio, uint16_t pin);
 

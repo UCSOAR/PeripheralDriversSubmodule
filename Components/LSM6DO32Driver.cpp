@@ -94,7 +94,7 @@ void LSM6DO32_Driver::SampleFIFOs(int numReads, uint8_t *out, size_t outBufferSi
  * @param temp Buffer includes temperature data
  * @return Struct containing extracted data
  */
-const LSM6DSO32_DATA_t LSM6DO32_Driver::GetDataFromBuf(const uint8_t *buf, bool accel, bool gyro, bool temp) {
+const LSM6DSO32_DATA_t LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel, bool gyro, bool temp) {
 	LSM6DSO32_DATA_t out;
 	size_t i = 0;
 
@@ -126,7 +126,7 @@ const LSM6DSO32_DATA_t LSM6DO32_Driver::GetDataFromBuf(const uint8_t *buf, bool 
 /* @brief Reads all 14 sensor registers in order. (temp, gyro, accel)
  * @param out Raw bytes read from registers. Must be 14 bytes long
  */
-void LSM6DO32_Driver::ReadAllSensorRegs(uint8_t* out) {
+void LSM6DO32_Driver::ReadSensors(uint8_t* out) {
 	GetMultipleRegisters(LSM6DSO32_REG::OUT_TEMP_L, 14, out);
 }
 
