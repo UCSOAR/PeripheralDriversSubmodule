@@ -31,6 +31,8 @@ class FDCanController {
 
   bool SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID);
 
+  HAL_StatusTypeDef RegisterLogs(LogInitStruct *logs, uint16_t numLogs);
+
   uint16_t ReceiveFirstLogFromRXBuf(uint8_t *out, uint16_t *msgID);
   uint16_t ReceiveLogTypeFromRXBuf(uint8_t *out, uint16_t logIndexFilter);
 
@@ -41,6 +43,8 @@ class FDCanController {
   static const uint32_t FDGetModDLC(uint16_t unroundedLen);
 
   inline void RaiseFXFlag();
+
+  HAL_StatusTypeDef GetRxFIFO(uint8_t* out, uint32_t* msgIDOut);
 
  protected:
   struct LogRegister {
@@ -60,6 +64,8 @@ class FDCanController {
 
   HAL_StatusTypeDef RegisterFilterRXBuf(uint16_t msgID, uint8_t rxBufferNum);
   HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
+
+  HAL_StatusTypeDef InitFDCAN();
 
   volatile bool RXFlag = false;
 

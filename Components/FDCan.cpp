@@ -102,6 +102,12 @@ void RXMsgCallback(FDCAN_HandleTypeDef *fdcan) {
   if (callbackcontroller) callbackcontroller->RaiseFXFlag();
 }
 
+// TODO
+// make it able to register all the logs after being initialized. needed because
+// the autonode needs to use the driver to send a join request, THEN decide what its log IDs are
+
+
+
 /* @brief Constructor. Also initializes FDCAN filters and callback.
  * Calls CANError if error in initialization. Two controllers should not
  * share the same FDCAN peripheral.
@@ -112,53 +118,9 @@ FDCanController::FDCanController(FDCAN_HandleTypeDef *fdcan,
                                  uint16_t numLogs) {
   this->fdcan = fdcan;
 
-  HAL_StatusTypeDef stat;
 
-  for (uint16_t i = 0; i < numLogs; i++) {
-    numFDFilters += (logs[i].byteLength - 1) / 64 + 1;
-  }
 
-  fdcan->Init.RxBuffersNbr = numFDFilters;
-  fdcan->Init.StdFiltersNbr = numFDFilters;
-  fdcan->Init.RxBufferSize = FDCAN_DATA_BYTES_64;
-  fdcan->Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_64;
-  fdcan->Init.TxElmtSize = FDCAN_DATA_BYTES_64;
-
-  if (HAL_FDCAN_Init(fdcan) != HAL_OK) {
-    CANError();
-  }
-
-  for (uint16_t i = 0; i < numLogs; i++) {
-    if (RegisterLogType(logs[i].startingMsgID, nextUnregisteredFilterID,
-                        logs[i].byteLength) != HAL_OK) {
-      CANError();
-    }
-  }
-
-  if (HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT,
-                                   FDCAN_REJECT_REMOTE,
-                                   FDCAN_REJECT_REMOTE) != HAL_OK) {
-    CANError();
-  }
-
-  // Turn on callback for receiving msg
-  stat =
-      HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_BUFFER_NEW_MESSAGE, 0);
-  if (stat != HAL_OK) {
-    CANError();
-  }
-
-  // Set callback
-  stat = HAL_FDCAN_RegisterCallback(fdcan, HAL_FDCAN_RX_BUFFER_NEW_MSG_CB_ID,
-                                    RXMsgCallback);
-  if (stat != HAL_OK) {
-    CANError();
-  }
-
-  stat = HAL_FDCAN_Start(fdcan);
-  if (stat != HAL_OK) {
-    CANError();
-  }
+  InitFDCAN();
 }
 
 /* @brief Registers a filter that directs an FDCAN message ID to a certain RX
@@ -382,6 +344,32 @@ bool FDCanController::SendByLogIndex(const uint8_t *msg, uint16_t logIndex) {
                      registeredLogs[logIndex].startingMsgID);
 }
 
+HAL_StatusTypeDef FDCanController::RegisterLogs(LogInitStruct *logs, uint16_t numLogs) {
+
+	  for (uint16_t i = 0; i < numLogs; i++) {
+	    numFDFilters += (logs[i].byteLength - 1) / 64 + 1;
+	  }
+
+	  fdcan->Init.RxBuffersNbr = numFDFilters;
+	  fdcan->Init.StdFiltersNbr = numFDFilters;
+	  fdcan->Init.RxBufferSize = FDCAN_DATA_BYTES_64;
+	  fdcan->Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_64;
+	  fdcan->Init.TxElmtSize = FDCAN_DATA_BYTES_64;
+
+	  if (HAL_FDCAN_Init(fdcan) != HAL_OK) {
+	    CANError();
+	  }
+
+	  for (uint16_t i = 0; i < numLogs; i++) {
+	    if (RegisterLogType(logs[i].startingMsgID, nextUnregisteredFilterID,
+	                        logs[i].byteLength) != HAL_OK) {
+	      CANError();
+	    }
+	  }
+
+	  return HAL_FDCAN_Start(fdcan);
+}
+
 /* @brief Registers a filter that directs a range of msg IDs to RX FIFO 0.
  * @param msgIDMin Minimum message ID, inclusive, 0-2047
  * @param msgIDMax Maximum message ID, inclusive, 0-2047
@@ -399,4 +387,43 @@ HAL_StatusTypeDef FDCanController::RegisterFilterRXFIFO(uint16_t msgIDMin,
 
   nextUnregisteredFilterID++;
   return HAL_FDCAN_ConfigFilter(fdcan, &filter);
+}
+
+HAL_StatusTypeDef FDCanController::GetRxFIFO(uint8_t *out, uint32_t *msgIDOut) {
+	if(HAL_FDCAN_GetRxFifoFillLevel(fdcan, 0) == 0) {
+		return HAL_ERROR;
+	}
+	FDCAN_RxHeaderTypeDef header;
+	HAL_FDCAN_GetRxMessage(fdcan, FDCAN_RX_FIFO0, &header, out);
+	*msgIDOut = header.Identifier;
+	return HAL_OK;
+}
+
+HAL_StatusTypeDef FDCanController::InitFDCAN() {
+	HAL_StatusTypeDef stat;
+	if (HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT,
+	                                   FDCAN_REJECT_REMOTE,
+	                                   FDCAN_REJECT_REMOTE) != HAL_OK) {
+	    CANError();
+	  }
+
+	  // Turn on callback for receiving msg
+	  stat =
+	      HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_BUFFER_NEW_MESSAGE, 0);
+	  if (stat != HAL_OK) {
+	    CANError();
+	  }
+
+	  // Set callback
+	  stat = HAL_FDCAN_RegisterCallback(fdcan, HAL_FDCAN_RX_BUFFER_NEW_MSG_CB_ID,
+	                                    RXMsgCallback);
+	  if (stat != HAL_OK) {
+	    CANError();
+	  }
+
+	  stat = HAL_FDCAN_Start(fdcan);
+	  if (stat != HAL_OK) {
+	    CANError();
+	  }
+	  return stat;
 }
