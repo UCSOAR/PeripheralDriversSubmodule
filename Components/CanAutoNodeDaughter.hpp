@@ -2,11 +2,13 @@
 #include "CanAutoNode.hpp"
 
 
-
 class CanAutoNodeDaughter : public CanAutoNode {
 
 public:
 
+	struct LogInit {
+		uint16_t sizeInBytes;
+	};
 	enum daughterState {
 		UNINITIALIZED,
 		REQUESTED_WAITING_FOR_RESPONSE,
@@ -16,14 +18,10 @@ public:
 		ERROR
 	};
 
-	enum acknowledgementStatus {
-		ACK_GOOD,
-		ACK_REQUESTED_IDS_TAKEN,
-		ACK_BOARD_ALREADY_EXISTS
-	};
-
-	CanAutoNodeDaughter(FDCanController* contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
-    ~CanAutoNodeDaughter();
+	//CanAutoNodeDaughter(FDCanController* contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
+    CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan,
+    		LogInit *logs, uint16_t numLogs);
+	~CanAutoNodeDaughter();
 	CanAutoNodeDaughter() = delete;
 
 	CanAutoNodeDaughter(const CanAutoNodeDaughter &) = delete;
@@ -50,7 +48,10 @@ public:
 		}
 	}
 
+	bool SendMessageToFSBByLogID(uint16_t logID, const uint8_t* msg);
+
 protected:
+
 
 
 //	uint32_t uniqueBoardID = HAL_GetDEVID();
@@ -67,6 +68,14 @@ protected:
 	bool ReceiveUpdate(uint8_t* msg);
 
 	uint32_t tickLastReceivedUpdatePart = 0;
+
+	LogInit logsToInit[MAX_LOGS];
+	uint16_t numLogs;
+
+	FDCanController::LogInitStruct determinedLogs[MAX_LOGS];
+
+	bool initializedLogs = false;
+
 
 //	const IDRange idRange;
 

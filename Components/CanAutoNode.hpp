@@ -11,7 +11,7 @@
 
 
 #include "FDCan.h"
-
+#include <cstring>
 
 constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
 
@@ -21,9 +21,10 @@ constexpr uint32_t UPDATE_ID = 2;
 constexpr uint32_t KICK_REQUEST_ID = 3;
 constexpr uint32_t HEARTBEAT_ID = 4;
 
-constexpr uint8_t CAN_UPDATE_DAUGHTER = 0;
-constexpr uint8_t CAN_UPDATE_LAST_DAUGHTER = 1;
-constexpr uint8_t CAN_UPDATE_FSB = 2;
+constexpr uint16_t MAX_LOGS = 32;
+constexpr uint16_t MAX_CAN_ID = 2047;
+
+
 
 class CanAutoNode {
 public:
@@ -36,13 +37,21 @@ public:
 	CanAutoNode& operator=(const CanAutoNode &other) = delete;
 
 
+	enum updateType {
+		CAN_UPDATE_DAUGHTER,
+		CAN_UPDATE_LAST_DAUGHTER,
+		CAN_UPDATE_FSB
+	};
 	enum acknowledgementStatus {
 		ACK_GOOD,
-		ACK_REQUESTED_IDS_TAKEN,
+		ACK_NO_ROOM,
 		ACK_BOARD_ALREADY_EXISTS
 	};
 
 	virtual bool CheckMessages() = 0;
+
+	bool SendMessageToDaughterBoardID(uint32_t boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
+	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
 
 protected:
 	struct IDRange {
@@ -55,16 +64,23 @@ protected:
 	};
 
 	struct Node {
-		IDRange requestedRange;
+		IDRange canIDRange;
 		uint32_t uniqueID;
 		bool operator!=(const Node& other) const {
-			return other.requestedRange != this->requestedRange
+			return other.canIDRange != this->canIDRange
 					|| other.uniqueID != this->uniqueID;
 		}
 	};
 
 	struct HeartbeatInfo {
 		uint32_t senderBoardID;
+	};
+
+	struct JoinRequest {
+		uint32_t uniqueID;
+		uint8_t slotNumber;
+		uint8_t boardType;
+		uint16_t requiredTotalCANIDs;
 	};
 
 	FDCanController* controller = nullptr;
@@ -84,6 +100,18 @@ protected:
 	uint32_t nodeTableVersion = 0; //todo
 
 	bool SendHeartbeat();
+
+	template <typename T>
+	static void DataToMsg(T data, uint8_t* out) {
+		memcpy(out,&data,sizeof(T));
+	}
+
+	template <typename T>
+	static T MsgToData(const uint8_t* in) {
+		T out;
+		memcpy(&out,in,sizeof(T));
+		return out;
+	}
 
 private:
 	CanAutoNode(const CanAutoNode &other) = delete;

@@ -8,11 +8,11 @@
 	// if bus fault/conflict, ?????? idk hehe
 
 
-CanAutoNodeDaughter::CanAutoNodeDaughter(FDCanController *contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount)
-{
-	controller = contr;
-	thisNode = Node{{msgIDsToRequestStartID,msgIDsToRequestAmount},HAL_GetDEVID()};
-}
+//CanAutoNodeDaughter::CanAutoNodeDaughter(FDCanController *contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount)
+//{
+//	controller = contr;
+//	thisNode = Node{{msgIDsToRequestStartID,msgIDsToRequestAmount},HAL_GetDEVID()};
+//}
 
 const CanAutoNodeDaughter::daughterState CanAutoNodeDaughter::GetCurrentState() const {
 	return currentState;
@@ -51,10 +51,20 @@ bool CanAutoNodeDaughter::TryRequestingJoiningNetwork() {
 // 32 bits ending index
 bool CanAutoNodeDaughter::RequestToJoinNetwork(uint16_t requestID) {
 
-	uint8_t msg[12] = {0};
-	msgFromNode(thisNode, msg);
 
-	return controller->SendByMsgID(msg, sizeof(msg), requestID);
+	JoinRequest request;
+	request.uniqueID = thisNode.uniqueID;
+	request.boardType = 123;
+	request.slotNumber = 123;
+	request.requiredTotalCANIDs = 0;
+	for(uint16_t i = 0; i < numLogs; i++) {
+		request.requiredTotalCANIDs += (FDCanController::FDRoundDataSize(logsToInit[i].sizeInBytes)-1)/64+1;
+	}
+
+	uint8_t msg[sizeof(JoinRequest)];
+	DataToMsg<JoinRequest>(request, msg);
+
+	return controller->SendByMsgID(msg, sizeof(msg), JOIN_REQUEST_ID);
 }
 
 CanAutoNodeDaughter::~CanAutoNodeDaughter() {
@@ -79,7 +89,7 @@ bool CanAutoNodeDaughter::CheckForAcknowledgement() {
 			ChangeState(WAITING_FOR_UPDATE);
 			return true;
 
-		case ACK_REQUESTED_IDS_TAKEN:
+		case ACK_NO_ROOM:
 			ChangeState(ERROR);
 			return false;
 
@@ -123,7 +133,13 @@ bool CanAutoNodeDaughter::ProcessMessage() {
 	while(controller->GetRxFIFO(msg, &id) == HAL_OK) {
 		gotOne = true;
 		switch(id) {
-		case KICK_REQUEST_ID:
+		case KICK_REQUEST_ID: {
+			uint32_t kickedBoard = MsgToData<uint32_t>(msg);
+			if(kickedBoard == this->thisNode.uniqueID) {
+				ChangeState(UNINITIALIZED);
+				return true;
+			}
+		}
 		case JOIN_REQUEST_ID:
 		{
 			ChangeState( WAITING_FOR_UPDATE);
@@ -149,9 +165,31 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
 		tickLastReceivedUpdatePart = HAL_GetTick();
 		break;
 
+	case UNINITIALIZED:
+		initializedLogs = false;
+		nodesInNetwork = 0;
+		thisNode.canIDRange = {0,0};
+		break;
+
 	default:
 		break;
 	}
+}
+
+CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, LogInit *logs,
+		uint16_t numLogs) {
+	controller = new FDCanController(fdcan,nullptr,0);
+
+	memcpy(logsToInit,logs,numLogs*sizeof(LogInit));
+	this->numLogs = numLogs;
+	callbackcontroller = controller;
+	currentState = UNINITIALIZED;
+	this->thisNode = {{0,0},HAL_GetDEVID()};
+
+}
+
+bool CanAutoNodeDaughter::SendMessageToFSBByLogID(uint16_t logID, const uint8_t *msg) {
+	return controller->SendByLogIndex(msg, logID);
 }
 
 bool CanAutoNodeDaughter::ReceiveUpdate(uint8_t *msg) {
@@ -167,6 +205,19 @@ bool CanAutoNodeDaughter::ReceiveUpdate(uint8_t *msg) {
 	case CAN_UPDATE_DAUGHTER:
 		if(receivedNode != thisNode) {
 			this->daughterNodes[this->nodesInNetwork++] = receivedNode;
+		} else {
+			this->thisNode = receivedNode;
+			if(!initializedLogs) {
+				uint16_t canid = receivedNode.canIDRange.start;
+				for(uint16_t i = 0; i < numLogs; i++) {
+					uint16_t requiredIDs = (logsToInit[i].sizeInBytes-1)/64+1;
+					determinedLogs[i] = {logsToInit[i].sizeInBytes, canid};
+					canid += requiredIDs;
+				}
+				controller->RegisterLogs(determinedLogs, numLogs);
+				initializedLogs = true;
+			}
+
 		}
 		break;
 
