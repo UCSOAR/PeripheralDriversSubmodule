@@ -31,6 +31,22 @@ bool CanAutoNodeFSB::KickNode(uint32_t uniqueBoardID) {
 	return SendFullUpdate();
 }
 
+//bool CanAutoNodeFSB::SendToDaughterBoardByIndex(uint32_t uniqueID,
+//		uint8_t logIndex, const uint8_t *msg) {
+//
+//	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+//		const Node& thisDaughter = daughterNodes[i];
+//		if(thisDaughter.uniqueID == uniqueID) {
+//
+//			for(uint16_t j = 0; j < )
+//
+//		}
+//	}
+//
+//	return false;
+//
+//}
+
 /* Exhausts the FIFO until a join request is found and processed.
  * @return true if one was found and processed successfully.
  */
@@ -60,7 +76,10 @@ bool CanAutoNodeFSB::CheckForJoinRequest() {
 bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 
 	JoinRequest request = MsgToData<JoinRequest>(msg);
-
+	uint16_t requiredTotalCANIDs = 0;
+	for(uint16_t i = 0; i < request.numberOfLogs; i++) {
+		requiredTotalCANIDs += (request.logSizesInBytes[i]-1)/64+1;
+	}
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisAlreadyExistingNode = daughterNodes[i];
 
@@ -92,7 +111,7 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 		const Node& thisNode = sortedNodes[i];
 		uint16_t thisAmountOfRoom = thisNode.canIDRange.start-previousEnd;
 
-		if(thisAmountOfRoom < bestAmountOfRoom && thisAmountOfRoom >= request.requiredTotalCANIDs) {
+		if(thisAmountOfRoom < bestAmountOfRoom && thisAmountOfRoom >= requiredTotalCANIDs) {
 			bestAmountOfRoom = thisAmountOfRoom;
 			bestStartingFreeCANID = previousEnd;
 			foundRoom = true;
@@ -102,7 +121,7 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 
 	uint16_t thisAmountOfRoom = MAX_CAN_ID-previousEnd;
 
-	if(thisAmountOfRoom < bestAmountOfRoom && thisAmountOfRoom >= request.requiredTotalCANIDs) {
+	if(thisAmountOfRoom < bestAmountOfRoom && thisAmountOfRoom >= requiredTotalCANIDs) {
 		bestAmountOfRoom = thisAmountOfRoom;
 		bestStartingFreeCANID = previousEnd;
 		foundRoom = true;
@@ -112,7 +131,14 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 	if(foundRoom)  {
 		// found no issues
 		SendAck(ACK_GOOD);
-		daughterNodes[nodesInNetwork++] = {{bestStartingFreeCANID,bestStartingFreeCANID+request.requiredTotalCANIDs},request.uniqueID};
+		daughterNodes[nodesInNetwork++] = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},request.uniqueID};
+		FDCanController::LogInitStruct newLogs[request.numberOfLogs];
+		uint16_t thisID = bestStartingFreeCANID;
+		for(uint16_t i = 0; i < request.numberOfLogs; i++) {
+			newLogs[i] = {request.logSizesInBytes[i], thisID};
+			thisID += (request.logSizesInBytes[i]-1)/64+1;
+		}
+		controller->RegisterLogs(newLogs, request.numberOfLogs);
 		HAL_Delay(50);
 		return SendFullUpdate();
 	} else {

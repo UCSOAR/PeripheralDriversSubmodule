@@ -15,6 +15,8 @@ public:
 
 	bool Heartbeat();
 
+//	bool SendToDaughterBoardByIndex(uint32_t uniqueID, uint8_t logIndex, const uint8_t* msg);
+
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);
 
@@ -23,6 +25,8 @@ private:
 	bool SendFullUpdate();
 
 	bool CheckForJoinRequest();
+
+
 
 
 

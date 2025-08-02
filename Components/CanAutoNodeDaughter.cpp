@@ -56,9 +56,9 @@ bool CanAutoNodeDaughter::RequestToJoinNetwork(uint16_t requestID) {
 	request.uniqueID = thisNode.uniqueID;
 	request.boardType = 123;
 	request.slotNumber = 123;
-	request.requiredTotalCANIDs = 0;
+	request.numberOfLogs = numLogs;
 	for(uint16_t i = 0; i < numLogs; i++) {
-		request.requiredTotalCANIDs += (FDCanController::FDRoundDataSize(logsToInit[i].sizeInBytes)-1)/64+1;
+		request.logSizesInBytes[i] = (logsToInit[i].sizeInBytes);
 	}
 
 	uint8_t msg[sizeof(JoinRequest)];
@@ -177,7 +177,7 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
 }
 
 CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, LogInit *logs,
-		uint16_t numLogs) {
+		uint16_t numLogs, uint8_t boardType) : boardType(boardType) {
 	controller = new FDCanController(fdcan,nullptr,0);
 
 	memcpy(logsToInit,logs,numLogs*sizeof(LogInit));

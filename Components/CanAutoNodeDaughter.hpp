@@ -20,7 +20,7 @@ public:
 
 	//CanAutoNodeDaughter(FDCanController* contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
     CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan,
-    		LogInit *logs, uint16_t numLogs);
+    		LogInit *logs, uint16_t numLogs, uint8_t boardType);
 	~CanAutoNodeDaughter();
 	CanAutoNodeDaughter() = delete;
 
@@ -75,6 +75,8 @@ protected:
 	FDCanController::LogInitStruct determinedLogs[MAX_LOGS];
 
 	bool initializedLogs = false;
+
+	const uint8_t boardType;
 
 
 //	const IDRange idRange;

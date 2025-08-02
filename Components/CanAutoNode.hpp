@@ -70,6 +70,7 @@ protected:
 			return other.canIDRange != this->canIDRange
 					|| other.uniqueID != this->uniqueID;
 		}
+
 	};
 
 	struct HeartbeatInfo {
@@ -80,7 +81,10 @@ protected:
 		uint32_t uniqueID;
 		uint8_t slotNumber;
 		uint8_t boardType;
-		uint16_t requiredTotalCANIDs;
+//		uint16_t requiredTotalCANIDs;
+
+		uint16_t numberOfLogs;
+		uint8_t  logSizesInBytes[52];
 	};
 
 	FDCanController* controller = nullptr;
@@ -112,6 +116,8 @@ protected:
 		memcpy(&out,in,sizeof(T));
 		return out;
 	}
+
+
 
 private:
 	CanAutoNode(const CanAutoNode &other) = delete;
