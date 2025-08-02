@@ -163,6 +163,7 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
 	switch(target) {
 	case WAITING_FOR_UPDATE:
 		tickLastReceivedUpdatePart = HAL_GetTick();
+		nodesInNetwork = 0;
 		break;
 
 	case UNINITIALIZED:

@@ -131,13 +131,19 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 	if(foundRoom)  {
 		// found no issues
 		SendAck(ACK_GOOD);
-		daughterNodes[nodesInNetwork++] = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},request.uniqueID};
+		Node newNode;
+		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},request.uniqueID,request.numberOfLogs};
+
 		FDCanController::LogInitStruct newLogs[request.numberOfLogs];
 		uint16_t thisID = bestStartingFreeCANID;
 		for(uint16_t i = 0; i < request.numberOfLogs; i++) {
 			newLogs[i] = {request.logSizesInBytes[i], thisID};
+			newNode.logOffsetsInCANIDs[i] = thisID - bestStartingFreeCANID;
+			newNode.logSizesInBytes[i] = request.logSizesInBytes[i];
 			thisID += (request.logSizesInBytes[i]-1)/64+1;
+
 		}
+		daughterNodes[nodesInNetwork++] = newNode;
 		controller->RegisterLogs(newLogs, request.numberOfLogs);
 		HAL_Delay(50);
 		return SendFullUpdate();

@@ -15,13 +15,13 @@
 
 constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
 
-constexpr uint32_t JOIN_REQUEST_ID = 0;
-constexpr uint32_t ACK_ID = 1;
-constexpr uint32_t UPDATE_ID = 2;
-constexpr uint32_t KICK_REQUEST_ID = 3;
-constexpr uint32_t HEARTBEAT_ID = 4;
+constexpr uint16_t JOIN_REQUEST_ID = 0;
+constexpr uint16_t ACK_ID = 1;
+constexpr uint16_t UPDATE_ID = 2;
+constexpr uint16_t KICK_REQUEST_ID = 3;
+constexpr uint16_t HEARTBEAT_ID = 4;
 
-constexpr uint16_t MAX_LOGS = 32;
+constexpr uint8_t MAX_LOGS = 5;
 constexpr uint16_t MAX_CAN_ID = 2047;
 
 
@@ -52,11 +52,12 @@ public:
 
 	bool SendMessageToDaughterBoardID(uint32_t boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
 	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
+	bool SendMessageToDaughterByLogIndex(uint32_t boardID, uint8_t logIndex, const uint8_t* msg);
 
 protected:
 	struct IDRange {
-		uint32_t start;
-		uint32_t end;
+		uint32_t start = 0;
+		uint32_t end = 0;
 		bool operator!=(const IDRange& other) const {
 			return this->start != other.start
 					|| this->end != other.end;
@@ -65,13 +66,22 @@ protected:
 
 	struct Node {
 		IDRange canIDRange;
-		uint32_t uniqueID;
+		uint32_t uniqueID = 0;
+
 		bool operator!=(const Node& other) const {
 			return other.canIDRange != this->canIDRange
-					|| other.uniqueID != this->uniqueID;
+					|| other.uniqueID != this->uniqueID
+					|| other.numberOfLogs != this->numberOfLogs
+					|| memcmp(other.logOffsetsInCANIDs,this->logOffsetsInCANIDs,sizeof(logOffsetsInCANIDs));
 		}
 
+		uint8_t numberOfLogs = 0;
+		uint8_t logOffsetsInCANIDs[MAX_LOGS];
+		uint8_t logSizesInBytes[MAX_LOGS];
+
 	};
+
+	static_assert(sizeof(Node) <= 64, "Node entries must be at most 64 bytes large. Try reducing MAX_LOGS");
 
 	struct HeartbeatInfo {
 		uint32_t senderBoardID;
@@ -81,10 +91,9 @@ protected:
 		uint32_t uniqueID;
 		uint8_t slotNumber;
 		uint8_t boardType;
-//		uint16_t requiredTotalCANIDs;
 
-		uint16_t numberOfLogs;
-		uint8_t  logSizesInBytes[52];
+		uint8_t numberOfLogs;
+		uint8_t logSizesInBytes[52];
 	};
 
 	FDCanController* controller = nullptr;

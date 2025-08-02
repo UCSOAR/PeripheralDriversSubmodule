@@ -90,7 +90,7 @@ bool CanAutoNode::SendMessageToDaughterBoardID(uint32_t boardID, const uint8_t *
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisNode = daughterNodes[i];
 		if(thisNode.uniqueID == boardID) {
-			if((len-1)/64+1 > thisNode.canIDRange.end - thisNode.canIDRange.start) {
+			if((len-1)/64u+1 > thisNode.canIDRange.end - thisNode.canIDRange.start) {
 				return false;
 			}
 			return controller->SendByMsgID(msg, len, thisNode.canIDRange.start + CANIDOffset);
@@ -125,4 +125,18 @@ bool CanAutoNode::SendHeartbeat() {
 	memcpy(msg,&beat,sizeof(msg));
 	return controller->SendByMsgID(msg, sizeof(msg), HEARTBEAT_ID);
 
+}
+
+bool CanAutoNode::SendMessageToDaughterByLogIndex(uint32_t boardID,
+		uint8_t logIndex, const uint8_t *msg) {
+	if(logIndex >= MAX_LOGS) {
+		return false;
+	}
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisDaughter = daughterNodes[i];
+		if(thisDaughter.uniqueID == boardID) {
+			return controller->SendByMsgID(msg, thisDaughter.logSizesInBytes[logIndex], thisDaughter.logOffsetsInCANIDs[logIndex]);
+		}
+	}
+	return false;
 }

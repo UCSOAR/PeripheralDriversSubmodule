@@ -52,8 +52,6 @@ public:
 
 protected:
 
-
-
 //	uint32_t uniqueBoardID = HAL_GetDEVID();
 	Node FSB = {0};
 	bool CheckForAcknowledgement();
@@ -77,9 +75,6 @@ protected:
 	bool initializedLogs = false;
 
 	const uint8_t boardType;
-
-
 //	const IDRange idRange;
-
 
 };
