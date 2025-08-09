@@ -20,7 +20,7 @@ public:
 
 	//CanAutoNodeDaughter(FDCanController* contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
     CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan,
-    		const LogInit *logs, uint16_t numLogs, uint8_t boardType);
+    		const LogInit *logs, uint16_t numLogs, uint8_t boardType, uint8_t slotNumber);
 	~CanAutoNodeDaughter();
 	CanAutoNodeDaughter() = delete;
 
@@ -48,12 +48,12 @@ public:
 		}
 	}
 
-	bool SendMessageToFSBByLogID(uint16_t logID, const uint8_t* msg);
+	bool SendMessageToMotherboardByLogID(uint16_t logID, const uint8_t* msg);
 
 protected:
 
 //	uint32_t uniqueBoardID = HAL_GetDEVID();
-	Node FSB = {0};
+	Node Motherboard = {0};
 	bool CheckForAcknowledgement();
 	bool CheckForUpdate();
 	bool ProcessMessage();

@@ -1,11 +1,11 @@
-#include <CanAutoNodeFSB.hpp>
+#include <CanAutoNodeMotherboard.hpp>
 #include <cstring>
 
 /* Kicks a board out of the network, updating the table, and sending an update to all remaining nodes.
  * @param uniqueBoardID Board to kick.
  * @return true if successful,
  */
-bool CanAutoNodeFSB::KickNode(UniqueBoardID uniqueBoardID) {
+bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 
 	bool exists = false;
 	uint16_t foundIndex = 0;
@@ -34,7 +34,7 @@ bool CanAutoNodeFSB::KickNode(UniqueBoardID uniqueBoardID) {
 /* Exhausts the FIFO until a join request is found and processed.
  * @return true if one was found and processed successfully.
  */
-bool CanAutoNodeFSB::CheckForJoinRequest() {
+bool CanAutoNodeMotherboard::CheckForJoinRequest() {
 
 	uint8_t msg[64] = {123};
 	uint32_t id = 0;
@@ -57,7 +57,7 @@ bool CanAutoNodeFSB::CheckForJoinRequest() {
  * @param msg The join request received.
  * @return true if successfully added the node and send an update.
  */
-bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
+bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 
 	JoinRequest request = MsgToData<JoinRequest>(msg);
 	uint16_t requiredTotalCANIDs = 0;
@@ -116,7 +116,11 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 		// found no issues
 		SendAck(ACK_GOOD);
 		Node newNode;
-		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},request.uniqueID,request.numberOfLogs,request.boardType};
+		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},
+				request.uniqueID,
+				request.numberOfLogs,
+				request.boardType,
+				request.slotNumber};
 
 		FDCanController::LogInitStruct newLogs[request.numberOfLogs];
 		uint16_t thisID = bestStartingFreeCANID;
@@ -142,7 +146,7 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
  * @apram status The acknowledgment to send.
  * @return true if successfully sent.
  */
-bool CanAutoNodeFSB::SendAck(acknowledgementStatus status) {
+bool CanAutoNodeMotherboard::SendAck(acknowledgementStatus status) {
 
 	uint8_t msg[] = {static_cast<uint8_t>(status)};
 	return controller->SendByMsgID(msg, sizeof(msg), ACK_ID);
@@ -157,11 +161,11 @@ bool CanAutoNodeFSB::SendAck(acknowledgementStatus status) {
  * last frame in the update.
  * @return true if successful.
  */
-bool CanAutoNodeFSB::SendFullUpdate() {
+bool CanAutoNodeMotherboard::SendFullUpdate() {
 
 	uint8_t msg[13];
 	msgFromNode(thisNode, msg+1);
-	msg[0] = CAN_UPDATE_FSB;
+	msg[0] = CAN_UPDATE_MOTHERBOARD;
 
 	if(!controller->SendByMsgID(msg, sizeof(msg), UPDATE_ID)) {
 		return false;
@@ -183,7 +187,7 @@ bool CanAutoNodeFSB::SendFullUpdate() {
  * Any nodes that do not respond within this time will be kicked.
  * @return true if heartbeat successfully sent.
  */
-bool CanAutoNodeFSB::Heartbeat() {
+bool CanAutoNodeMotherboard::Heartbeat() {
 
 	if(!SendHeartbeat()) {
 		return false;

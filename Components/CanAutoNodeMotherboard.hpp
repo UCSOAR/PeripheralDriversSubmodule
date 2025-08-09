@@ -2,7 +2,7 @@
 #include "CanAutoNode.hpp"
 
 
-class CanAutoNodeFSB : public CanAutoNode {
+class CanAutoNodeMotherboard : public CanAutoNode {
 
 public:
 
@@ -14,8 +14,6 @@ public:
 	bool KickNode(UniqueBoardID uniqueBoardID);
 
 	bool Heartbeat();
-
-//	bool SendToDaughterBoardByIndex(uint32_t uniqueID, uint8_t logIndex, const uint8_t* msg);
 
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);

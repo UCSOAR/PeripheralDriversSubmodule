@@ -52,7 +52,7 @@ bool CanAutoNodeDaughter::RequestToJoinNetwork() {
 	JoinRequest request;
 	request.uniqueID = thisNode.uniqueID;
 	request.boardType = thisNode.boardType;
-	request.slotNumber = 123;
+	request.slotNumber = thisNode.slotNumber;
 	request.numberOfLogs = numLogs;
 	for(uint16_t i = 0; i < numLogs; i++) {
 		request.logSizesInBytes[i] = (logsToInit[i].sizeInBytes);
@@ -158,7 +158,7 @@ bool CanAutoNodeDaughter::ProcessMessage() {
 		}
 
 		case HEARTBEAT_ID: {
-			if(MsgToData<UniqueBoardID>(msg) == FSB.uniqueID) {
+			if(MsgToData<UniqueBoardID>(msg) == Motherboard.uniqueID) {
 				SendHeartbeat();
 				return true;
 			}
@@ -197,7 +197,7 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
  * @param boardType A user-defined byte to be stored with the board information.
  */
 CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogInit *logs,
-		uint16_t numLogs, uint8_t boardType) {
+		uint16_t numLogs, uint8_t boardType, uint8_t slotNumber) {
 	controller = new FDCanController(fdcan,nullptr,0);
 
 	memcpy(logsToInit,logs,numLogs*sizeof(LogInit));
@@ -207,6 +207,7 @@ CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogIn
 	this->thisNode.canIDRange = {0,0};
 	this->thisNode.uniqueID = GetThisBoardUniqueID();
 	this->thisNode.boardType = boardType;
+	this->thisNode.slotNumber = slotNumber;
 
 }
 
@@ -216,7 +217,7 @@ CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogIn
  * @param msg Data to send. Size must be at least as large as the log type being sent.
  * @return true if sent successfully.
  */
-bool CanAutoNodeDaughter::SendMessageToFSBByLogID(uint16_t logID, const uint8_t *msg) {
+bool CanAutoNodeDaughter::SendMessageToMotherboardByLogID(uint16_t logID, const uint8_t *msg) {
 	return controller->SendByLogIndex(msg, logID);
 }
 
@@ -253,8 +254,8 @@ bool CanAutoNodeDaughter::ReceiveUpdate(const uint8_t *msg) {
 		}
 		break;
 
-	case CAN_UPDATE_FSB:
-		this->FSB = receivedNode;
+	case CAN_UPDATE_MOTHERBOARD:
+		this->Motherboard = receivedNode;
 		break;
 
 	default:

@@ -44,7 +44,7 @@ public:
 	enum updateType {
 		CAN_UPDATE_DAUGHTER,
 		CAN_UPDATE_LAST_DAUGHTER,
-		CAN_UPDATE_FSB
+		CAN_UPDATE_MOTHERBOARD
 	};
 	enum acknowledgementStatus {
 		ACK_GOOD,
@@ -87,6 +87,7 @@ protected:
 
 		uint8_t numberOfLogs = 0;
 		uint8_t boardType = 0;
+		uint8_t slotNumber = 0;
 
 		uint8_t logOffsetsInCANIDs[MAX_LOGS];
 		uint8_t logSizesInBytes[MAX_LOGS];
