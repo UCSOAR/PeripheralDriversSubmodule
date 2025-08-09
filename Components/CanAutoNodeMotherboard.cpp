@@ -31,6 +31,12 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 	return SendFullUpdate();
 }
 
+CanAutoNodeMotherboard::CanAutoNodeMotherboard(FDCAN_HandleTypeDef *fdcan) {
+	controller = new FDCanController(fdcan,nullptr,0);
+	callbackcontroller = controller;
+
+}
+
 /* Exhausts the FIFO until a join request is found and processed.
  * @return true if one was found and processed successfully.
  */

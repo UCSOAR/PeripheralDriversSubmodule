@@ -170,3 +170,21 @@ bool CanAutoNode::SendMessageToDaughterByLogIndex(UniqueBoardID boardID,
 	}
 	return false;
 }
+
+/* Sends a message to a board in a given slot number by the log index on that daughter board.
+ * @param slotNumber Slot to send to.
+ * @param logIndex Index of the log on the target board to send.
+ * @param msg Message to send. Size is determined by the size of the log being sent.
+ * @return true if successfully sent.
+ */
+bool CanAutoNode::SendMessageToSlotNumberByLogIndex(uint8_t slotNumber,
+		uint8_t logIndex, const uint8_t *msg) {
+
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(thisNode.slotNumber == slotNumber) {
+			return SendMessageToDaughterByLogIndex(thisNode.uniqueID, logIndex, msg);
+		}
+	}
+	return false;
+}

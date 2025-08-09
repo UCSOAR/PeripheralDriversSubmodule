@@ -68,6 +68,7 @@ public:
 	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
 	bool SendMessageToDaughterByLogIndex(UniqueBoardID boardID, uint8_t logIndex, const uint8_t* msg);
 	bool SendMessageToAllBoardsOfTypeByLogIndex(uint8_t boardType, uint8_t logIndex, const uint8_t* msg);
+	bool SendMessageToSlotNumberByLogIndex(uint8_t slotNumber, uint8_t logIndex, const uint8_t* msg);
 
 	UniqueBoardID GetThisBoardUniqueID() const;
 

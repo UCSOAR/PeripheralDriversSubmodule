@@ -1,12 +1,12 @@
 #include "FDCan.h"
 #include "CanAutoNode.hpp"
 
-
 class CanAutoNodeMotherboard : public CanAutoNode {
 
 public:
 
 
+	CanAutoNodeMotherboard(FDCAN_HandleTypeDef *fdcan);
 
 	bool CheckMessages() override {
 		return CheckForJoinRequest();
