@@ -5,7 +5,7 @@
  * @param uniqueBoardID Board to kick.
  * @return true if successful,
  */
-bool CanAutoNodeFSB::KickNode(uint32_t uniqueBoardID) {
+bool CanAutoNodeFSB::KickNode(UniqueBoardID uniqueBoardID) {
 
 	bool exists = false;
 	uint16_t foundIndex = 0;
@@ -30,22 +30,6 @@ bool CanAutoNodeFSB::KickNode(uint32_t uniqueBoardID) {
 	}
 	return SendFullUpdate();
 }
-
-//bool CanAutoNodeFSB::SendToDaughterBoardByIndex(uint32_t uniqueID,
-//		uint8_t logIndex, const uint8_t *msg) {
-//
-//	for(uint16_t i = 0; i < nodesInNetwork; i++) {
-//		const Node& thisDaughter = daughterNodes[i];
-//		if(thisDaughter.uniqueID == uniqueID) {
-//
-//			for(uint16_t j = 0; j < )
-//
-//		}
-//	}
-//
-//	return false;
-//
-//}
 
 /* Exhausts the FIFO until a join request is found and processed.
  * @return true if one was found and processed successfully.
@@ -201,7 +185,6 @@ bool CanAutoNodeFSB::SendFullUpdate() {
  */
 bool CanAutoNodeFSB::Heartbeat() {
 
-
 	if(!SendHeartbeat()) {
 		return false;
 	}
@@ -216,7 +199,7 @@ bool CanAutoNodeFSB::Heartbeat() {
 		if(controller->GetRxFIFO(out, &id) == HAL_OK) {
 			switch(id) {
 			case HEARTBEAT_ID: {
-				uint32_t responseID = shift8to32(out);
+				UniqueBoardID responseID = MsgToData<UniqueBoardID>(out);
 				bool foundResponder = false;
 				for(int node = 0; node < nodesInNetwork; node++) {
 					if(daughterNodes[node].uniqueID == responseID) {

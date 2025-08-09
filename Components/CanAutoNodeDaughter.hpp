@@ -20,7 +20,7 @@ public:
 
 	//CanAutoNodeDaughter(FDCanController* contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
     CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan,
-    		LogInit *logs, uint16_t numLogs, uint8_t boardType);
+    		const LogInit *logs, uint16_t numLogs, uint8_t boardType);
 	~CanAutoNodeDaughter();
 	CanAutoNodeDaughter() = delete;
 
@@ -61,9 +61,9 @@ protected:
 
 	daughterState currentState = UNINITIALIZED;
 
-	bool RequestToJoinNetwork(uint16_t requestID);
+	bool RequestToJoinNetwork();
 
-	bool ReceiveUpdate(uint8_t* msg);
+	bool ReceiveUpdate(const uint8_t* msg);
 
 	uint32_t tickLastReceivedUpdatePart = 0;
 

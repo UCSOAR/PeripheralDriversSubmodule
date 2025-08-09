@@ -2,7 +2,7 @@
  * CanAutoNode.h
  *
  *  Created on: Jul 16, 2025
- *      Author: Local user
+ *      Author: Adam Godin
  */
 
 #ifndef AUTONODE_CANAUTONODE_HPP_
@@ -13,17 +13,20 @@
 #include "FDCan.h"
 #include <cstring>
 
-constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
 
+constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
+constexpr uint8_t MAX_LOGS = 5;
+constexpr uint8_t MAX_JOIN_ATTEMPTS = 8;
+// Max 2047 for 11-bit standard FDCAN, max 536,870,911 for extended FDCAN.
+// See transceiver and board capabilities before changing.
+constexpr uint16_t MAX_CAN_ID = 2047;
+
+// Reserved CAN IDs
 constexpr uint16_t JOIN_REQUEST_ID = 0;
 constexpr uint16_t ACK_ID = 1;
 constexpr uint16_t UPDATE_ID = 2;
 constexpr uint16_t KICK_REQUEST_ID = 3;
 constexpr uint16_t HEARTBEAT_ID = 4;
-
-constexpr uint8_t MAX_LOGS = 5;
-constexpr uint16_t MAX_CAN_ID = 2047;
-
 
 
 class CanAutoNode {
@@ -50,11 +53,26 @@ public:
 
 	virtual bool CheckMessages() = 0;
 
-	bool SendMessageToDaughterBoardID(uint32_t boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
+	struct UniqueBoardID {
+		uint32_t u0;
+		uint32_t u1;
+		uint32_t u2;
+		bool operator!=(const UniqueBoardID& other) const {
+			return u0!=other.u0 || u1!=other.u1 || u2!=other.u2;
+		}
+		bool operator==(const UniqueBoardID& other) const {
+			return u0 == other.u0 && u1 == other.u1 && u2 == other.u2;
+		}
+	};
+
+	bool SendMessageToDaughterBoardID(UniqueBoardID boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
 	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
-	bool SendMessageToDaughterByLogIndex(uint32_t boardID, uint8_t logIndex, const uint8_t* msg);
+	bool SendMessageToDaughterByLogIndex(UniqueBoardID boardID, uint8_t logIndex, const uint8_t* msg);
+
+	UniqueBoardID GetThisBoardUniqueID() const;
 
 protected:
+
 	struct IDRange {
 		uint32_t start = 0;
 		uint32_t end = 0;
@@ -66,7 +84,7 @@ protected:
 
 	struct Node {
 		IDRange canIDRange;
-		uint32_t uniqueID = 0;
+		UniqueBoardID uniqueID = {0};
 
 		bool operator!=(const Node& other) const {
 			return other.canIDRange != this->canIDRange
@@ -84,17 +102,20 @@ protected:
 	static_assert(sizeof(Node) <= 64, "Node entries must be at most 64 bytes large. Try reducing MAX_LOGS");
 
 	struct HeartbeatInfo {
-		uint32_t senderBoardID;
+		UniqueBoardID senderBoardID;
 	};
 
 	struct JoinRequest {
-		uint32_t uniqueID;
+		UniqueBoardID uniqueID;
 		uint8_t slotNumber;
 		uint8_t boardType;
 
 		uint8_t numberOfLogs;
-		uint8_t logSizesInBytes[52];
+		uint8_t logSizesInBytes[MAX_LOGS];
 	};
+
+	static_assert(sizeof(JoinRequest) <= 64, "Join request entries must be at most 64 bytes large. Try reducing MAX_LOGS");
+
 
 	FDCanController* controller = nullptr;
 	Node thisNode = {0};
@@ -110,7 +131,6 @@ protected:
 
 	Node daughterNodes[MAX_NODES_IN_NETWORK];
 	uint16_t nodesInNetwork = 0;
-	uint32_t nodeTableVersion = 0; //todo
 
 	bool SendHeartbeat();
 
@@ -125,6 +145,7 @@ protected:
 		memcpy(&out,in,sizeof(T));
 		return out;
 	}
+
 
 
 

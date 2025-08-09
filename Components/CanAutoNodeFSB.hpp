@@ -11,7 +11,7 @@ public:
 	bool CheckMessages() override {
 		return CheckForJoinRequest();
 	}
-	bool KickNode(uint32_t uniqueBoardID);
+	bool KickNode(UniqueBoardID uniqueBoardID);
 
 	bool Heartbeat();
 

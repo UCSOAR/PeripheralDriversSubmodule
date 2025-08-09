@@ -45,11 +45,7 @@ bool CanAutoNode::IDRangesOverlap(IDRange a, IDRange b) {
  */
 CanAutoNode::Node CanAutoNode::nodeFromMsg(const uint8_t *msg) {
 
-	Node newNode;
-	newNode.uniqueID = shift8to32(msg);
-	newNode.canIDRange.start = shift8to32(msg+4);
-	newNode.canIDRange.end = shift8to32(msg+8);
-	return newNode;
+	return MsgToData<Node>(msg);
 
 }
 
@@ -67,9 +63,8 @@ void CanAutoNode::shift32to8(uint32_t in, uint8_t *out) {
  */
 void CanAutoNode::msgFromNode(Node node, uint8_t *msgout) {
 
-	memcpy(msgout,&node.uniqueID,sizeof(node.uniqueID));
-	memcpy(msgout+4,&node.canIDRange.start,sizeof(node.canIDRange.start));
-	memcpy(msgout+8,&node.canIDRange.end,sizeof(node.canIDRange.end));
+	memcpy(msgout,&node,sizeof(Node));
+
 
 }
 
@@ -84,7 +79,7 @@ CanAutoNode::CanAutoNode() {
  * @param len Length of message in bytes.
  * @return true if successfully sent.
  */
-bool CanAutoNode::SendMessageToDaughterBoardID(uint32_t boardID, const uint8_t *msg,
+bool CanAutoNode::SendMessageToDaughterBoardID(UniqueBoardID boardID, const uint8_t *msg,
 		uint16_t len, uint16_t CANIDOffset) {
 
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
@@ -111,6 +106,13 @@ bool CanAutoNode::SendMessageByCANID(uint32_t startingCanID, const uint8_t *msg,
 		return controller->SendByMsgID(msg, len, startingCanID);
 }
 
+CanAutoNode::UniqueBoardID CanAutoNode::GetThisBoardUniqueID() const {
+	UniqueBoardID out;
+	out.u0 = HAL_GetUIDw0();
+	out.u1 = HAL_GetUIDw1();
+	out.u2 = HAL_GetUIDw2();
+	return out;
+}
 
 /* Broadcast a heartbeat to the entire network on the reserved heartbeat channel.
  * The caller is responsible for checking for responses.
@@ -127,7 +129,14 @@ bool CanAutoNode::SendHeartbeat() {
 
 }
 
-bool CanAutoNode::SendMessageToDaughterByLogIndex(uint32_t boardID,
+/* Sends a message to a daughter board by a log index on that daughter board. Can be called from
+ * the motherboard or another daughter board.
+ * @param boardID Unique board ID to send to.
+ * @param logIndex Index of the log on the target board to send.
+ * @param msg Message to send. Size is determined by the size of the log being sent.
+ * @return true if successfully sent.
+ */
+bool CanAutoNode::SendMessageToDaughterByLogIndex(UniqueBoardID boardID,
 		uint8_t logIndex, const uint8_t *msg) {
 	if(logIndex >= MAX_LOGS) {
 		return false;
