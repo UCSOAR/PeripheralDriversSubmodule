@@ -15,6 +15,8 @@ public:
 
 	bool Heartbeat();
 
+	uint32_t GetTicksSinceLastHeartbeat() const;
+
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);
 
@@ -23,6 +25,8 @@ private:
 	bool SendFullUpdate();
 
 	bool CheckForJoinRequest();
+
+	uint32_t lastHeartbeatTick = 0;
 
 
 };

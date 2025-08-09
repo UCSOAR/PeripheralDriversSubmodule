@@ -199,6 +199,8 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 		return false;
 	}
 
+	this->lastHeartbeatTick = HAL_GetTick();
+
 	bool received[nodesInNetwork];
 	memset(received,0,sizeof(received));
 
@@ -244,4 +246,6 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 
 }
 
-
+uint32_t CanAutoNodeMotherboard::GetTicksSinceLastHeartbeat() const {
+	return HAL_GetTick() - lastHeartbeatTick;
+}
