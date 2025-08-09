@@ -88,8 +88,8 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 
 	uint32_t bestStartingFreeCANID = 0;
 	bool foundRoom = false;
-	uint16_t bestAmountOfRoom = UINT16_MAX;
-	uint32_t previousEnd = 0;
+	uint16_t bestAmountOfRoom = MAX_CAN_ID;
+	uint32_t previousEnd = MAX_RESERVED_CAN_ID+1;
 
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisNode = sortedNodes[i];
@@ -116,7 +116,7 @@ bool CanAutoNodeFSB::ReceiveJoinRequest(uint8_t* msg) {
 		// found no issues
 		SendAck(ACK_GOOD);
 		Node newNode;
-		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},request.uniqueID,request.numberOfLogs};
+		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},request.uniqueID,request.numberOfLogs,request.boardType};
 
 		FDCanController::LogInitStruct newLogs[request.numberOfLogs];
 		uint16_t thisID = bestStartingFreeCANID;

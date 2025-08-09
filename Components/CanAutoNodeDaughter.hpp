@@ -74,7 +74,7 @@ protected:
 
 	bool initializedLogs = false;
 
-	const uint8_t boardType;
+//	const uint8_t boardType;
 //	const IDRange idRange;
 
 };

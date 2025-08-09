@@ -27,6 +27,7 @@ constexpr uint16_t ACK_ID = 1;
 constexpr uint16_t UPDATE_ID = 2;
 constexpr uint16_t KICK_REQUEST_ID = 3;
 constexpr uint16_t HEARTBEAT_ID = 4;
+constexpr uint16_t MAX_RESERVED_CAN_ID = 4; // Make sure to update if adding a new reserved ID
 
 
 class CanAutoNode {
@@ -57,17 +58,16 @@ public:
 		uint32_t u0;
 		uint32_t u1;
 		uint32_t u2;
-		bool operator!=(const UniqueBoardID& other) const {
-			return u0!=other.u0 || u1!=other.u1 || u2!=other.u2;
-		}
-		bool operator==(const UniqueBoardID& other) const {
-			return u0 == other.u0 && u1 == other.u1 && u2 == other.u2;
-		}
+
+		bool operator==(const UniqueBoardID&) const = default;
+		bool operator!=(const UniqueBoardID&) const = default;
+
 	};
 
 	bool SendMessageToDaughterBoardID(UniqueBoardID boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
 	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
 	bool SendMessageToDaughterByLogIndex(UniqueBoardID boardID, uint8_t logIndex, const uint8_t* msg);
+	bool SendMessageToAllBoardsOfTypeByLogIndex(uint8_t boardType, uint8_t logIndex, const uint8_t* msg);
 
 	UniqueBoardID GetThisBoardUniqueID() const;
 
@@ -76,26 +76,26 @@ protected:
 	struct IDRange {
 		uint32_t start = 0;
 		uint32_t end = 0;
-		bool operator!=(const IDRange& other) const {
-			return this->start != other.start
-					|| this->end != other.end;
-		}
+
+		bool operator==(const IDRange&) const = default;
+		bool operator!=(const IDRange&) const = default;
 	};
 
 	struct Node {
 		IDRange canIDRange;
 		UniqueBoardID uniqueID = {0};
 
-		bool operator!=(const Node& other) const {
-			return other.canIDRange != this->canIDRange
-					|| other.uniqueID != this->uniqueID
-					|| other.numberOfLogs != this->numberOfLogs
-					|| memcmp(other.logOffsetsInCANIDs,this->logOffsetsInCANIDs,sizeof(logOffsetsInCANIDs));
-		}
-
 		uint8_t numberOfLogs = 0;
+		uint8_t boardType = 0;
+
 		uint8_t logOffsetsInCANIDs[MAX_LOGS];
 		uint8_t logSizesInBytes[MAX_LOGS];
+
+
+
+		bool operator==(const Node&) const = default;
+		bool operator!=(const Node&) const = default;
+
 
 	};
 

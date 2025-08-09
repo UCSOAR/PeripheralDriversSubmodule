@@ -114,6 +114,27 @@ CanAutoNode::UniqueBoardID CanAutoNode::GetThisBoardUniqueID() const {
 	return out;
 }
 
+/* Sends a message to every daughter node of a given user-defined board type by a log index.
+ * @param boardType The type to send to.
+ * @param logIndex The log index to use.
+ * @param msg The message to send. Size determined by the reserved log.
+ * @return true if successfully sent at least one message.
+ */
+bool CanAutoNode::SendMessageToAllBoardsOfTypeByLogIndex(uint8_t boardType,
+		uint8_t logIndex, const uint8_t *msg) {
+	bool foundOne = false;
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(thisNode.boardType == boardType) {
+			if(SendMessageToDaughterByLogIndex(thisNode.uniqueID, logIndex, msg)) {
+				foundOne = true;
+			}
+		}
+	}
+	return foundOne;
+
+}
+
 /* Broadcast a heartbeat to the entire network on the reserved heartbeat channel.
  * The caller is responsible for checking for responses.
  * @return true if successfully sent.

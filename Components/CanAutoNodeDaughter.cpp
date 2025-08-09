@@ -51,7 +51,7 @@ bool CanAutoNodeDaughter::RequestToJoinNetwork() {
 
 	JoinRequest request;
 	request.uniqueID = thisNode.uniqueID;
-	request.boardType = this->boardType;
+	request.boardType = thisNode.boardType;
 	request.slotNumber = 123;
 	request.numberOfLogs = numLogs;
 	for(uint16_t i = 0; i < numLogs; i++) {
@@ -197,14 +197,16 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
  * @param boardType A user-defined byte to be stored with the board information.
  */
 CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogInit *logs,
-		uint16_t numLogs, uint8_t boardType) : boardType(boardType) {
+		uint16_t numLogs, uint8_t boardType) {
 	controller = new FDCanController(fdcan,nullptr,0);
 
 	memcpy(logsToInit,logs,numLogs*sizeof(LogInit));
 	this->numLogs = numLogs;
 	callbackcontroller = controller;
 	currentState = UNINITIALIZED;
-	this->thisNode = {{0,0},GetThisBoardUniqueID()};
+	this->thisNode.canIDRange = {0,0};
+	this->thisNode.uniqueID = GetThisBoardUniqueID();
+	this->thisNode.boardType = boardType;
 
 }
 
