@@ -147,21 +147,39 @@ bool CanAutoNodeDaughter::ProcessMessage() {
 		case KICK_REQUEST_ID: {
 			UniqueBoardID kickedBoard = MsgToData<UniqueBoardID>(msg);
 			if(kickedBoard == this->thisNode.uniqueID) {
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("This node just got kicked!\n");
+#endif
 				ChangeState(UNINITIALIZED);
 				return true;
 			}
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Saw ");
+	PrintBoardID(kickedBoard);
+	SOAR_PRINT("just get kicked\n");
+#endif
+
+			ChangeState(WAITING_FOR_UPDATE);
+			return true;
 		}
 		case JOIN_REQUEST_ID:
 		{
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Saw a join request from another board\n");
+#endif
 			ChangeState( WAITING_FOR_UPDATE);
 			return true;
 		}
 
 		case HEARTBEAT_ID: {
+
 			if(MsgToData<UniqueBoardID>(msg) == Motherboard.uniqueID) {
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Received heartbeat");
+#endif
 				SendHeartbeat();
-				return true;
 			}
+			return true;
 		}
 		}
 
@@ -174,6 +192,9 @@ bool CanAutoNodeDaughter::ProcessMessage() {
  */
 void CanAutoNodeDaughter::ChangeState(daughterState target) {
 	currentState = target;
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Changing state to %d\n",target);
+#endif
 	switch(target) {
 	case WAITING_FOR_UPDATE:
 		tickLastReceivedUpdatePart = HAL_GetTick();
@@ -252,10 +273,20 @@ bool CanAutoNodeDaughter::ReceiveUpdate(const uint8_t *msg) {
 			}
 
 		}
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Received a daughter update part for ");
+	PrintBoardID(receivedNode.uniqueID);
+	SOAR_PRINT("\n");
+#endif
 		break;
 
 	case CAN_UPDATE_MOTHERBOARD:
 		this->Motherboard = receivedNode;
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Received a motherboard update part for ");
+	PrintBoardID(receivedNode.uniqueID);
+	SOAR_PRINT("\n");
+#endif
 		break;
 
 	default:
