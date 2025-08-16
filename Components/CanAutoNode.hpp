@@ -29,6 +29,12 @@ constexpr uint16_t KICK_REQUEST_ID = 3;
 constexpr uint16_t HEARTBEAT_ID = 4;
 constexpr uint16_t MAX_RESERVED_CAN_ID = 4; // Make sure to update if adding a new reserved ID
 
+#define CANAUTONODEDEBUG
+
+#ifdef CANAUTONODEDEBUG
+#include "Task.hpp"
+#include "SystemDefines.hpp"
+#endif
 
 class CanAutoNode {
 public:
@@ -72,6 +78,12 @@ public:
 
 	UniqueBoardID GetThisBoardUniqueID() const;
 
+	virtual uint16_t GetNumberOfNodesInNetwork() const = 0;
+
+#ifdef CANAUTONODEDEBUG
+	static void PrintBoardID(UniqueBoardID id);
+#endif
+
 protected:
 
 	struct IDRange {
@@ -93,11 +105,8 @@ protected:
 		uint8_t logOffsetsInCANIDs[MAX_LOGS];
 		uint8_t logSizesInBytes[MAX_LOGS];
 
-
-
 		bool operator==(const Node&) const = default;
 		bool operator!=(const Node&) const = default;
-
 
 	};
 
@@ -117,7 +126,6 @@ protected:
 	};
 
 	static_assert(sizeof(JoinRequest) <= 64, "Join request entries must be at most 64 bytes large. Try reducing MAX_LOGS");
-
 
 	FDCanController* controller = nullptr;
 	Node thisNode = {0};
@@ -148,13 +156,8 @@ protected:
 		return out;
 	}
 
-
-
-
 private:
 	CanAutoNode(const CanAutoNode &other) = delete;
-
-
 
 };
 

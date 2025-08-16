@@ -135,6 +135,17 @@ bool CanAutoNode::SendMessageToAllBoardsOfTypeByLogIndex(uint8_t boardType,
 
 }
 
+#ifdef CANAUTONODEDEBUG
+void CanAutoNode::PrintBoardID(CanAutoNode::UniqueBoardID id) {
+	  for(uint16_t i = 0; i < sizeof(CanAutoNode::UniqueBoardID); i++) {
+		  SOAR_PRINT("%x",((const uint8_t*)(&id))[i]);
+		  if(i % 4 == 0 && i > 0 && i < sizeof(CanAutoNode::UniqueBoardID)-1) {
+			  SOAR_PRINT(" ");
+		  }
+	  }
+}
+#endif
+
 /* Broadcast a heartbeat to the entire network on the reserved heartbeat channel.
  * The caller is responsible for checking for responses.
  * @return true if successfully sent.

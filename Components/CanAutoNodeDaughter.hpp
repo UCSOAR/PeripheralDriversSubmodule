@@ -48,6 +48,13 @@ public:
 		}
 	}
 
+	/* Gets the total number of nodes in the network, including the motherboard and this node.
+	 * Note that this is different from the size of the internal node table.
+	 */
+	uint16_t GetNumberOfNodesInNetwork() const override {
+		return nodesInNetwork+2;
+	}
+
 	bool SendMessageToMotherboardByLogID(uint16_t logID, const uint8_t* msg);
 
 protected:

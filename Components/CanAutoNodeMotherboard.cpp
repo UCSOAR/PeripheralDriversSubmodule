@@ -20,14 +20,29 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 	}
 
 	if(!exists) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Tried to kick node, but doesn't exist! (Attempted to kick ");
+		PrintBoardID(uniqueBoardID);
+		SOAR_PRINT(")\n");
+#endif
 		return false;
 	}
 
 	daughterNodes[foundIndex] = daughterNodes[--nodesInNetwork];
 
 	if(!controller->SendByMsgID((uint8_t*)(&uniqueBoardID), sizeof(uniqueBoardID), KICK_REQUEST_ID)) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Tried to kick node, but failed to send! (Attempted to kick ");
+		PrintBoardID(uniqueBoardID);
+		SOAR_PRINT(")\n");
+#endif
 		return false;
 	}
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Kicked node (");
+		PrintBoardID(uniqueBoardID);
+		SOAR_PRINT(")\n");
+#endif
 	return SendFullUpdate();
 }
 
@@ -65,7 +80,13 @@ bool CanAutoNodeMotherboard::CheckForJoinRequest() {
  */
 bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 
+
 	JoinRequest request = MsgToData<JoinRequest>(msg);
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Received a join request from ");
+	PrintBoardID(request.uniqueID);
+	SOAR_PRINT("\n");
+#endif
 	uint16_t requiredTotalCANIDs = 0;
 	for(uint16_t i = 0; i < request.numberOfLogs; i++) {
 		requiredTotalCANIDs += (request.logSizesInBytes[i]-1)/64+1;
@@ -121,6 +142,9 @@ bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 	if(foundRoom)  {
 		// found no issues
 		SendAck(ACK_GOOD);
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Adding new node at ID range [%d,%d)\n",bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs);
+#endif
 		Node newNode;
 		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},
 				request.uniqueID,
@@ -143,6 +167,9 @@ bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 		return SendFullUpdate();
 	} else {
 		SendAck(ACK_NO_ROOM);
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("No room for new node!\n");
+#endif
 		return false;
 	}
 
@@ -174,15 +201,27 @@ bool CanAutoNodeMotherboard::SendFullUpdate() {
 	msg[0] = CAN_UPDATE_MOTHERBOARD;
 
 	if(!controller->SendByMsgID(msg, sizeof(msg), UPDATE_ID)) {
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Failed to send motherboard update frame!\n");
+#endif
 		return false;
 	}
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Sent motherboard update frame\n");
+#endif
 
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		msgFromNode(daughterNodes[i], msg+1);
 		msg[0] = (i == nodesInNetwork-1) ? CAN_UPDATE_LAST_DAUGHTER : CAN_UPDATE_DAUGHTER;
 		if(!controller->SendByMsgID(msg, sizeof(msg), UPDATE_ID)) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Tried but failed to send daughter update frame!\n");
+#endif
 			return false;
 		}
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Sent daughter update frame %d/%d\n",i+1,nodesInNetwork);
+#endif
 	}
 
 	return true;
@@ -195,11 +234,11 @@ bool CanAutoNodeMotherboard::SendFullUpdate() {
  */
 bool CanAutoNodeMotherboard::Heartbeat() {
 
+	this->lastHeartbeatTick = HAL_GetTick();
+
 	if(!SendHeartbeat()) {
 		return false;
 	}
-
-	this->lastHeartbeatTick = HAL_GetTick();
 
 	bool received[nodesInNetwork];
 	memset(received,0,sizeof(received));
@@ -217,6 +256,11 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 					if(daughterNodes[node].uniqueID == responseID) {
 						if(received[node]) {
 							// received multiple heartbeats from the same node?
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Received multiple heartbeats from ");
+		PrintBoardID(responseID);
+		SOAR_PRINT(", kicking\n");
+#endif
 							KickNode(responseID);
 						}
 						received[node] = true;
@@ -226,6 +270,11 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 				}
 				if(!foundResponder) {
 					// ??? a node that wasn't in the network just responded to the heartbeat?  get out
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Received heartbeat from unrecognized node ");
+		PrintBoardID(responseID);
+		SOAR_PRINT(", kicking\n");
+#endif
 					KickNode(responseID);
 				}
 				break;
@@ -238,6 +287,11 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 
 	for(size_t i = 0; i < nodesInNetwork; i++) {
 		if(!received[i]) { // Found a node that never responded to the heartbeat
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Received no heartbeat from ");
+		PrintBoardID(daughterNodes[i].uniqueID);
+		SOAR_PRINT(", kicking\n");
+#endif
 			KickNode(daughterNodes[i].uniqueID);
 		}
 	}

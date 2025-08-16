@@ -17,6 +17,13 @@ public:
 
 	uint32_t GetTicksSinceLastHeartbeat() const;
 
+	/* Gets the total number of nodes in the network, including the motherboard.
+	 * Note that this is different from the size of the internal node table.
+	 */
+	uint16_t GetNumberOfNodesInNetwork() const override {
+		return nodesInNetwork+1;
+	}
+
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);
 
