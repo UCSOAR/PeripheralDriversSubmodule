@@ -8,10 +8,12 @@ public:
 
 	CanAutoNodeMotherboard(FDCAN_HandleTypeDef *fdcan);
 
-	bool CheckMessages() override {
+	bool CheckCANCommands() override {
 		return CheckForJoinRequest();
 	}
 	bool KickNode(UniqueBoardID uniqueBoardID);
+	bool KickNode(const char* boardName);
+	bool KickNode(uint16_t slotNumber);
 
 	bool Heartbeat();
 

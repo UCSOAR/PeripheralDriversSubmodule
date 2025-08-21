@@ -19,8 +19,9 @@ public:
 	};
 
 	//CanAutoNodeDaughter(FDCanController* contr, uint16_t msgIDsToRequestStartID, uint16_t msgIDsToRequestAmount);
+
     CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan,
-    		const LogInit *logs, uint16_t numLogs, uint8_t boardType, uint8_t slotNumber);
+    		const LogInit *logs, uint16_t numLogs, uint8_t boardType, uint8_t slotNumber, const char* readableName);
 	~CanAutoNodeDaughter();
 	CanAutoNodeDaughter() = delete;
 
@@ -30,12 +31,10 @@ public:
 
 	const daughterState GetCurrentState() const;
 
-	void ChangeState(daughterState target);
-
 
 	bool TryRequestingJoiningNetwork();
 
-	bool CheckMessages() override {
+	bool CheckCANCommands() override {
 		switch(currentState) {
 		case REQUESTED_WAITING_FOR_RESPONSE:
 			return CheckForAcknowledgement();
@@ -59,6 +58,9 @@ public:
 
 protected:
 
+
+	void ChangeState(daughterState target);
+
 //	uint32_t uniqueBoardID = HAL_GetDEVID();
 	Node Motherboard = {0};
 	bool CheckForAcknowledgement();
@@ -74,10 +76,10 @@ protected:
 
 	uint32_t tickLastReceivedUpdatePart = 0;
 
-	LogInit logsToInit[MAX_LOGS];
+	LogInit logsToInit[MAX_LOG_TYPES_PER_NODE];
 	uint16_t numLogs;
 
-	FDCanController::LogInitStruct determinedLogs[MAX_LOGS];
+	FDCanController::LogInitStruct determinedLogs[MAX_LOG_TYPES_PER_NODE];
 
 	bool initializedLogs = false;
 

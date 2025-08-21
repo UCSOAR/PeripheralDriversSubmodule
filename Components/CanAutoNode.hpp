@@ -8,14 +8,15 @@
 #ifndef AUTONODE_CANAUTONODE_HPP_
 #define AUTONODE_CANAUTONODE_HPP_
 
-
+//#define CANAUTONODEDEBUG
 
 #include "FDCan.h"
 #include <cstring>
 
 
 constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
-constexpr uint8_t MAX_LOGS = 5;
+constexpr uint8_t MAX_LOG_TYPES_PER_NODE = 5;
+constexpr uint8_t MAX_NAME_STR_LEN = 20;
 constexpr uint8_t MAX_JOIN_ATTEMPTS = 8;
 // Max 2047 for 11-bit standard FDCAN, max 536,870,911 for extended FDCAN.
 // See transceiver and board capabilities before changing.
@@ -29,7 +30,6 @@ constexpr uint16_t KICK_REQUEST_ID = 3;
 constexpr uint16_t HEARTBEAT_ID = 4;
 constexpr uint16_t MAX_RESERVED_CAN_ID = 4; // Make sure to update if adding a new reserved ID
 
-#define CANAUTONODEDEBUG
 
 #ifdef CANAUTONODEDEBUG
 #include "Task.hpp"
@@ -58,7 +58,7 @@ public:
 		ACK_BOARD_ALREADY_EXISTS
 	};
 
-	virtual bool CheckMessages() = 0;
+	virtual bool CheckCANCommands() = 0;
 
 	struct UniqueBoardID {
 		uint32_t u0;
@@ -70,11 +70,12 @@ public:
 
 	};
 
-	bool SendMessageToDaughterBoardID(UniqueBoardID boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
-	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
 	bool SendMessageToDaughterByLogIndex(UniqueBoardID boardID, uint8_t logIndex, const uint8_t* msg);
 	bool SendMessageToAllBoardsOfTypeByLogIndex(uint8_t boardType, uint8_t logIndex, const uint8_t* msg);
 	bool SendMessageToSlotNumberByLogIndex(uint8_t slotNumber, uint8_t logIndex, const uint8_t* msg);
+	bool SendMessageToNameByLogIndex(const char* targetName, uint8_t logIndex, const uint8_t* msg);
+	bool SendMessageByCANID(uint32_t startingCanID, const uint8_t* msg, uint16_t len);
+	bool SendMessageToDaughterBoardByCANIDOffset(UniqueBoardID boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
 
 	UniqueBoardID GetThisBoardUniqueID() const;
 
@@ -102,8 +103,10 @@ protected:
 		uint8_t boardType = 0;
 		uint8_t slotNumber = 0;
 
-		uint8_t logOffsetsInCANIDs[MAX_LOGS];
-		uint8_t logSizesInBytes[MAX_LOGS];
+		uint8_t logOffsetsInCANIDs[MAX_LOG_TYPES_PER_NODE];
+		uint8_t logSizesInBytes[MAX_LOG_TYPES_PER_NODE];
+
+		char nodeName[MAX_NAME_STR_LEN];
 
 		bool operator==(const Node&) const = default;
 		bool operator!=(const Node&) const = default;
@@ -121,8 +124,9 @@ protected:
 		uint8_t slotNumber;
 		uint8_t boardType;
 
+		char nodeName[MAX_NAME_STR_LEN];
 		uint8_t numberOfLogs;
-		uint8_t logSizesInBytes[MAX_LOGS];
+		uint8_t logSizesInBytes[MAX_LOG_TYPES_PER_NODE];
 	};
 
 	static_assert(sizeof(JoinRequest) <= 64, "Join request entries must be at most 64 bytes large. Try reducing MAX_LOGS");

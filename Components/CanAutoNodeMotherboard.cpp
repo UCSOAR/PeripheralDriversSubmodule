@@ -46,11 +46,41 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 	return SendFullUpdate();
 }
 
+/* Kicks a board out of the network with a given name, updating the table, and sending an update to all remaining nodes.
+ * @param uniqueBoardID Board to kick.
+ * @return true if successful,
+ */
+bool CanAutoNodeMotherboard::KickNode(const char *boardName) {
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(strcmp(thisNode.nodeName,boardName) == 0) {
+			return KickNode(thisNode.uniqueID);
+		}
+	}
+	return false;
+}
+
+/* Kicks a board out of the network in a given slot number, updating the table, and sending an update to all remaining nodes.
+ * @param uniqueBoardID Board to kick.
+ * @return true if successful,
+ */
+bool CanAutoNodeMotherboard::KickNode(uint16_t slotNumber) {
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(thisNode.slotNumber == slotNumber) {
+			return KickNode(thisNode.uniqueID);
+		}
+	}
+	return false;
+}
+
 CanAutoNodeMotherboard::CanAutoNodeMotherboard(FDCAN_HandleTypeDef *fdcan) {
 	controller = new FDCanController(fdcan,nullptr,0);
 	callbackcontroller = controller;
 
 }
+
+
 
 /* Exhausts the FIFO until a join request is found and processed.
  * @return true if one was found and processed successfully.
@@ -303,3 +333,4 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 uint32_t CanAutoNodeMotherboard::GetTicksSinceLastHeartbeat() const {
 	return HAL_GetTick() - lastHeartbeatTick;
 }
+

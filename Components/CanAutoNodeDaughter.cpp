@@ -57,6 +57,7 @@ bool CanAutoNodeDaughter::RequestToJoinNetwork() {
 	for(uint16_t i = 0; i < numLogs; i++) {
 		request.logSizesInBytes[i] = (logsToInit[i].sizeInBytes);
 	}
+	strcpy(request.nodeName,thisNode.nodeName);
 
 	uint8_t msg[sizeof(JoinRequest)];
 	DataToMsg<JoinRequest>(request, msg);
@@ -216,9 +217,11 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
  * @param logs Pointer to an array of data types to be reserved in the network
  * @param numLogs Number of entries in logs.
  * @param boardType A user-defined byte to be stored with the board information.
+ * @param slotNumber The number of the slot the board is placed in.
+ * @param readableName An optional null-terminated string to identify the board. Can be nullptr.
  */
 CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogInit *logs,
-		uint16_t numLogs, uint8_t boardType, uint8_t slotNumber) {
+		uint16_t numLogs, uint8_t boardType, uint8_t slotNumber, const char* readableName) {
 	controller = new FDCanController(fdcan,nullptr,0);
 
 	memcpy(logsToInit,logs,numLogs*sizeof(LogInit));
@@ -229,6 +232,11 @@ CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogIn
 	this->thisNode.uniqueID = GetThisBoardUniqueID();
 	this->thisNode.boardType = boardType;
 	this->thisNode.slotNumber = slotNumber;
+	if(readableName != nullptr && strlen(readableName) > 0 && strlen(readableName) < MAX_NAME_STR_LEN) {
+		strcpy(this->thisNode.nodeName,readableName);
+	} else {
+		memset(this->thisNode.nodeName,0x00,MAX_NAME_STR_LEN);
+	}
 
 }
 
@@ -296,3 +304,4 @@ bool CanAutoNodeDaughter::ReceiveUpdate(const uint8_t *msg) {
 	return true;
 
 }
+

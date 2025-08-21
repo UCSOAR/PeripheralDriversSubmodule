@@ -2,7 +2,7 @@
  * CanAutoNode.cpp
  *
  *  Created on: Jul 16, 2025
- *      Author: Local user
+ *      Author: Adam Godin
  */
 
 #include <CanAutoNode.hpp>
@@ -79,7 +79,7 @@ CanAutoNode::CanAutoNode() {
  * @param len Length of message in bytes.
  * @return true if successfully sent.
  */
-bool CanAutoNode::SendMessageToDaughterBoardID(UniqueBoardID boardID, const uint8_t *msg,
+bool CanAutoNode::SendMessageToDaughterBoardByCANIDOffset(UniqueBoardID boardID, const uint8_t *msg,
 		uint16_t len, uint16_t CANIDOffset) {
 
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
@@ -170,7 +170,7 @@ bool CanAutoNode::SendHeartbeat() {
  */
 bool CanAutoNode::SendMessageToDaughterByLogIndex(UniqueBoardID boardID,
 		uint8_t logIndex, const uint8_t *msg) {
-	if(logIndex >= MAX_LOGS) {
+	if(logIndex >= MAX_LOG_TYPES_PER_NODE) {
 		return false;
 	}
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
@@ -194,6 +194,24 @@ bool CanAutoNode::SendMessageToSlotNumberByLogIndex(uint8_t slotNumber,
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisNode = daughterNodes[i];
 		if(thisNode.slotNumber == slotNumber) {
+			return SendMessageToDaughterByLogIndex(thisNode.uniqueID, logIndex, msg);
+		}
+	}
+	return false;
+}
+
+/* Sends a message to a daughter board going by a given readable name (case-sensitive).
+ * @param targetName A null-terminated name of the board to send to.
+ * @param logIndex The index of the log to send.
+ * @param msg The message to send. Size is determined by the log being sent.
+ * @return true if successfully sent.
+ */
+bool CanAutoNode::SendMessageToNameByLogIndex(const char *targetName,
+		uint8_t logIndex, const uint8_t *msg) {
+
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(strcmp(targetName, thisNode.nodeName) == 0) {
 			return SendMessageToDaughterByLogIndex(thisNode.uniqueID, logIndex, msg);
 		}
 	}
