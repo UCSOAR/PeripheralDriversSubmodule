@@ -16,7 +16,7 @@ const CanAutoNodeDaughter::daughterState CanAutoNodeDaughter::GetCurrentState() 
  */
 bool CanAutoNodeDaughter::TryRequestingJoiningNetwork() {
 
-	if(GetCurrentState() != UNINITIALIZED) {
+	if(GetCurrentState() != UNINITIALIZED && GetCurrentState() != REQUESTED_FAILED_WAITING_TO_RETRY) {
 		return false;
 	}
 	srand(GetThisBoardUniqueID().u1);
