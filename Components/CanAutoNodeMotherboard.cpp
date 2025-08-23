@@ -77,6 +77,7 @@ bool CanAutoNodeMotherboard::KickNode(uint16_t slotNumber) {
 CanAutoNodeMotherboard::CanAutoNodeMotherboard(FDCAN_HandleTypeDef *fdcan) {
 	controller = new FDCanController(fdcan,nullptr,0);
 	callbackcontroller = controller;
+	controller->RegisterFilterRXFIFO(0, MAX_RESERVED_CAN_ID);
 
 }
 

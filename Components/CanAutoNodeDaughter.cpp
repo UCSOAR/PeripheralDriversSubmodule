@@ -24,19 +24,31 @@ bool CanAutoNodeDaughter::TryRequestingJoiningNetwork() {
 
 	while(1) {
 		if(!RequestToJoinNetwork()) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Failed try %d/%d\n",tries+1,MAX_JOIN_ATTEMPTS);
+#endif
 			HAL_Delay(rand()%500+100);
 			tries++;
-			if(tries > MAX_JOIN_ATTEMPTS) {
+			if(tries >= MAX_JOIN_ATTEMPTS) {
 				ChangeState(ERROR);
 				return false;
 			}
 			ChangeState(REQUESTED_FAILED_WAITING_TO_RETRY);
 		} else {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Successfully sent request\n");
+#endif
 			ChangeState(REQUESTED_WAITING_FOR_RESPONSE);
 			HAL_Delay(rand()%500+100);
 			if(CheckForAcknowledgement()) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Received good ACK\n");
+#endif
 				return true;
 			} else {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Non good ACK received\n");
+#endif
 				ChangeState(REQUESTED_FAILED_WAITING_TO_RETRY);
 			}
 		}
@@ -92,11 +104,17 @@ bool CanAutoNodeDaughter::CheckForAcknowledgement() {
 
 		case ACK_NO_ROOM:
 			ChangeState(ERROR);
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("No room!\n");
+#endif
 			return false;
 
 		default:
 			// invalid ack
 			ChangeState(ERROR);
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Invalid ACK!\n");
+#endif
 			return false;
 		}
 
@@ -126,6 +144,9 @@ bool CanAutoNodeDaughter::CheckForUpdate() {
 	}
 	// not received
 	if(HAL_GetTick() - tickLastReceivedUpdatePart > 1000) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Update timed out!\n");
+#endif
 		ChangeState(ERROR);
 	}
 	return false;
@@ -202,11 +223,18 @@ void CanAutoNodeDaughter::ChangeState(daughterState target) {
 		nodesInNetwork = 0;
 		break;
 
+	case ERROR:
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT(">>>ERROR!\n");
+#endif
+		//intentional fallthrough
 	case UNINITIALIZED:
 		initializedLogs = false;
 		nodesInNetwork = 0;
 		thisNode.canIDRange = {0,0};
 		break;
+
+
 
 	default:
 		break;
@@ -237,6 +265,7 @@ CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogIn
 	} else {
 		memset(this->thisNode.nodeName,0x00,MAX_NAME_STR_LEN);
 	}
+	controller->RegisterFilterRXFIFO(0, MAX_RESERVED_CAN_ID);
 
 }
 
