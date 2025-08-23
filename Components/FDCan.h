@@ -45,6 +45,7 @@ class FDCanController {
   inline void RaiseFXFlag();
 
   HAL_StatusTypeDef GetRxFIFO(uint8_t* out, uint32_t* msgIDOut);
+  HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
 
  protected:
   struct LogRegister {
@@ -63,7 +64,6 @@ class FDCanController {
   LogRegister registeredLogs[MAX_FDCAN_RX_BUFFERS];
 
   HAL_StatusTypeDef RegisterFilterRXBuf(uint16_t msgID, uint8_t rxBufferNum);
-  HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
 
   HAL_StatusTypeDef InitFDCAN();
 
