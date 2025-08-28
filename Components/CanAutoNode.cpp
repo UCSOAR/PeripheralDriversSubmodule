@@ -217,3 +217,32 @@ bool CanAutoNode::SendMessageToNameByLogIndex(const char *targetName,
 	}
 	return false;
 }
+
+bool CanAutoNode::ReadMessageFromRXBuf(uint8_t logIndex, uint16_t logSize, uint8_t *out,
+		uint16_t outLen) {
+	// because of restrictive FDCAN size rounding, the output buffer may sometimes be
+	// padded with zeroes that need to be removed
+	uint16_t paddedSize = FDCanController::FDRoundDataSize(logSize);
+	if(paddedSize > outLen) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Log must be trimmed to fit in buffer\n");
+#endif
+		if(logSize > outLen) {
+#ifdef CANAUTONODEDEBUG
+			SOAR_PRINT("Could not read msg, buffer too small!\n");
+#endif
+			return false;
+		}
+		uint8_t paddedOut[paddedSize];
+		if(!controller->ReceiveLogTypeFromRXBuf(paddedOut, logIndex)) {
+			return false;
+		}
+		memcpy(out,paddedOut,logSize);
+		return true;
+	}
+
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Buffer large enough, attempting read...\n");
+#endif
+	return (controller->ReceiveLogTypeFromRXBuf(out, logIndex));
+}

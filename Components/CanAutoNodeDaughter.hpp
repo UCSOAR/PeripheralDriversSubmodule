@@ -56,6 +56,8 @@ public:
 
 	bool SendMessageToMotherboardByLogID(uint16_t logID, const uint8_t* msg);
 
+	bool ReadMessageByLogIndex(uint8_t logIndex, uint8_t* out, uint16_t outLen);
+
 protected:
 
 

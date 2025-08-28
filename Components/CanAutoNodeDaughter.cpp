@@ -16,7 +16,7 @@ const CanAutoNodeDaughter::daughterState CanAutoNodeDaughter::GetCurrentState() 
  */
 bool CanAutoNodeDaughter::TryRequestingJoiningNetwork() {
 
-	if(GetCurrentState() != UNINITIALIZED && GetCurrentState() != REQUESTED_FAILED_WAITING_TO_RETRY) {
+	if(GetCurrentState() != UNINITIALIZED) {
 		return false;
 	}
 	srand(GetThisBoardUniqueID().u1);
@@ -334,3 +334,12 @@ bool CanAutoNodeDaughter::ReceiveUpdate(const uint8_t *msg) {
 
 }
 
+bool CanAutoNodeDaughter::ReadMessageByLogIndex(uint8_t logIndex,
+		uint8_t *out, uint16_t outLen) {
+	if(GetCurrentState() != READY) {
+		return false;
+	}
+	uint16_t logSize = determinedLogs[logIndex].byteLength;
+	return ReadMessageFromRXBuf(logIndex, logSize, out, outLen);
+
+}

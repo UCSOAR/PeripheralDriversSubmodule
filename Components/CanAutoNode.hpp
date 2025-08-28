@@ -8,6 +8,9 @@
 #ifndef AUTONODE_CANAUTONODE_HPP_
 #define AUTONODE_CANAUTONODE_HPP_
 
+/*
+ * Define this to enable debug prints across the driver. Uses SOAR_PRINT.
+ */
 //#define CANAUTONODEDEBUG
 
 #include "FDCan.h"
@@ -108,6 +111,8 @@ protected:
 
 		char nodeName[MAX_NAME_STR_LEN];
 
+		uint16_t startingLogIndexOnMotherboard = 0;
+
 		bool operator==(const Node&) const = default;
 		bool operator!=(const Node&) const = default;
 
@@ -160,8 +165,11 @@ protected:
 		return out;
 	}
 
+	bool ReadMessageFromRXBuf(uint8_t logIndex, uint16_t logSize, uint8_t* out, uint16_t outLen);
+
 private:
 	CanAutoNode(const CanAutoNode &other) = delete;
+
 
 };
 

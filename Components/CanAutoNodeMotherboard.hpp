@@ -26,6 +26,8 @@ public:
 		return nodesInNetwork+1;
 	}
 
+	bool ReadMessageFromDaughterByLogIndex(UniqueBoardID daughter, uint8_t logIndex, uint8_t *out, uint16_t outSize);
+
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);
 
@@ -37,5 +39,6 @@ private:
 
 	uint32_t lastHeartbeatTick = 0;
 
+	uint16_t nextFreeMotherboardLogIndex = 0;
 
 };

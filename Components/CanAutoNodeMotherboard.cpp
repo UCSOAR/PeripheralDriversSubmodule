@@ -192,8 +192,11 @@ bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 			thisID += (request.logSizesInBytes[i]-1)/64+1;
 
 		}
-		daughterNodes[nodesInNetwork++] = newNode;
+		daughterNodes[nodesInNetwork] = newNode;
 		controller->RegisterLogs(newLogs, request.numberOfLogs);
+		nodesInNetwork++;
+		newNode.startingLogIndexOnMotherboard = nextFreeMotherboardLogIndex;
+		nextFreeMotherboardLogIndex += request.numberOfLogs;
 		HAL_Delay(50);
 		return SendFullUpdate();
 	} else {
@@ -335,3 +338,31 @@ uint32_t CanAutoNodeMotherboard::GetTicksSinceLastHeartbeat() const {
 	return HAL_GetTick() - lastHeartbeatTick;
 }
 
+/*
+ * Reads an incoming message from a daughter node on a given log index.
+ */
+bool CanAutoNodeMotherboard::ReadMessageFromDaughterByLogIndex(
+		UniqueBoardID daughter, uint8_t logIndex, uint8_t *out,
+		uint16_t outSize) {
+
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(thisNode.uniqueID == daughter) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Trying to read message from daughter...\n");
+#endif
+		if(logIndex >= thisNode.numberOfLogs) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Cannot read log index %d from daughter with max index %d",logIndex,thisNode.numberOfLogs);
+#endif
+			return false;
+		}
+			return ReadMessageFromRXBuf(thisNode.startingLogIndexOnMotherboard+logIndex, thisNode.logSizesInBytes[logIndex], out, outSize);
+		}
+	}
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("No node with that ID!\n");
+#endif
+	return false;
+
+}
