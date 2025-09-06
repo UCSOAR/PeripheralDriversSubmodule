@@ -58,6 +58,8 @@ public:
 
 	bool ReadMessageByLogIndex(uint8_t logIndex, uint8_t* out, uint16_t outLen);
 
+	uint16_t GetSizeOfLog(uint8_t logIndex) const;
+
 protected:
 
 
