@@ -1,3 +1,5 @@
+#ifndef CANAUTONODEMOTHERBOARD_HPP_
+#define CANAUTONODEMOTHERBOARD_HPP_
 #include "FDCan.h"
 #include "CanAutoNode.hpp"
 
@@ -42,3 +44,5 @@ private:
 	uint16_t nextFreeMotherboardLogIndex = 0;
 
 };
+
+#endif

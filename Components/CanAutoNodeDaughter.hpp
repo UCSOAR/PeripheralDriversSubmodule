@@ -1,3 +1,6 @@
+#ifndef CANAUTONODEDAUGHTER_HPP_
+#define CANAUTONODEDAUGHTER_HPP_
+
 #include "FDCan.h"
 #include "CanAutoNode.hpp"
 
@@ -91,3 +94,5 @@ protected:
 //	const IDRange idRange;
 
 };
+
+#endif

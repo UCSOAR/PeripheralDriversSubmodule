@@ -276,6 +276,9 @@ CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogIn
  * @return true if sent successfully.
  */
 bool CanAutoNodeDaughter::SendMessageToMotherboardByLogID(uint16_t logID, const uint8_t *msg) {
+	if(GetCurrentState() != READY) {
+		return false;
+	}
 	return controller->SendByLogIndex(msg, logID);
 }
 
