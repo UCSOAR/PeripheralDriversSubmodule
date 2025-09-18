@@ -246,3 +246,30 @@ bool CanAutoNode::ReadMessageFromRXBuf(uint8_t logIndex, uint16_t logSize, uint8
 #endif
 	return (controller->ReceiveLogTypeFromRXBuf(out, logIndex));
 }
+
+bool CanAutoNode::BoardExistsWithName(const char* name) {
+	if(strcmp(thisNode.nodeName,name)==0) {
+		return true;
+	}
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		if(strcmp(daughterNodes[i].nodeName,name)==0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+uint16_t CanAutoNode::GetNamesOfAllBoards(char(* outputArr)[MAX_NAME_STR_LEN], uint16_t outputArrayLen) {
+	uint16_t num = 0;
+	strcpy(outputArr[num++],thisNode.nodeName,MAX_NAME_STR_LEN);
+
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		strcpy(outputArr[num++],daughterNodes[i].nodeName,MAX_NAME_STR_LEN);
+		if(num >= outputArrayLen) {
+			break;
+		}
+	}
+
+	return num;
+
+}

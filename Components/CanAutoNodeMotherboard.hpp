@@ -30,6 +30,8 @@ public:
 
 	bool ReadMessageFromDaughterByLogIndex(UniqueBoardID daughter, uint8_t logIndex, uint8_t *out, uint16_t outSize);
 
+	uint16_t GetNamesOfNewlyJoinedBoards(char(*outputArr)[MAX_NAME_STR_LEN], uint16_t outputBufferLen);
+
 private:
 	bool ReceiveJoinRequest(uint8_t* msg);
 
@@ -42,6 +44,9 @@ private:
 	uint32_t lastHeartbeatTick = 0;
 
 	uint16_t nextFreeMotherboardLogIndex = 0;
+
+	Node* recentlyJoined[MAX_NODES_IN_NETWORK];
+	uint16_t recentlyJoinedNum = 0;
 
 };
 

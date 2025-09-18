@@ -193,10 +193,13 @@ bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 
 		}
 		daughterNodes[nodesInNetwork] = newNode;
+		recentlyJoined[recentlyJoinedNum++] = &daughterNodes[nodesInNetwork];
 		controller->RegisterLogs(newLogs, request.numberOfLogs);
 		nodesInNetwork++;
 		newNode.startingLogIndexOnMotherboard = nextFreeMotherboardLogIndex;
 		nextFreeMotherboardLogIndex += request.numberOfLogs;
+
+
 		HAL_Delay(50);
 		return SendFullUpdate();
 	} else {
@@ -364,5 +367,30 @@ bool CanAutoNodeMotherboard::ReadMessageFromDaughterByLogIndex(
 	SOAR_PRINT("No node with that ID!\n");
 #endif
 	return false;
+
+}
+
+/* Returns an array of name strings of any boards that joined the network since the last call of this function.
+ * @param outputArr A pointer to an array of char arrays to store the names.
+ * @param outputBufferLen For safety, will not write more entries than this to the output.
+ * @return The number of nodes returned in the array.
+ *
+ */
+uint16_t CanAutoNodeMotherboard::GetNamesOfNewlyJoinedBoards(char(*outputArr)[MAX_NAME_STR_LEN], uint16_t outputBufferLen) {
+
+	if(recentlyJoinedNum == 0) {
+		return 0;
+	}
+
+	uint16_t num = 0;
+	for(uint16_t i = 0; i < recentlyJoinedNum; i++) {
+		strcpy(outputArr[num++],daughterNodes[i].nodeName,MAX_NAME_STR_LEN);
+		if(i >= outputBufferLen) {
+			break;
+		}
+
+	}
+	memcpy(recentlyJoined,&recentlyJoined[recentlyJoinedNum-num],(num)*sizeof(Node*));
+	recentlyJoinedNum -= num;
 
 }
