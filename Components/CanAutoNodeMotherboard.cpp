@@ -10,6 +10,8 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 	bool exists = false;
 	uint16_t foundIndex = 0;
 
+
+
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisNode = daughterNodes[i];
 		if(thisNode.uniqueID == uniqueBoardID) {
@@ -29,6 +31,13 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 	}
 
 	daughterNodes[foundIndex] = daughterNodes[--nodesInNetwork];
+
+	for(uint16_t i = 0; i < recentlyJoinedNum; i++) {
+		if(recentlyJoined[i]->uniqueID == uniqueBoardID) {
+			recentlyJoined[i] = recentlyJoined[--recentlyJoinedNum];
+			break;
+		}
+	}
 
 	if(!controller->SendByMsgID((uint8_t*)(&uniqueBoardID), sizeof(uniqueBoardID), KICK_REQUEST_ID)) {
 #ifdef CANAUTONODEDEBUG
