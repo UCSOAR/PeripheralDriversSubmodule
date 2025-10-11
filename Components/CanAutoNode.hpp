@@ -82,6 +82,8 @@ public:
 
 	UniqueBoardID GetThisBoardUniqueID() const;
 	UniqueBoardID GetIDOfBoardWithName(const char* name);
+	uint16_t GetNumberOfLogIndicesInBoard(UniqueBoardID board);
+	uint16_t GetSizeOfLogIndexInBoard(UniqueBoardID board, uint16_t logindex);
 
 	virtual uint16_t GetNumberOfNodesInNetwork() const = 0;
 

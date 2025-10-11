@@ -287,3 +287,30 @@ UniqueBoardID CanAutoNode::GetIDOfBoardWithName(const char* name) {
 	}
 	return 0;
 }
+
+uint16_t CanAutoNode::GetNumberOfLogIndicesInBoard(UniqueBoardID board) {
+	if(board == thisNode.uniqueID) {
+		return thisNode.numberOfLogs;
+	}
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(thisNode.uniqueID == board) {
+			return thisNode.numberOfLogs;
+		}
+	}
+	return 0;
+
+}
+
+uint16_t CanAutoNode::GetSizeOfLogIndexInBoard(UniqueBoardID board, uint16_t logindex) {
+	if(board == thisNode.uniqueID) {
+		return thisNode.logSizesInBytes[logindex];
+	}
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		const Node& thisNode = daughterNodes[i];
+		if(thisNode.uniqueID == board) {
+			return thisNode.logSizesInBytes[logindex];
+		}
+	}
+	return 0;
+}
