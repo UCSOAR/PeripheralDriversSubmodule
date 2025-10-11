@@ -81,6 +81,7 @@ public:
 	bool SendMessageToDaughterBoardByCANIDOffset(UniqueBoardID boardID, const uint8_t* msg, uint16_t len, uint16_t CANIDOffset);
 
 	UniqueBoardID GetThisBoardUniqueID() const;
+	UniqueBoardID GetIDOfBoardWithName(const char* name);
 
 	virtual uint16_t GetNumberOfNodesInNetwork() const = 0;
 
