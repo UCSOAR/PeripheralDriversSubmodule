@@ -5,7 +5,8 @@
 #ifndef SPI_WRAPPER_HPP
 #define SPI_WRAPPER_HPP
 
-#include <array>
+#include <cstdint>
+//#include <array>
 
 extern "C" {
     #include "stm32f4xx_hal.h"
@@ -40,4 +41,4 @@ private:
     SPI_HandleTypeDef* _hspi;
 };
 
-#endif /* SPI_WRAPPER_HPP_ */
+#endif // SPI_WRAPPER_HPP
