@@ -12,6 +12,9 @@
 #include <cstdint>
 // if needed: fw declaration for the SPIClass from HAL/SPI wrapper, 
 // class SPIClass; 
+extern "C" {
+    #include "stm32f4xx_hal.h"
+}
 
 struct MagData {
     std::uint32_t rawX;
@@ -29,7 +32,7 @@ public:
      * @param spiBus Pointer to an initialized SPI wrapper instance.
      * @param csPin The GPIO pin for chip select.
      */
-    MMC5983MA(SpiWrapper* spiBus, std::uint16_t csPin); // Assuming SpiWrapper and CS pin
+    MMC5983MA(SPI_Wrapper* spiBus, GPIO_TypeDef* csPort, std::uint16_t csPin);
     
     /**
      * @brief Initializes the sensor.
@@ -94,11 +97,16 @@ private:
      * @param len Number of bytes to read.
      */
     void readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len);
-    SpiWrapper* _spi;
+    
+    // Member variables
+    SPI_Wrapper* _spi;
     std::uint16_t _csPin;
+    GPIO_TypeDef* _csPort;
 
-    // sensitivity here for scaling raw data
-    // float _sensitivity; 
+
+    // Constants for scaling data
+    const float _countsPerGauss = 16384.0f;
+    const float _nullFieldOffset = 131072.0f;
 };
 
 #endif // MMC5983MA_HPP
