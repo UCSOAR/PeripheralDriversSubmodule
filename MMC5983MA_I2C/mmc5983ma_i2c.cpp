@@ -4,9 +4,9 @@
  * Implementation of the MMC5983MA driver.
  */
 
-#include "mmc5983ma.hpp"
+#include "mmc5983ma_i2c.hpp"
 #include "mmc5983ma_regs.hpp"
-#include "spi_wrapper.hpp" 
+#include "i2c_wrapper.hpp" 
 #include <cstdint>
 
 using std::uint8_t;

@@ -8,10 +8,10 @@
 #define MMC5983MA_HPP
 
 #include "mmc5983ma_regs.hpp"
-#include "spi_wrapper.hpp" 
+#include "i2c_wrapper.hpp" 
 #include <cstdint>
-// if needed: fw declaration for the SPIClass from HAL/SPI wrapper, 
-// class SPIClass; 
+
+
 extern "C" {
     #include "stm32f4xx_hal.h"
 }
@@ -29,10 +29,10 @@ class MMC5983MA {
 public:
     /**
      * @brief Constructor
-     * @param spiBus Pointer to an initialized SPI wrapper instance.
-     * @param csPin The GPIO pin for chip select.
+     * @param i2cBus Pointer to an initialized I2C wrapper instance.
+     * @param address The I2C address of the sensor.
      */
-    MMC5983MA(SPI_Wrapper* spiBus, GPIO_TypeDef* csPort, std::uint16_t csPin);
+    MMC5983MA(I2C_Wrapper* i2cBus, std::uint8_t address);
     
     /**
      * @brief Initializes the sensor.
@@ -99,7 +99,7 @@ private:
     void readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len);
     
     // Member variables
-    SPI_Wrapper* _spi;
+    I2C_Wrapper* _i2c;
     std::uint16_t _csPin;
     GPIO_TypeDef* _csPort;
 
