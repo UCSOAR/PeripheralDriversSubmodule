@@ -1,27 +1,26 @@
 /*
- * spi_wrapper.hpp
+ * i2c_wrapper.hpp
  */
 
-#ifndef SPI_WRAPPER_HPP
-#define SPI_WRAPPER_HPP
+#ifndef I2C_WRAPPER_HPP
+#define I2C_WRAPPER_HPP
 
 #include <cstdint>
-//#include <array>
 
 extern "C" {
     #include "stm32f4xx_hal.h"
 }
 
-#define COMM_ERROR 5
+//#define COMM_ERROR 5
 
-class SPI_Wrapper {
+class I2C_Wrapper {
 public:
     /**
      * @brief Constructor.
-     * @param hspi Pointer to the HAL SPI handle (e.g., &hspi1)
+     * @param hi2c Pointer to the HAL I2C handle (e.g., &hi2c1)
      */
 
-    SPI_Wrapper(SPI_HandleTypeDef* hspi);
+    I2C_Wrapper(I2C_HandleTypeDef* hi2c);
 
     /**
      * @brief Transmits and receives a single byte.
@@ -36,9 +35,9 @@ public:
      * @param size Number of bytes to send.
      */
     void transmit(std::uint8_t* data, std::uint16_t size);
-
+    
 private:
-    SPI_HandleTypeDef* _hspi;
+    I2C_HandleTypeDef* _hi2c;
 };
 
-#endif // SPI_WRAPPER_HPP
+#endif // I2C_WRAPPER_HPP
