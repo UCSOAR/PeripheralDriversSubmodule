@@ -1,0 +1,4 @@
+[submodule "PeripheralDriversSubmodule"]
+	path = PeripheralDriversSubmodule
+	url = https://github.com/UCSOAR/PeripheralDriversSubmodule.git
+	branch = adamg/prototranslationgenscript
