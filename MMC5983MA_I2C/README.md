@@ -1,67 +1,71 @@
-# STM32 C++ Driver for MMC5983MA
+# STM32 C++ Driver for MMC5983MA (I2C)
 
 ### Description
-This is a C++ driver for the MEMSIC MMC5983MA 3-axis magnetometer, designed for STM32 microcontrollers using the HAL library.
+This is a high-performance C++ driver for the MEMSIC MMC5983MA 3-axis magnetometer, designed for STM32 microcontrollers using the HAL library.
 
-This driver communicates with the sensor over the SPI interface and is built to be easily integrated into STM32 projects.
+**Key Feature:** This driver uses a **Stateless I2C Wrapper**, making it thread-safe.
 
 ---
 
 ### Features
-* Read the device Product ID.
-* Trigger single-shot magnetic field measurements.
-* Perform SET and RESET operations.
-* Read 18-bit raw data for X, Y, and Z axes.
-* Calculate scaled magnetic field data in Gauss.
+* **Stateless Architecture:** Wrapper stores no state, preventing race conditions in preemptive environments.
+* **Standard I2C Support:** Communicates via the standard 2-wire I2C interface.
+* **Core Functionality:**
+    * Read Product ID (Validation).
+    * Trigger Magnetic Field Measurements.
+    * Perform SET and RESET operations (De-gaussing).
+    * Read and scale 18-bit X, Y, Z magnetic data (in Gauss).
 
 ---
 
 ### Project Structure
-* `spi/mmc5983ma.hpp`: The main driver class header. It defines the `MMC5983MA` class, public functions, and private helpers.
-* `spi/mmc5983ma.cpp`: The driver implementation file. Contains the logic for all class functions.
-* `spi/mmc5983ma_regs.hpp`: A helper header that defines all register addresses and bitmasks for the sensor.
-* `spi_wrapper.hpp` / `spi_wrapper.cpp`: An abstraction layer that wraps the STM32 HAL SPI functions (`HAL_SPI_TransmitReceive`, etc.) into a simple C++ class. The `MMC5983MA` driver uses this wrapper for all SPI communication.
-* `spi/MMC5983MA_RevA_4-3-19.pdf`: The official sensor datasheet.
+* `mmc5983ma_i2c.hpp` / `.cpp`: The main driver class. Handles register logic and data conversion.
+* `i2c_wrapper.hpp` / `.cpp`: A lightweight abstraction layer for STM32 HAL I2C functions.
+* `mmc5983ma_regs.hpp`: Register map and bit definitions.
+* `main_read_test.cpp`: Example implementation.
 
 ---
 
 ### Dependencies
-* **STM32 HAL Library:** The driver depends on HAL types (`SPI_HandleTypeDef`, `GPIO_TypeDef*`, etc.).
-* **`spi_wrapper`:** The `MMC5983MA` class requires a pointer to an initialized `SPI_Wrapper` object.
+* **STM32 HAL Library:** Requires `stm32f4xx_hal.h` (or equivalent for your F1/H7/L4 series).
+* **I2C Handle:** You must initialize an `I2C_HandleTypeDef` (e.g., `hi2c1`) in your `main.c`.
 
 ---
 
 ### How to Use
-Here is the high-level workflow for integrating the driver:
 
-1.  **Include Files:**
-    In your main application file, include the necessary headers:
+1.  **Include Headers:**
     ```cpp
-    #include "spi_wrapper.hpp"
-    #include "mmc5983ma.hpp"
+    #include "i2c_wrapper.hpp"
+    #include "mmc5983ma_i2c.hpp"
     ```
 
-2.  **Ensure Hardware is Configured:**
-    Before using the driver, make sure your STM32's `SPI_HandleTypeDef` (e.g., `hspi1`) and the Chip Select (CS) GPIO pin are configured and initialized by the HAL (e.g., in `main.c` via STM32CubeMX).
+2.  **Instantiate Objects:**
+    Since the driver is stateless, you create the wrapper and pass it by pointer to the driver, along with the device address.
+    ```cpp
+    // 1. Create Wrapper (Pass the HAL Handle)
+    I2C_Wrapper i2cBus(&hi2c1);
 
-3.  **Create Driver Instances:**
-    * Create an instance of `SPI_Wrapper`, passing it a pointer to your initialized `SPI_HandleTypeDef`.
-    * Create an instance of `MMC5983MA`, passing it a pointer to your `SPI_Wrapper` instance, along with the `GPIO_TypeDef*` and `uint16_t` pin number for your CS pin.
+    // 2. Create Driver (Pass Wrapper Pointer + I2C Address)
+    // Standard Address: 0x30 (0110000 shifted left by 1 is 0x60, handled internally)
+    MMC5983MA mag(&i2cBus, 0x30);
+    ```
 
-4.  **Initialize the Sensor:**
-    * Call the `.begin()` method on your `MMC5983MA` object.
-    * Check the return value (`bool`) to confirm that communication was successful and the sensor's Product ID was correctly read.
+3.  **Initialization & Reading:**
+    ```cpp
+    if (mag.begin()) {
+        // Init success
+    }
 
-5.  **Read Data in Your Main Loop:**
-    * Call `.triggerMeasurement()` to request a new reading from the sensor.
-    * Wait for the measurement to complete (refer to the datasheet for measurement time, e.g., `HAL_Delay(10)` for 100Hz bandwidth).
-    * Create a `MagData` struct variable.
-    * Call `.readData(your_mag_data_struct)`. If it returns `true`, your struct is now populated with the latest X, Y, and Z data.
+    // In your loop:
+    mag.triggerMeasurement();
+    HAL_Delay(10); // Wait for conversion (~8ms)
+    
+    MagData data;
+    if (mag.readData(data)) {
+        // Use data.scaledX, data.scaledY, data.scaledZ
+    }
+    ```
 
----
-
-### Complete Example
-Check `main_read_test.cpp` for a complete example on this.
-
-### Datasheet
-Initial commit, MMC5983MA magnetometer project Structure.
+### Address Note
+The MMC5983MA 7-bit address is `0x30`. The driver automatically handles the left-shift required by the HAL library.

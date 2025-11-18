@@ -6,16 +6,17 @@
 I2C_Wrapper::I2C_Wrapper(I2C_HandleTypeDef* hi2c) : _hi2c(hi2c) {
 }
 
-std::uint8_t I2C_Wrapper::transfer(std::uint8_t txByte) {
-    std::uint8_t rxByte = 0;
-
-    // HAL to send one byte and receive one byte (txByte).
-    HAL_I2C_Master_TransmitReceive(_hi2c, &txByte, &rxByte, 1, 100); // 100ms timeout
-
-    return rxByte;
+bool I2C_Wrapper::writeByte(std::uint8_t devAddr, std::uint8_t regAddr, std::uint8_t data) { 
+    // HAL_I2C_Mem_Write handles Reg Addr + Data Sequence
+    return HAL_I2C_Mem_Write(_hi2c, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, &data, 1, 100) == HAL_OK;
 }
 
-void I2C_Wrapper::transmit(std::uint8_t* data, std::uint16_t size) {
-    // HAL to transmit a block of data.
-    HAL_I2C_Master_Transmit(_hi2c, data, size, 100); // 100ms timeout
+std::uint8_t I2C_Wrapper::readByte(std::uint8_t devAddr, std::uint8_t regAddr) {
+    std::uint8_t data = 0; 
+    // HAL_I2C_Mem_Read handles Reg Addr + Data Sequence
+    return HAL_I2C_Mem_Read(_hi2c, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+}
+
+bool I2C_Wrapper::readBytes(std::uint8_t devAddr, std::uint8_t regAddr, std::uint8_t *data, std::uint8_t len) { 
+    return HAL_I2C_Mem_Read(_hi2c, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, data, 1, 100);
 }

@@ -11,11 +11,6 @@
 #include "i2c_wrapper.hpp" 
 #include <cstdint>
 
-
-extern "C" {
-    #include "stm32f4xx_hal.h"
-}
-
 struct MagData {
     std::uint32_t rawX;
     std::uint32_t rawY;
@@ -30,7 +25,7 @@ public:
     /**
      * @brief Constructor
      * @param i2cBus Pointer to an initialized I2C wrapper instance.
-     * @param address The I2C address of the sensor.
+     * @param address The 7Bit I2C address of the sensor.
      */
     MMC5983MA(I2C_Wrapper* i2cBus, std::uint8_t address);
     
@@ -41,7 +36,7 @@ public:
     bool begin();
 
     /**
-     * @brief Triggers a new magnetic field measurement.
+     * @brief Triggers a new MF measurement.
      */
     void triggerMeasurement();
 
@@ -67,14 +62,6 @@ public:
      */
     std::uint8_t getProductID();
 
-    // --- More functions; later ---
-    // bool isDataReady();
-    // void setBandwidth(std::uint8_t bw);
-    // float getTemperature();
-    // void startContinuousMode(std::uint8_t freq);
-    // void stopContinuousMode();
-
-
 private:
     /**
      * @brief Writes a single byte to a sensor register.
@@ -98,11 +85,9 @@ private:
      */
     void readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len);
     
-    // Member variables
+    // Dependencies
     I2C_Wrapper* _i2c;
-    std::uint16_t _csPin;
-    GPIO_TypeDef* _csPort;
-
+    std::uint8_t _address;
 
     // Constants for scaling data
     const float _countsPerGauss = 16384.0f;
