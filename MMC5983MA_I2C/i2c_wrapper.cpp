@@ -18,5 +18,5 @@ std::uint8_t I2C_Wrapper::readByte(std::uint8_t devAddr, std::uint8_t regAddr) {
 }
 
 bool I2C_Wrapper::readBytes(std::uint8_t devAddr, std::uint8_t regAddr, std::uint8_t *data, std::uint8_t len) { 
-    return HAL_I2C_Mem_Read(_hi2c, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, data, 1, 100);
+    return HAL_I2C_Mem_Read(_hi2c, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, data, len, 100) == HAL_OK;
 }
