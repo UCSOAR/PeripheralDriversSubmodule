@@ -15,7 +15,7 @@ extern "C" {
 
 // Include the driver files
 #include "spi_wrapper.hpp"
-#include "spi/mmc5983ma.hpp"
+#include "mmc5983ma.hpp"
 
 // For printf debugging (e.g., via SWV/ITM)
 #include <stdio.h>

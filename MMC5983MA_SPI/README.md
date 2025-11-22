@@ -17,11 +17,11 @@ This driver communicates with the sensor over the SPI interface and is built to 
 ---
 
 ### Project Structure
-* `spi/mmc5983ma.hpp`: The main driver class header. It defines the `MMC5983MA` class, public functions, and private helpers.
-* `spi/mmc5983ma.cpp`: The driver implementation file. Contains the logic for all class functions.
-* `spi/mmc5983ma_regs.hpp`: A helper header that defines all register addresses and bitmasks for the sensor.
+* `mmc5983ma.hpp`: The main driver class header. It defines the `MMC5983MA` class, public functions, and private helpers.
+* `mmc5983ma.cpp`: The driver implementation file. Contains the logic for all class functions.
+* `mmc5983ma_regs.hpp`: A helper header that defines all register addresses and bitmasks for the sensor.
 * `spi_wrapper.hpp` / `spi_wrapper.cpp`: An abstraction layer that wraps the STM32 HAL SPI functions (`HAL_SPI_TransmitReceive`, etc.) into a simple C++ class. The `MMC5983MA` driver uses this wrapper for all SPI communication.
-* `spi/MMC5983MA_RevA_4-3-19.pdf`: The official sensor datasheet.
+* `MMC5983MA_RevA_4-3-19.pdf`: The official sensor datasheet.
 
 ---
 
