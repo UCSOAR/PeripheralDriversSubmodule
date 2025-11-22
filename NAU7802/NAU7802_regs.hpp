@@ -6,7 +6,7 @@
 #ifndef NAU7802_REGS_HPP
 #define NAU7802_REGS_HPP
 
-// Fixed 7-bit I2C address of the NAU7802. [left-shifted for HAL functions]
+// Fixed 7-bit I2C address of the NAU7802. [left-shifted for HAL]
 #define NAU7802_I2C_ADDRESS (0x2A << 1)
 
 // Register Map
@@ -36,5 +36,16 @@
 #define NAU7802_PU_CTRL_CR       (1 << 5) // Cycle Ready (Read Only)
 #define NAU7802_PU_CTRL_OSCS     (1 << 6) // Select clock source
 #define NAU7802_PU_CTRL_AVDDS    (1 << 7) // Select internal LDO
+
+// CTRL2 Register Bits
+#define NAU7802_CTRL2_CHS        (1 << 7) // Channel Select
+#define NAU7802_CTRL2_CRS_MASK   (0b111 << 4) // Conversion Rate Select Mask
+#define NAU7802_CTRL2_CAL_ERR    (1 << 3) // Calibration Error (Read Only)
+#define NAU7802_CTRL2_CALS       (1 << 2) // Start Calibration
+
+// Calibration Modes (CALMOD bits 1:0)
+#define NAU7802_CALMOD_OFFSET_INT (0b00) // Internal Offset Calibration (Default)
+#define NAU7802_CALMOD_OFFSET_SYS (0b10) // System Offset Calibration
+#define NAU7802_CALMOD_GAIN_SYS   (0b11) // System Gain Calibration
 
 #endif // NAU7802_REGS_HPP

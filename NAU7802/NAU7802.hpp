@@ -6,23 +6,30 @@
 #ifndef NAU7802_HPP
 #define NAU7802_HPP
 
-#include <stdint.h>
-#include "I2C_Wrapper.hpp"
+#include <cstdint>
+#include "i2c_wrapper.hpp"
 #include "NAU7802_regs.hpp"
 
-/**
- * @brief Configuration parameters for the NAU7802 driver.
- */
-typedef struct NAU7802_DRIVER_PARAMETER {
-    uint8_t initialGain; // Use one of the NAU7802_GAIN_xxx macros
-} NAU7802_PARAMS;
 
 /**
  * @brief Output data structure for the NAU7802.
  */
 typedef struct NAU7802_OUTPUT {
-    int32_t raw_reading;
+    std::int32_t raw_reading;
 } NAU7802_OUT;
+
+// RTOS compatible delay function pointer type
+typedef void (*NauDelay)(uint32_t);
+
+
+// New Status Enum
+enum class NauStatus : uint8_t {
+    OK = 0,
+    ERR_I2C,
+    ERR_TIMEOUT,
+    ERR_NOT_READY,
+    ERR_INVALID_ARG
+};
 
 
 class NAU7802 {
@@ -32,27 +39,59 @@ public:
      * @param configs Configuration settings for the sensor.
      * @param i2c_pointer I2C Wrapper for communication.
      */
-    NAU7802(NAU7802_PARAMS configs, I2C_Wrapper& i2c_pointer);
+    NAU7802(I2C_Wrapper* i2c_pointer, NauDelay delayFunction, std::uint8_t address = NAU7802_I2C_ADDRESS);
 
-    // Check if conversion is ready
+
+
+    /**
+    * @brief Initializes the sensor, resets and waits for power up ready.
+    * @return true if sensor detected and powered up, false otherwise.
+    */
+    NauStatus begin(uint8_t initialGain = NAU7802_GAIN_1X);
+
+    /**
+     * @brief Checks the Cycle Ready (CR) bit.
+     * @return true if new data is available.
+     */
     bool isReady();
 
-    // Read 24-bit signed ADC value
-    uint8_t readSensor(NAU7802_OUT *dest);
+    /**
+     * @brief Reads the 24-bit signed ADC value.
+     * @param dest Pointer to the output struct.
+     * @return true if read was successful.
+     */
+    NauStatus readSensor(NAU7802_OUT *dest);
 
-    // Software reset
-    bool reset();
+    /**
+     * @brief Performs a software reset of the device.
+     */
+    NauStatus reset();
 
-    // Set PGA gain
-    bool setGain(uint8_t gain);
+    /**
+     * @brief Sets the Programmable Gain Amplifier (PGA) setting.
+     * @param gain One of NAU7802_GAIN_xxx constants.
+     * @return true if write successful.
+     */
+    NauStatus setGain(std::uint8_t gain);
 
-    // Check if the driver is initialized
-    bool get_isInitialized(void);
+    /**
+     * @brief Calibrates the internal offsets (Optional usage).
+     */
+    NauStatus calibrate();
 
 private:
-    I2C_Wrapper& i2c; // Reference to the I2C wrapper
-    bool isInitialized;
-    NAU7802_PARAMS parameters; // Store the configs
+
+    // Private Helpers
+    NauStatus writeRegister(std::uint8_t reg, std::uint8_t value);
+    NauStatus readRegister(std::uint8_t reg, std::uint8_t* value);
+    NauStatus readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len);
+    NauStatus modifyRegisterBit(std::uint8_t reg, std::uint8_t bitMask, bool state);
+
+    // Member Variables
+    I2C_Wrapper* _i2c;
+    std::uint8_t _deviceAddress;
+    NauDelay _delay;
+
 };
 
 #endif // NAU7802_HPP
