@@ -1,15 +1,21 @@
-/*
- * nau7802.hpp
- *
- * Driver for the NAU7802 24-bit ADC.
+ /**
+ ********************************************************************************
+ * @file    NAU7802.hpp
+ * @author  Javier
+ * @date    2025-11-25
+ * @brief   Header for the NAU7802 24-bit ADC Driver.
+ ********************************************************************************
  */
+
 #ifndef NAU7802_HPP
 #define NAU7802_HPP
 
+/************************************
+ * INCLUDES
+ ************************************/
 #include <cstdint>
 #include "i2c_wrapper.hpp"
 #include "NAU7802_regs.hpp"
-
 
 /**
  * @brief Output data structure for the NAU7802.
@@ -18,10 +24,18 @@ typedef struct NAU7802_OUTPUT {
     std::int32_t raw_reading;
 } NAU7802_OUT;
 
+
+/************************************
+ * TYPEDEFS
+ ************************************/
 // RTOS compatible delay function pointer type
-typedef void (*NauDelay)(uint32_t);
+
+typedef void (*NauDelay)(std::uint32_t);
 
 
+/************************************
+ * CLASS DEFINITIONS
+ ************************************/
 // New Status Enum
 enum class NauStatus : uint8_t {
     OK = 0,
@@ -94,4 +108,4 @@ private:
 
 };
 
-#endif // NAU7802_HPP
+#endif /* NAU7802_HPP */

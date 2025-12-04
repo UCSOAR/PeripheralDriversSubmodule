@@ -1,8 +1,18 @@
-/*
- * nau7802_regs.hpp
- *
- * Register definitions and constants for the NAU7802 ADC.
+ /**
+ ********************************************************************************
+ * @file    nau7802_regs.hpp
+ * @author  Javier
+ * @date    2025-11-25
+ * @brief   Register definitions and constants for the NAU7802 ADC.
+ ********************************************************************************
  */
+
+
+
+/************************************
+ * MACROS AND DEFINES
+ ************************************/
+
 #ifndef NAU7802_REGS_HPP
 #define NAU7802_REGS_HPP
 

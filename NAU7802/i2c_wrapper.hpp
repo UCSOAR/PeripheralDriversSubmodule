@@ -1,16 +1,30 @@
-/*
- * i2c_wrapper.hpp
+ /**
+ ********************************************************************************
+ * @file    i2c_wrapper.hpp
+ * @author  Javier
+ * @date    2025-11-25
+ * @brief   I2C communication wrapper.
+ ********************************************************************************
  */
 
 #ifndef I2C_WRAPPER_HPP
 #define I2C_WRAPPER_HPP
 
+
+/************************************
+ * INCLUDES
+ ************************************/
 #include <cstdint>
 
 extern "C" {
-    #include "stm32f4xx_hal.h"
+    #include "main.h"
 }
 
+
+
+/************************************
+ * CLASS DEFINITIONS
+ ************************************/
 class I2C_Wrapper {
 public:
     /**

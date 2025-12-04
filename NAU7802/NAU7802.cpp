@@ -1,11 +1,14 @@
-/*
- * nau7802.cpp
- *
- * Implementation of the NAU7802 driver.
+/**
+ ********************************************************************************
+ * @file    nau7802.cpp
+ * @author  Javier
+ * @date    2025-11-25
+ * @brief   Implementation of the NAU7802 driver.
+ ********************************************************************************
  */
 
 #include "NAU7802.hpp"
-#include "stm32f4xx_hal.h"
+#include "main.h"
 #include <cstdint>
 
 NAU7802::NAU7802(I2C_Wrapper* i2c_pointer, NauDelay delayFunction, std::uint8_t address)
@@ -124,7 +127,6 @@ NauStatus NAU7802::writeRegister(std::uint8_t reg, std::uint8_t value) {
 }
 
 NauStatus NAU7802::readRegister(std::uint8_t reg, std::uint8_t* value) {
-    // Change: Pass pointer to wrapper
     if (_i2c->readByte(_deviceAddress, reg, value)) {
         return NauStatus::OK;
     }

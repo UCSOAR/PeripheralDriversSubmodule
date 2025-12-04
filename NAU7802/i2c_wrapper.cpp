@@ -13,7 +13,6 @@ bool I2C_Wrapper::writeByte(std::uint8_t devAddr, std::uint8_t regAddr, std::uin
 }
 
 bool I2C_Wrapper::readByte(std::uint8_t devAddr, std::uint8_t regAddr, std::uint8_t* dest) {
-    std::uint8_t data = 0; 
     // HAL_I2C_Mem_Read handles Reg Addr + Data Sequence
     return (HAL_I2C_Mem_Read(_hi2c, devAddr, regAddr, I2C_MEMADD_SIZE_8BIT, dest, 1, 100) == HAL_OK);
 }
