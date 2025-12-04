@@ -20,7 +20,10 @@ INCLUDES = \
     -I/home/BerryByte/SOAR/general/dependencies/stm32f4xx_hal_driver/Inc/Legacy \
     -I/home/BerryByte/SOAR/general/dependencies/STM32CubeF4/Drivers/CMSIS/RTOS/Template \
     -I/home/BerryByte/SOAR/general/AvionicsTemplateRepository/SoarOS/Core/Inc \
-    -I/home/BerryByte/SOAR/general/AvionicsTemplateRepository/SoarOS
+    -I/home/BerryByte/SOAR/general/AvionicsTemplateRepository/SoarOS \
+	-I/home/BerryByte/SOAR/general/AvionicsDisco/AvionicsSoftware/Components \
+	-I/home/BerryByte/SOAR/general/AvionicsDisco/Middlewares/Third_Party/FreeRTOS/Source/include/ \
+	-I/home/BerryByte/SOAR/general/AvionicsDisco/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/ \
 
 # Note: Added the path ending in /SoarOS above so <Core/Inc/Queue.hpp> resolves correctly.
 
