@@ -85,6 +85,7 @@ uint8_t MAX31856Driver::GetCJHF() {
 bool MAX31856Driver::SetCR0(uint8_t value) {
     return SetRegister(MAX31856_REG::CR0, value);
 }
+
 uint8_t MAX31856Driver::GetCR0() {
     return GetRegister(MAX31856_REG::CR0);
 }
@@ -197,4 +198,3 @@ float MAX31856Driver::ReadThermocoupleTempC() {
 uint8_t MAX31856Driver::GetFaultStatus() {
     return GetRegister(MAX31856_REG::SR);
 }
-
