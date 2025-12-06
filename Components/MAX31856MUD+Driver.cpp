@@ -7,12 +7,7 @@
 
 #define SPI_DUMMY_BYTE 0xFF
 
-MAX31856Driver::MAX31856Driver() {
-}
-
-MAX31856Driver::~MAX31856Driver() {
-}
-
+//marks driver as initialized
 void MAX31856Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_) {
     hspi = hspi_;
     initialized = true;
@@ -22,36 +17,6 @@ void MAX31856Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint
 
     // Optionally read CR0 to confirm SPI works
     (void)GetRegister(MAX31856_REG::CR0);
-}
-
-void MAX31856Driver::CSLow() {
-    assert(initialized);
-    HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-}
-
-void MAX31856Driver::CSHigh() {
-    assert(initialized);
-    HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
-}
-
-void MAX31856Driver::SetCSPin(GPIO_TypeDef* gpio, uint16_t pin) {
-    cs_gpio = gpio;
-    cs_pin = pin;
-}
-
-bool MAX31856Driver::SetRegister(MAX31856_REG::REG reg, uint8_t val) {
-    assert(initialized);
-
-    uint8_t tx[2] = {
-        uint8_t(reg & 0x7F),
-        val
-    };
-
-    CSLow();
-    HAL_StatusTypeDef r = HAL_SPI_Transmit(hspi, tx, 2, 1000);
-    CSHigh();
-
-    return r == HAL_OK;
 }
 
 uint8_t MAX31856Driver::GetRegister(MAX31856_REG::REG reg) {
@@ -69,6 +34,124 @@ uint8_t MAX31856Driver::GetRegister(MAX31856_REG::REG reg) {
     CSHigh();
 
     return rx[1];
+}
+
+bool MAX31856Driver::SetRegister(MAX31856_REG::REG reg, uint8_t val) {
+    assert(initialized);
+
+    uint8_t tx[2] = {
+        uint8_t(reg & 0x7F),
+        val
+    };
+
+    CSLow();
+    HAL_StatusTypeDef r = HAL_SPI_Transmit(hspi, tx, 2, 1000);
+    CSHigh();
+
+    return r == HAL_OK;
+}
+
+void MAX31856Driver::CSLow() {
+    assert(initialized);
+    HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+}
+
+void MAX31856Driver::CSHigh() {
+    assert(initialized);
+    HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+}
+
+void MAX31856Driver::SetCSPin(GPIO_TypeDef* gpio, uint16_t pin) {
+    cs_gpio = gpio;
+    cs_pin = pin;
+}
+
+bool MAX31856Driver::SetMASK(uint8_t value) {
+    return SetRegister(MAX31856_REG::MASK, value);
+}
+
+uint8_t MAX31856Driver::GetMASK() {
+    return GetRegister(MAX31856_REG::MASK);
+}
+
+bool MAX31856Driver::SetCJHF(uint8_t value) {
+    return SetRegister(MAX31856_REG::CJHF, value);
+}
+
+uint8_t MAX31856Driver::GetCJHF() {
+    return GetRegister(MAX31856_REG::CJHF);
+}
+
+bool MAX31856Driver::SetCR1(uint8_t value) {
+    return SetRegister(MAX31856_REG::CR1, value);
+}
+
+uint8_t MAX31856Driver::GetCR1() {
+    return GetRegister(MAX31856_REG::CR1);
+}
+
+bool MAX31856Driver::SetCJLF(uint8_t value) {
+    return SetRegister(MAX31856_REG::CJLF, value);
+}
+
+uint8_t MAX31856Driver::GetCJLF() {
+    return GetRegister(MAX31856_REG::CJLF);
+}
+//
+bool MAX31856Driver::SetLTHFTH(uint8_t value) {
+    return SetRegister(MAX31856_REG::LTHFTH, value);
+}
+
+uint8_t MAX31856Driver::GetLTHFTH() {
+    return GetRegister(MAX31856_REG::LTHFTH);
+}
+
+bool MAX31856Driver::SetLTHFTL(uint8_t value) {
+    return SetRegister(MAX31856_REG::LTHFTL, value);
+}
+
+uint8_t MAX31856Driver::GetLTHFTL() {
+    return GetRegister(MAX31856_REG::LTHFTL);
+}
+
+bool MAX31856Driver::SetLTLFTH(uint8_t value) {
+    return SetRegister(MAX31856_REG::LTLFTH, value);
+}
+
+uint8_t MAX31856Driver::GetLTLFTH() {
+    return GetRegister(MAX31856_REG::LTLFTH);
+}
+
+bool MAX31856Driver::SetCJTO(uint8_t value) {
+    return SetRegister(MAX31856_REG::CJTO, value);
+}
+
+uint8_t MAX31856Driver::GetCJTO() {
+    return GetRegister(MAX31856_REG::CJTO);
+}
+
+bool MAX31856Driver::SetCJTH(uint8_t value) {
+    return SetRegister(MAX31856_REG::CJTH, value);
+}
+
+uint8_t MAX31856Driver::GetCJTH() {
+    return GetRegister(MAX31856_REG::CJTH);
+}
+
+bool MAX31856Driver::SetCJTL(uint8_t value) {
+    return SetRegister(MAX31856_REG::CJTL, value);
+}
+
+uint8_t MAX31856Driver::GetCJTL() {
+    return GetRegister(MAX31856_REG::CJTL);
+}
+
+bool MAX31856Driver::SetLTLFTL(uint8_t value) {
+    return SetRegister(MAX31856_REG::LTLFTL, value);
+}
+
+uint8_t MAX31856Driver::GetLTLFTL() {
+    return GetRegister(MAX31856_REG::LTLFTL);
 }
 
 void MAX31856Driver::GetMultipleRegisters(MAX31856_REG::REG startreg, int numBytes, uint8_t* out) {
@@ -107,3 +190,4 @@ float MAX31856Driver::ReadThermocoupleTempC() {
 uint8_t MAX31856Driver::GetFaultStatus() {
     return GetRegister(MAX31856_REG::SR);
 }
+

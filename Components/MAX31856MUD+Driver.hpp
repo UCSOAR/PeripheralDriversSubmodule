@@ -22,6 +22,7 @@ namespace MAX31856_REG {
         LTCBM = 0x0D,
         LTCBL = 0x0E,
         SR = 0x0F
+
     };
 }
 
@@ -51,4 +52,3 @@ private:
 };
 
 #endif
-
