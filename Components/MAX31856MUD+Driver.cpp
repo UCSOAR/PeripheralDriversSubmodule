@@ -82,6 +82,13 @@ uint8_t MAX31856Driver::GetCJHF() {
     return GetRegister(MAX31856_REG::CJHF);
 }
 
+bool MAX31856Driver::SetCR0(uint8_t value) {
+    return SetRegister(MAX31856_REG::CR0, value);
+}
+uint8_t MAX31856Driver::GetCR0() {
+    return GetRegister(MAX31856_REG::CR0);
+}
+
 bool MAX31856Driver::SetCR1(uint8_t value) {
     return SetRegister(MAX31856_REG::CR1, value);
 }
@@ -97,7 +104,7 @@ bool MAX31856Driver::SetCJLF(uint8_t value) {
 uint8_t MAX31856Driver::GetCJLF() {
     return GetRegister(MAX31856_REG::CJLF);
 }
-//
+
 bool MAX31856Driver::SetLTHFTH(uint8_t value) {
     return SetRegister(MAX31856_REG::LTHFTH, value);
 }
