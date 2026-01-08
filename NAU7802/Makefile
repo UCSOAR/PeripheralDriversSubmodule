@@ -10,6 +10,7 @@ MCU      = -mcpu=cortex-m4 -mthumb -DSTM32F407xx -DUSE_HAL_DRIVER
 CFLAGS   = -c -Wall $(MCU) $(INCLUDES)
 CXXFLAGS = -c -Wall $(MCU) $(INCLUDES)
 
+
 # Include Directories
 INCLUDES = \
     -I. \
@@ -21,11 +22,11 @@ INCLUDES = \
     -I/home/BerryByte/SOAR/general/dependencies/STM32CubeF4/Drivers/CMSIS/RTOS/Template \
     -I/home/BerryByte/SOAR/general/AvionicsTemplateRepository/SoarOS/Core/Inc \
     -I/home/BerryByte/SOAR/general/AvionicsTemplateRepository/SoarOS \
-	-I/home/BerryByte/SOAR/general/AvionicsDisco/AvionicsSoftware/Components \
-	-I/home/BerryByte/SOAR/general/AvionicsDisco/Middlewares/Third_Party/FreeRTOS/Source/include/ \
-	-I/home/BerryByte/SOAR/general/AvionicsDisco/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/ \
+    -I/home/BerryByte/SOAR/general/AvionicsDisco/AvionicsSoftware/Components \
+    -I/home/BerryByte/SOAR/general/AvionicsDisco/AvionicsSoftware/Core/Inc \
+    -I/home/BerryByte/SOAR/general/AvionicsDisco/Middlewares/Third_Party/FreeRTOS/Source/include/ \
+    -I/home/BerryByte/SOAR/general/AvionicsDisco/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/ \
 
-# Note: Added the path ending in /SoarOS above so <Core/Inc/Queue.hpp> resolves correctly.
 
 # Source Files
 SOURCES_CPP = \
