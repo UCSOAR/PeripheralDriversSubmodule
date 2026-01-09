@@ -24,15 +24,6 @@ typedef struct NAU7802_OUTPUT {
     std::int32_t raw_reading;
 } NAU7802_OUT;
 
-
-/************************************
- * TYPEDEFS
- ************************************/
-// RTOS compatible delay function pointer type
-
-typedef void (*NauDelay)(std::uint32_t);
-
-
 /************************************
  * CLASS DEFINITIONS
  ************************************/
@@ -53,7 +44,7 @@ public:
      * @param configs Configuration settings for the sensor.
      * @param i2c_pointer I2C Wrapper for communication.
      */
-    NAU7802(I2C_Wrapper* i2c_pointer, NauDelay delayFunction, std::uint8_t address = NAU7802_I2C_ADDRESS);
+    NAU7802(I2C_Wrapper* i2c_pointer, std::uint8_t address = NAU7802_I2C_ADDRESS);
 
 
 
@@ -104,7 +95,6 @@ private:
     // Member Variables
     I2C_Wrapper* _i2c;
     std::uint8_t _deviceAddress;
-    NauDelay _delay;
 
 };
 

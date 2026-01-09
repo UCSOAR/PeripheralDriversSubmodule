@@ -12,16 +12,21 @@
 /************************************
  * INCLUDES
  ************************************/
+#include "main.h"
+
+// FreeRTOS includes
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "semphr.h"
 
-#include "Task.hpp"
+// system includes
 #include "SystemDefines.hpp"
-#include "NAU7802.hpp"
+#include "Task.hpp"
 
+// Driver Includes
+#include "NAU7802.hpp"
 #include "i2c_wrapper.hpp"
-#include "main.h"
 
 /************************************
  * CLASS DEFINITIONS

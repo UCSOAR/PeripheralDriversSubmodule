@@ -11,8 +11,8 @@
 #include "main.h"
 #include <cstdint>
 
-NAU7802::NAU7802(I2C_Wrapper* i2c_pointer, NauDelay delayFunction, std::uint8_t address)
-  : _i2c(i2c_pointer), _delay(delayFunction), _deviceAddress(address) {}
+NAU7802::NAU7802(I2C_Wrapper* i2c_pointer, std::uint8_t address)
+  : _i2c(i2c_pointer), _deviceAddress(address) {}
 
 // Begin NAU7802 Startup Sequence
 NauStatus NAU7802::begin(uint8_t initialGain) {
@@ -21,7 +21,7 @@ NauStatus NAU7802::begin(uint8_t initialGain) {
     if (reset() != NauStatus::OK) {
         return NauStatus::ERR_I2C; // Failed to reset
     }
-    _delay(10);
+    HAL_Delay(10);
 
     // 2. Power up the analog and digital sections
     uint8_t pu_ctrl = NAU7802_PU_CTRL_PUA | NAU7802_PU_CTRL_PUD;
@@ -37,7 +37,7 @@ NauStatus NAU7802::begin(uint8_t initialGain) {
                 break;
             }
         }
-        _delay(1);
+        HAL_Delay(1);
         attempts--;
     }
     return setGain(initialGain);
@@ -77,7 +77,7 @@ NauStatus NAU7802::reset() {
     // RR bit
     modifyRegisterBit(NAU7802_REG_PU_CTRL, NAU7802_PU_CTRL_RR, true);
 
-    _delay(1); // Small delay to ensure reset is processed
+    HAL_Delay(1); // Small delay to ensure reset is processed
 
     // Clear RR bit
     return modifyRegisterBit(NAU7802_REG_PU_CTRL, NAU7802_PU_CTRL_RR, false);

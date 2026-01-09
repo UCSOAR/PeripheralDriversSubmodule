@@ -43,7 +43,7 @@ int main(void)
   
   // 3. Create the driver object
   // Pass the address of the wrapper and the HAL_Delay function pointer
-  NAU7802 adc(&i2c_bus_1, HAL_Delay);
+  NAU7802 adc(&i2c_bus_1);
 
   // 4. Initialize the sensor
   // Initializing with 1x Gain. Options: NAU7802_GAIN_1X through _128X

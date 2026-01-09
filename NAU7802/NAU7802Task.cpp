@@ -47,12 +47,9 @@
 void NAU7802Task::Init(I2C_HandleTypeDef* hi2c)
 {
     SOAR_ASSERT(hi2c != nullptr, "NAU7802Task: Received Null I2C Handle");
-
-    // Initialize objects for driver use
+    
     _i2c_wrapper = new I2C_Wrapper(hi2c);
-    //_adc = new NAU7802(_i2c_wrapper, HAL_Delay);
-    _adc = new NAU7802(_i2c_wrapper, HAL_Delay);
-    //_adc = new NAU7802(_i2c_wrapper, NauDelay(HAL_Delay));
+    _adc = new NAU7802(_i2c_wrapper);
 }
 
 
