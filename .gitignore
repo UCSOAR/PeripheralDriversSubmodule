@@ -1,2 +1,5 @@
 # Ignore .pre-commit-config.yaml
 .pre-commit-config.yaml
+
+#Ignore Makefile
+Makefile
