@@ -2,7 +2,7 @@
  ********************************************************************************
  * @file    NAU7802Task.cpp
  * @author  Javier
- * @date    2025-11-25
+ * @date    2026-01-10
  * @brief   Implementation of the NAU7802 task handling.
  ********************************************************************************
  */
@@ -117,11 +117,9 @@ void NAU7802Task::Run(void * pvParams)  // Instance Run loop for task
 
 void NAU7802Task::HandleCommand(Command & cm)
 {
-    // Handle task-specific commands here
-    // Example:
     switch (cm.GetTaskCommand())
     {
-    // TODO: Add command cases (Gain change, calibration, etc.)
+    // TODO: Add command cases (Gain change, calibration, etc.) IF NEEDED
     
     /*
     -- Example command --
@@ -134,5 +132,5 @@ void NAU7802Task::HandleCommand(Command & cm)
         break;
     }
 
-    cm.Reset(); // Clean up command
+    cm.Reset();
 }

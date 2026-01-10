@@ -38,8 +38,7 @@ public:
         static NAU7802Task inst;
         return inst;
     }
-
-    // call in main passing &hi2c1 before InitTask
+    
     void Init(I2C_HandleTypeDef* hi2c);
 
     void InitTask();
