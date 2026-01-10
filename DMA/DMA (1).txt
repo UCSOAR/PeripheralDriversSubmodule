@@ -1,0 +1,106 @@
+DMA
+
+STM32 at least one DMA controller for data transfer duties offload from cpu
+
+STM32G4 - more flexible
+
+32bit data width (same as STM32F0/F1/F3/Cx/Gx/Lx/U0)
+----------------------
+AHB buses (1 or +)  bus matrix and the peripherals.
+"AHB bus does not provide the data (aka layer) parallelism of the bus matrix, but it runs on the same system
+clock speed, and provide moderate bandwidth, thanks to its pipelined data/address protocol"
+
+APB
+APB buses (1 or +) DMA data transfer from or to an APB peripheral is first crossing the bus matrix, and the AHB to APB bridge.
+APB bus -> connect and share 1+ APB periph (low bandwidth req). APB CLK spd can be tuned down from AHB speed w/CLK div.
+high divider ratio
+yields lower power consumption, but at the cost of lower bandwidth and higher latency.
+
+DMA channels == improves bus bandwidth usage, but + latency (due to highest priority channel DMA arbitration scheme)
+
+Same transfer in the opposite direction (peripheral to memory) same latency for the DMA data transfer.
+
+
+"The assignment of the available bus resources can be focused on bandwidth (bus is assigned for a longer period,
+minimizing overhead) or on low latency in sharing (simple and fast switching between tasks). The requirements in
+MCU use cases favor the latter choice. This way it is impossible to use the whole bus bandwidth for a single DMA
+transfer, but sharing is efficient."
+
+DMA1 transfer from SRAM1 to AES can access the
+bus matrix simultaneously with DMA2 transfer from flash memory to any APB communication interface. No
+conflict and arbitration occurs
+
+better to assign priorities to minimize latency within the round for selected channels
+
+The APB bus introduces a first
+additional latency with the AHB to APB bridge. Another APB cause of extra latency is when the APB peripheral is
+used with a lower APB frequency vs the AHB frequency. 
+
+
+
+
+==========================
+DMAMUX: 
+
+The DMAMUX controller is designed to simplify the allocation of embedded application resources. It offers the
+flexibility to dynamically allocate a peripheral to a DMA channel, and increases the DMA capabilities thanks to a
+synchronization mechanism that allows to free the CPU from some tasks. The combination of synchronization and
+request generation can be used to implement power optimized data transfer (in autonomous mode without CPU
+involvement)
+
+
+explained:
+
+fully configurable routing of any DMA request from a given peripheral in DMA mode to any DMA channel of the DMA controllers.
+not add any clock cycles between DMA req (sent from periph) and (received by dma channel)
+Dedicated inputs for DMA req sync
+able to generate req from own trigger in or software.
+more flexibility, resulting in full dynamic DMA peripheral request mapping instead of pseudo-dynamic mapping.
+
+
+synchronization signal (SYNC_ID), the synchronization signal polarity (SPOL) and the number of requests to
+forward (NBREQ + 1) are configured in the request line multiplexer channel configuration register
+(DMAMUX_CxCR).
+==========================
+
+
+
+
+
+
+************************
+SPECIFIC TO G4:
+8 DMA 1
+8 DMA 2
+
+as x2 8 DMA chann :. 16 request multiplexer channels available
+
+DMAMUX - 4 channels, 21 IN
+Harvard arch
+Flash mem connection - 32 + 32 b
+CPU Core - M4 
+AHB:APB bridge CLK - 2
+
+
+***********************
+
+
+
+***********************
+
+STM32H7
+
+
+DUAL AHB master bus architecture with independent FIFO: optimize the system bandwidth
+16 streams over (DMA1 DMA2)
+indep stream interr flags
+four-word FIFO per stream allows performing data
+packing/unpacking and burst transfers
+
+STM32CubeH7 examples
+The following examples are available on the STM32CubeH7 under root "Projects\STM32H743I-
+EVAL\Examples\DMA\":
+
+***********************
+
+
