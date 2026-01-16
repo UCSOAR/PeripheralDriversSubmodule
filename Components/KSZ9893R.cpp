@@ -91,4 +91,3 @@ bool KSZ9893RDriver::LinkStatus(uint8_t port) {
     uint8_t status = ReadRegister(PHY_STATUS_BASE + port);
     return (status & LINK_UP_BIT) != 0;
 }
-
