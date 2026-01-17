@@ -15,16 +15,14 @@ namespace KSZ9893R_REG {
         PHY3_STATUS = 0x0102
     };
 }
-
-#define KSZ9893R_CHIP_ID1_VAL 0x98
-#define KSZ9893R_CHIP_ID2_VAL 0x93
-
 class KSZ9893RDriver {
 public:
     KSZ9893RDriver();
     ~KSZ9893RDriver();
 
-    void Init(SPI_HandleTypeDef *hspi, GPIO_TypeDef *gpio, uint16_t pin);
+    void Init(SPI_HandleTypeDef *hspi,
+              GPIO_TypeDef *gpio,
+              uint16_t pin);
 
     bool SetRegister(KSZ9893R_REG::REG reg, uint8_t val);
     uint8_t GetRegister(KSZ9893R_REG::REG reg);
