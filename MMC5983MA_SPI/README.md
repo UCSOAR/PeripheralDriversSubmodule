@@ -1,6 +1,9 @@
 # STM32 C++ Driver for MMC5983MA
 
+##
+
 ### Description
+
 This is a C++ driver for the MEMSIC MMC5983MA 3-axis magnetometer, designed for STM32 microcontrollers using the HAL library.
 
 This driver communicates with the sensor over the SPI interface and is built to be easily integrated into STM32 projects.
@@ -8,6 +11,7 @@ This driver communicates with the sensor over the SPI interface and is built to 
 ---
 
 ### Features
+
 * Read the device Product ID.
 * Trigger single-shot magnetic field measurements.
 * Perform SET and RESET operations.
@@ -17,6 +21,7 @@ This driver communicates with the sensor over the SPI interface and is built to 
 ---
 
 ### Project Structure
+
 * `mmc5983ma.hpp`: The main driver class header. It defines the `MMC5983MA` class, public functions, and private helpers.
 * `mmc5983ma.cpp`: The driver implementation file. Contains the logic for all class functions.
 * `mmc5983ma_regs.hpp`: A helper header that defines all register addresses and bitmasks for the sensor.
@@ -26,33 +31,37 @@ This driver communicates with the sensor over the SPI interface and is built to 
 ---
 
 ### Dependencies
+
 * **STM32 HAL Library:** The driver depends on HAL types (`SPI_HandleTypeDef`, `GPIO_TypeDef*`, etc.).
 * **`spi_wrapper`:** The `MMC5983MA` class requires a pointer to an initialized `SPI_Wrapper` object.
 
 ---
 
 ### How to Use
+
 Here is the high-level workflow for integrating the driver:
 
-1.  **Include Files:**
+1. **Include Files:**
+
     In your main application file, include the necessary headers:
+
     ```cpp
     #include "spi_wrapper.hpp"
     #include "mmc5983ma.hpp"
     ```
 
-2.  **Ensure Hardware is Configured:**
+2. **Ensure Hardware is Configured:**
     Before using the driver, make sure your STM32's `SPI_HandleTypeDef` (e.g., `hspi1`) and the Chip Select (CS) GPIO pin are configured and initialized by the HAL (e.g., in `main.c` via STM32CubeMX).
 
-3.  **Create Driver Instances:**
+3. **Create Driver Instances:**
     * Create an instance of `SPI_Wrapper`, passing it a pointer to your initialized `SPI_HandleTypeDef`.
     * Create an instance of `MMC5983MA`, passing it a pointer to your `SPI_Wrapper` instance, along with the `GPIO_TypeDef*` and `uint16_t` pin number for your CS pin.
 
-4.  **Initialize the Sensor:**
+4. **Initialize the Sensor:**
     * Call the `.begin()` method on your `MMC5983MA` object.
     * Check the return value (`bool`) to confirm that communication was successful and the sensor's Product ID was correctly read.
 
-5.  **Read Data in Your Main Loop:**
+5. **Read Data in Your Main Loop:**
     * Call `.triggerMeasurement()` to request a new reading from the sensor.
     * Wait for the measurement to complete (refer to the datasheet for measurement time, e.g., `HAL_Delay(10)` for 100Hz bandwidth).
     * Create a `MagData` struct variable.
@@ -61,7 +70,9 @@ Here is the high-level workflow for integrating the driver:
 ---
 
 ### Complete Example
+
 Check `main_read_test.cpp` for a complete example on this.
 
 ### Datasheet
+
 Initial commit, MMC5983MA magnetometer project Structure.

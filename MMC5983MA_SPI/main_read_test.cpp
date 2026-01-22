@@ -10,7 +10,7 @@
 // Include the HAL library for SPI_HandleTypeDef, GPIO_TypeDef, etc.
 // The exact path might vary based on your project structure.
 extern "C" {
-    #include "main.h" // Or "stm32f4xx_hal.h" directly
+    #include "main.h"
 }
 
 // Include the driver files
@@ -23,10 +23,6 @@ extern "C" {
 // ##################################################################
 // ##                 Hardware Configuration                     ##
 // ##################################################################
-
-// --- IMPORTANT ---
-// You must update these definitions to match your hardware configuration
-// set up in your .ioc (STM32CubeMX) file.
 
 // 1. Define your SPI Handle (e.g., hspi1, hspi2)
 // This handle must be initialized in main.c
@@ -75,6 +71,7 @@ int main(void)
         while (1) {
             // Hang here on failure
             HAL_Delay(1000);
+            // return -1; // Or handle error as needed  
         }
     }
 
