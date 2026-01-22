@@ -4,8 +4,8 @@
 #include "stm32l4xx_hal.h"
 #include <stdint.h>
 
+// Register addresses
 namespace KSZ9893R_REG {
-
     enum REG : uint16_t {
         CHIP_ID1        = 0x0000,
         CHIP_ID2        = 0x0001,
@@ -25,24 +25,20 @@ class KSZ9893RDriver {
 public:
     bool Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* cs_gpio, uint16_t cs_pin);
 
-    uint8_t ReadReg(KSZ9893R_REG::REG reg);
-    bool    WriteReg(KSZ9893R_REG::REG reg, uint8_t value);
+    uint8_t ReadReg(uint16_t reg);
+    void WriteReg(uint16_t reg, uint8_t value);
     bool ReadRegs(uint16_t startAddr, uint8_t* buffer, uint16_t length);
-    bool SoftReset();
+    void SoftReset();
     bool LinkUp(uint8_t port);
 
 private:
-    SPI_HandleTypeDef* hspi = nullptr;
-    GPIO_TypeDef* cs_gpio = nullptr;
-    uint16_t cs_pin = 0;
+    SPI_HandleTypeDef* hspi;
+    GPIO_TypeDef* cs_gpio;
+    uint16_t cs_pin;
 
-    void CSLow();
-    void CSHigh();
-
+    // Basic SPI operations
     bool SPI_Read(uint16_t addr, uint8_t* data, uint16_t len);
-    bool SPI_Write(uint16_t addr, const uint8_t* data, uint16_t len);
-
-    bool ConfigureRMII_Port3();
+    bool SPI_Write(uint16_t addr, uint8_t* data, uint16_t len);
 };
 
 #endif
