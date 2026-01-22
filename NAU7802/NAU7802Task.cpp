@@ -42,6 +42,9 @@
 {
     _i2c_wrapper = nullptr;
     _adc = nullptr;
+
+    _enableReading = true;
+    _enableLogging = true;
 }
 
 void NAU7802Task::Init(I2C_HandleTypeDef* hi2c)
@@ -86,19 +89,23 @@ void NAU7802Task::Run(void * pvParams)  // Instance Run loop for task
 
     NAU7802_OUT adcData;
 
-    /* ==Main Loop== */
+    /* == Main Loop == */
     while (1)
     {
         // Check if new data is ready
         if (_adc->isReady()){
             // Read sensor data
             if (_adc->readSensor(&adcData) == NauStatus::OK){
-                // SOAR_PRINT("NAU7802Task: ADC Reading: %ld\n", adc_data.raw_reading);
-                
+                if (_enableLogging) {
+                    SOAR_PRINT("NAU7802Task: ADC Reading: %ld\n", adcData.raw_reading);
+                }
                 // TODO: Send data somewhere
             }
             else{
-                SOAR_PRINT("NAU7802Task: Failed to read sensor data.\n");
+
+                if (_enableLogging) {
+                    SOAR_PRINT("NAU7802Task: Failed to read sensor data.\n");
+                }
             }
         }
 
@@ -121,12 +128,26 @@ void NAU7802Task::HandleCommand(Command & cm)
     {
     // TODO: Add command cases (Gain change, calibration, etc.) IF NEEDED
     
-    /*
-    -- Example command --
-    case 0: // 
-    SOAR_PRINT("NAU7802Task: Received command 0.\n");
-    break;
-    */
+    case NAU7802_Commands::NAU_CMD_START_READ: // Start Readings
+        _enableReading = true;
+        SOAR_PRINT("NAU7802Task: Enabled Readings.\n");
+        break;
+
+    case NAU7802_Commands::NAU_CMD_STOP_READ: // Stop Readings
+        _enableReading = false;
+        SOAR_PRINT("NAU7802Task: Disabled Readings.\n");
+        break;
+
+    case NAU7802_Commands::NAU_CMD_ENABLE_LOG: // Enable Logging
+        _enableLogging = true;
+        SOAR_PRINT("NAU7802Task: Enabled Logging.\n");
+        break;
+
+    case NAU7802_Commands::NAU_CMD_DISABLE_LOG: // Disable Logging
+        _enableLogging = false;
+        SOAR_PRINT("NAU7802Task: Disabled Logging.\n");
+        break;
+
     default:
         SOAR_PRINT("NAU7802Task: Received Unsupported Command {%d}.\n", cm.GetTaskCommand());
         break;
