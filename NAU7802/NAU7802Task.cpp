@@ -92,8 +92,8 @@ void NAU7802Task::Run(void * pvParams)  // Instance Run loop for task
     /* == Main Loop == */
     while (1)
     {
-        // Check if new data is ready
-        if (_adc->isReady()){
+        // Check if new data is ready AND reading is enabled
+        if (_adc->isReady() && _enableReading){
             // Read sensor data
             if (_adc->readSensor(&adcData) == NauStatus::OK){
                 if (_enableLogging) {
