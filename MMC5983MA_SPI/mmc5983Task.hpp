@@ -71,6 +71,16 @@ private:
     // Task Control Flags
     bool _enableReading;
     bool _enableLogging;
+
+    // Chip Select Port
+    GPIO_TypeDef* MMC_CS_PORT = GPIOA;
+    const uint16_t MMC_CS_PIN = GPIO_PIN_4;
+
+
 };
+
+/*
+ * TODO: FINISH
+*/
 
 #endif /* MMC5983MA_TASK_HPP_ */

@@ -64,7 +64,7 @@ int main(void)
     printf("--- MMC5983MA Read Test ---\r\n");
 
     // 4. Initialize the sensor
-    if (magnetometer.begin()) {
+    if (bool(magnetometer.begin())) {
         printf("Sensor initialized successfully. Product ID OK.\r\n");
     } else {
         printf("Sensor initialization failed! Check wiring or SPI config.\r\n");
@@ -87,7 +87,7 @@ int main(void)
         HAL_Delay(10); // 10ms delay
 
         // 7. Attempt to read the data
-        if (magnetometer.readData(magData)) {
+        if (bool(magnetometer.readData(magData))) {
             // If readData() returns true, the 'magData' struct is populated.
 
             // Print the scaled data in Gauss

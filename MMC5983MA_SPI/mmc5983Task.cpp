@@ -52,7 +52,7 @@ void MMC5983MATask::Init(SPI_HandleTypeDef* hspi)
     SOAR_ASSERT(hspi != nullptr, "MMC5983MATask: Received Null SPI Handle");
     
     _spi_wrapper = new SPI_Wrapper(hspi);
-    _magnetometer = new MMC5983MA(_spi_wrapper);
+    _magnetometer = new MMC5983MA(_spi_wrapper, MMC_CS_PORT, MMC_CS_PIN);
 }
 
 
@@ -94,6 +94,10 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
     {
         // Check if reading is enabled
         if (_enableReading){
+
+            _magnetometer->triggerMeasurement();
+            vTaskDelay(pdMS_TO_TICKS(10)); // Wait for measurement to complete
+            
             // Read sensor data
             if (_magnetometer->readData(magData) == MMC5983MA_Status::OK){
                 if (_enableLogging) {

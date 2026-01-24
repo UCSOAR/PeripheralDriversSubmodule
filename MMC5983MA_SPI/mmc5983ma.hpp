@@ -51,7 +51,7 @@ public:
     /**
      * @brief Triggers a new magnetic field measurement.
      */
-    void triggerMeasurement();
+    MMC5983MA_Status triggerMeasurement();
 
     /**
      * @brief Reads the latest magnetic field data from the sensor.

@@ -26,10 +26,15 @@ MMC5983MA::MMC5983MA(SPI_Wrapper* spiBus, GPIO_TypeDef* csPort, uint16_t csPin) 
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
 }
 
-bool MMC5983MA::begin(){
+MMC5983MA_Status MMC5983MA::begin(){
     uint8_t productID = getProductID();
 
-    return (productID == MMC5983MA_PRODUCT_ID_VALUE);
+    if (productID == MMC5983MA_PRODUCT_ID_VALUE) {
+        return MMC5983MA_Status::OK;
+    }
+    else {
+        return MMC5983MA_Status::ERR_INVALID_ARG;
+    }
 }
 
 uint8_t MMC5983MA::getProductID(){
@@ -38,16 +43,16 @@ uint8_t MMC5983MA::getProductID(){
 }
 
 
-void MMC5983MA::triggerMeasurement(){
+MMC5983MA_Status MMC5983MA::triggerMeasurement(){
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_TM_M);
 }
 
-void MMC5983MA::performSet(){
+MMC5983MA_Status MMC5983MA::performSet(){
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_SET);
 }
 
 
-void MMC5983MA::performReset(){
+MMC5983MA_Status MMC5983MA::performReset(){
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_RESET);
 }
 
@@ -55,13 +60,13 @@ void MMC5983MA::performReset(){
 
 
 
-bool MMC5983MA::readData(MagData& data) {
+MMC5983MA_Status MMC5983MA::readData(MagData& data) {
     // Read status register to check if data is ready
     uint8_t status = readRegister(MMC5983MA_STATUS);
 
     // Check if measurement done bit is set
     if (!(status & MMC5983MA_MEAS_M_DONE)) {
-        return false; // Data not ready
+        return MMC5983MA_Status::ERR_NOT_READY; // Data not ready
     }
     
     // Data Ready. Read all 7 measurement regs at once.
@@ -86,7 +91,7 @@ bool MMC5983MA::readData(MagData& data) {
         data.scaledY = ((float)data.rawY - _nullFieldOffset) / _countsPerGauss;
         data.scaledZ = ((float)data.rawZ - _nullFieldOffset) / _countsPerGauss;
 
-        return true;
+        return MMC5983MA_Status::OK;
 }
 
 
