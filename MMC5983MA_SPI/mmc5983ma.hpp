@@ -25,6 +25,14 @@ struct MagData {
     float scaledZ;
 };
 
+// New Status Enum
+enum class MMC5983MA_Status : uint8_t {
+    OK = 0,
+    ERR_I2C,
+    ERR_TIMEOUT,
+    ERR_NOT_READY,
+    ERR_INVALID_ARG
+};
 class MMC5983MA {
 public:
     /**
@@ -38,7 +46,7 @@ public:
      * @brief Initializes the sensor.
      * @return True on success (e.g., product ID matches), false otherwise.
      */
-    bool begin();
+    MMC5983MA_Status begin();
 
     /**
      * @brief Triggers a new magnetic field measurement.
@@ -49,17 +57,17 @@ public:
      * @brief Reads the latest magnetic field data from the sensor.
      * @return True if data is ready and read, false otherwise.
      */
-    bool readData(MagData& data);
+    MMC5983MA_Status readData(MagData& data);
 
     /**
      * @brief Performs a SET operation.
      */
-    void performSet();
+    MMC5983MA_Status performSet();
 
     /**
      * @brief Performs a RESET operation.
      */
-    void performReset();
+    MMC5983MA_Status performReset();
 
     /**
      * @brief Reads the product ID register.
@@ -102,7 +110,6 @@ private:
     SPI_Wrapper* _spi;
     std::uint16_t _csPin;
     GPIO_TypeDef* _csPort;
-
 
     // Constants for scaling data
     const float _countsPerGauss = 16384.0f;
