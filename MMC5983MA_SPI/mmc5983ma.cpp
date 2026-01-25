@@ -59,10 +59,70 @@ MMC5983MA_Status MMC5983MA::performReset(){
     return MMC5983MA_Status::OK;
 }
 
+MMC5983MA_Status MMC5983MA::setOffsets(float offsetX, float offsetY, float offsetZ) {
+    _offsetX = offsetX;
+    _offsetY = offsetY;
+    _offsetZ = offsetZ;
+    return MMC5983MA_Status::OK;
+}
+
+MMC5983MA_Status MMC5983MA::calibrateOffset(){
+    MagData setReading;
+    MagData resetReading;
+
+    // --- 1. SET Sequence ---
+    // 1. Perform SET
+    if (performSet() != MMC5983MA_Status::OK) {
+        return MMC5983MA_Status::ERR_I2C;
+    }
+    HAL_Delay(1); // Wait for measurement to complete
+    
+    // Measure
+    triggerMeasurement();
+    HAL_Delay(10); // Wait for measurement (~8ms for 100Hz BW)
+    
+    // Read SET data
+    if (readData(setReading) != MMC5983MA_Status::OK) {
+        return MMC5983MA_Status::ERR_I2C;
+    }
+    
+    // --- 2.  RESET Sequence ---
+    // 1. Perform RESET
+    if (performReset() != MMC5983MA_Status::OK) {
+        return MMC5983MA_Status::ERR_I2C;
+    }
+    HAL_Delay(1); // Wait for measurement to complete
+
+    // Measure
+    triggerMeasurement();
+    HAL_Delay(10); // Wait for measurement (~8ms for 100Hz BW)
+
+    // Read RESET data
+    if (readData(resetReading) != MMC5983MA_Status::OK) {
+        return MMC5983MA_Status::ERR_I2C;
+    }
+
+    // --- 3. Calculate Null Field Offset ---
+    // Out1 (SET) = +H + Offset
+    // Out2 (RESET) = -H + Offset
+    // Offset = (Out1 + Out2) / 2
+
+    float newOffsetX = (setReading.rawX + resetReading.rawX) / 2.0f;
+    float newOffsetY = (setReading.rawY + resetReading.rawY) / 2.0f;
+    float newOffsetZ = (setReading.rawZ + resetReading.rawZ) / 2.0f;
+
+    // Update Internal member Variables
+    setOffsets(newOffsetX, newOffsetY, newOffsetZ);
+
+    return MMC5983MA_Status::OK;
+}
+
+
 MMC5983MA_Status MMC5983MA::readTemperature(float& tempOut) {
     // Trigger temperature measurement
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_TM_T);
-
+    
+    HAL_Delay(10);
     // data ready Poll status
     uint8_t status = readRegister(MMC5983MA_STATUS);
     if (!(status & MMC5983MA_MEAS_T_DONE)) {
@@ -103,11 +163,10 @@ MMC5983MA_Status MMC5983MA::readData(MagData& data) {
                 ((uint32_t)buffer[5] << 2)  |
                 ((uint32_t)(buffer[6] & 0x0C) >> 2);
 
-
         // Apply scaling factors
-        data.scaledX = ((float)data.rawX - _nullFieldOffset) / _countsPerGauss;
-        data.scaledY = ((float)data.rawY - _nullFieldOffset) / _countsPerGauss;
-        data.scaledZ = ((float)data.rawZ - _nullFieldOffset) / _countsPerGauss;
+        data.scaledX = ((float)data.rawX - _offsetX) / _countsPerGauss;
+        data.scaledY = ((float)data.rawY - _offsetY) / _countsPerGauss;
+        data.scaledZ = ((float)data.rawZ - _offsetZ) / _countsPerGauss;
 
         return MMC5983MA_Status::OK;
 }

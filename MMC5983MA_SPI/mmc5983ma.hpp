@@ -82,6 +82,27 @@ public:
     // void startContinuousMode(std::uint8_t freq);
     // void stopContinuousMode();
 
+    /* 
+     * @brief Calibrates the sensor to determine null field offset.
+     * @return Status of the calibration operation.
+     * WARNING: This function BLOCKS for ~25 ms to perform two measurements.
+    */
+    MMC5983MA_Status calibrateOffset();
+    
+    /**
+     * @brief Sets user-defined offsets for X, Y, Z axes.
+     * @param offsetX Offset for X axis.
+     * @param offsetY Offset for Y axis.
+     * @param offsetZ Offset for Z axis.
+     * @return Status of the operation.
+     */
+    MMC5983MA_Status setOffsets(float offsetX, float offsetY, float offsetZ);
+    
+    /**
+     * @brief Reads the temperature data from the sensor.
+     * @param tempOut Reference to store the temperature in degrees Celsius.
+     * @return Status of the operation.
+     */
     MMC5983MA_Status readTemperature(float& tempOut);
 
 private:
@@ -114,7 +135,12 @@ private:
 
     // Constants for scaling data
     const float _countsPerGauss = 16384.0f;
-    const float _nullFieldOffset = 131072.0f;
+    // Null field offsets
+    float _offsetX = 131072.0f;
+    float _offsetY = 131072.0f;
+    float _offsetZ = 131072.0f;
+
+
 };
 
 #endif // MMC5983MA_HPP

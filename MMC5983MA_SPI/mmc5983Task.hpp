@@ -60,7 +60,7 @@ protected:
     void Run(void* pvParams);
     void HandleCommand(Command& cm);
 
-    MagData _lastReading
+    MagData _lastReading;
 
 
 private:
