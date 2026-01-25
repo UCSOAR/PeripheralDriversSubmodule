@@ -82,6 +82,7 @@ public:
     // void startContinuousMode(std::uint8_t freq);
     // void stopContinuousMode();
 
+    MMC5983MA_Status readTemperature(float& tempOut);
 
 private:
     /**

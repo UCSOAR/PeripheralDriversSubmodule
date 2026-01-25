@@ -43,8 +43,8 @@
 #define MMC5983MA_BW_400HZ (0x02) // 10: 2ms, 400Hz
 #define MMC5983MA_BW_800HZ (0x03) // 11: 0.5ms, 800Hz
 // Channel inhibits
-#define MMC5983MA_X_INHIBIT (1 << 3)  // Disable X channel
-#define MMC5983MA_Y_INHIBIT ((1 << 4) | (1 << 5))   // Disable Y and Z channels
+#define MMC5983MA_X_INHIBIT (1 << 1)  // Disable X channel
+#define MMC5983MA_Y_INHIBIT ((1 << 3) | (1 << 4))   // Disable Y and Z channels
 // Software Reset
 #define MMC5983MA_SW_RST (1 << 7) // Software Reset
 

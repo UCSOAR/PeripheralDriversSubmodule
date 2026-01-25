@@ -74,6 +74,11 @@ void MMC5983MATask::InitTask() // RTOS Task Init
      SOAR_ASSERT(rtValue == pdPASS, "MMC5983MATask::InitTask() - xTaskCreate() failed");
 }
 
+void MMC5983MATask::GetLatestData(MagData & dataOut)
+{
+    dataOut = _lastReading;
+}
+
 void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
 {
    /*   -Driver Setup-  */
@@ -82,6 +87,8 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
     if (_magnetometer->begin() != MMC5983MA_Status::OK){
         // Handle initialization error
         SOAR_PRINT("MMC5983MATask: Sensor initialization failed.\n");
+        _enableReading = false;
+
     } 
     else{
         SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
@@ -100,6 +107,9 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
             
             // Read sensor data
             if (_magnetometer->readData(magData) == MMC5983MA_Status::OK){
+                
+                _lastReading = magData;
+
                 if (_enableLogging) {
                     SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
                 }

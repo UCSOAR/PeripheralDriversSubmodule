@@ -45,25 +45,43 @@ uint8_t MMC5983MA::getProductID(){
 
 MMC5983MA_Status MMC5983MA::triggerMeasurement(){
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_TM_M);
+    return MMC5983MA_Status::OK;
 }
 
 MMC5983MA_Status MMC5983MA::performSet(){
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_SET);
+    return MMC5983MA_Status::OK;
 }
 
 
 MMC5983MA_Status MMC5983MA::performReset(){
     writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_RESET);
+    return MMC5983MA_Status::OK;
 }
 
+MMC5983MA_Status MMC5983MA::readTemperature(float& tempOut) {
+    // Trigger temperature measurement
+    writeRegister(MMC5983MA_IT_CONTROL0, MMC5983MA_TM_T);
 
+    // data ready Poll status
+    uint8_t status = readRegister(MMC5983MA_STATUS);
+    if (!(status & MMC5983MA_MEAS_T_DONE)) {
+        return MMC5983MA_Status::ERR_NOT_READY; // Data not ready
+    }
 
+    // Read Reg 0x07
+    uint8_t RawTemp = readRegister(MMC5983MA_TOUT);
 
+    // Convert -75C to +125C range
+    tempOut = -75.0f + ((float)RawTemp * 0.8f); // Each LSB = 0.8C
+    
+    return MMC5983MA_Status::OK;
+}
 
 MMC5983MA_Status MMC5983MA::readData(MagData& data) {
     // Read status register to check if data is ready
     uint8_t status = readRegister(MMC5983MA_STATUS);
-
+    
     // Check if measurement done bit is set
     if (!(status & MMC5983MA_MEAS_M_DONE)) {
         return MMC5983MA_Status::ERR_NOT_READY; // Data not ready
