@@ -91,7 +91,6 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	case IMU_SAMPLE_AND_LOG:
 		imu.ReadSensors(data);
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
-
 		LogData();
 	default:
 		break;
