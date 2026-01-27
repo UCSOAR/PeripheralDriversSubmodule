@@ -8,30 +8,14 @@
 #ifndef LSM6DO32DRIVER_H_
 #define LSM6DO32DRIVER_H_
 
-#include "stm32h7xx.h"
+#include "stm32h7xx_hal_gpio.h"
+#include "SensorDataTypes.hpp"
 
 constexpr uint8_t SPI_DUMMY_BYTE = 0x00;
 constexpr uint8_t LSM6DSO32_ID = 0x6C;
 
 typedef uint8_t LSM6DSO32_REGISTER_t;
 
-struct ACCEL_t {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-};
-
-struct GYRO_t {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-};
-
-struct LSM6DSO32_DATA_t {
-	ACCEL_t accel;
-	GYRO_t gyro;
-	int16_t temp;
-};
 
 /* @brief Singleton SPI driver for the 6-axis LSM6DSO32 IMU.
  * Must call Init before using any other functions besides SetCSPin.
@@ -90,7 +74,7 @@ public:
 	LSM6DO32_Driver(const LSM6DO32_Driver&) = delete;
 	LSM6DO32_Driver& operator=(const LSM6DO32_Driver&) = delete;
 
-	const LSM6DSO32_DATA_t ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
+	const IMUData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
 
 	void SetCSPin(GPIO_TypeDef* gpio, uint16_t pin);
 

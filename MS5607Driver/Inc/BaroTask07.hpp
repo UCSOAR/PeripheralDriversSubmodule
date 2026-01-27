@@ -9,6 +9,7 @@
 #define PERIPHERALDRIVERSSUBMODULE_MS5607DRIVER_INC_BAROTASK07_HPP_
 #include "Task.hpp"
 #include "MS5607Driver.hpp"
+#include "SensorDataTypes.hpp"
 /************************************
  * MACROS AND DEFINES
  ************************************/

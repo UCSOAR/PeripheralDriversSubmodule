@@ -1,29 +1,17 @@
 /*
- * BaroTask07.cpp
+ * IMUTask.cpp
  *
- *  Created on: Jan 23, 2026
+ *  Created on: Jan 27, 2026
  *      Author: jaddina
- */
-
-
-/**
- ********************************************************************************
- * @file    BaroTask07.cpp
- * @author  jaddina
- * @date    Sep 13, 2025
- * @brief
- ********************************************************************************
  */
 
 /************************************
  * INCLUDES
  ************************************/
-#include "BaroTask07.hpp"
+#include "IMUTask.hpp"
 #include "SystemDefines.hpp"
 #include "Command.hpp"
 #include "LoggingService.hpp"
-
-
 #include "DataBroker.hpp"
 #include "Task.hpp"
 
@@ -44,34 +32,35 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
+IMUTask::IMUTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
 
 /**
- * @brief Initialize the BaroTask07
+ * @brief Initialize the IMUTask
  *        Do not modify this function aside from adding the task name
  */
-void BaroTask07::InitTask()
+void IMUTask::InitTask()
 {
     // Make sure the task is not already initialized
     SOAR_ASSERT(rtTaskHandle == nullptr, "Cannot initialize watchdog task twice");
 
     BaseType_t rtValue =
-        xTaskCreate((TaskFunction_t)BaroTask07::RunTask,
-            (const char*)"BaroTask07",
+        xTaskCreate((TaskFunction_t)IMUTask::RunTask,
+            (const char*)"IMUTask",
             (uint16_t)TASK_LOGGING_QUEUE_DEPTH_WORDS,
             (void*)this,
             (UBaseType_t)TASK_LOGGING_PRIORITY,
             (TaskHandle_t*)&rtTaskHandle);
 
-                SOAR_ASSERT(rtValue == pdPASS, "BaroTask07::InitTask() - xTaskCreate() failed");
+                SOAR_ASSERT(rtValue == pdPASS, "IMUTask::InitTask() - xTaskCreate() failed");
 }
 
-void BaroTask07::Run(void * pvParams){
+void IMUTask::Run(void * pvParams){
 
-	barometer = MS5607Driver(hspi, MS5607_CS_PORT, MS5607_CS_PIN);
+	LSM6DO32_Driver imu = LSM6DO32_Driver();
+	imu.Init(hspi, LSM6DO32_CS_PORT, LSM6DO32_CS_PIN);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -84,7 +73,7 @@ void BaroTask07::Run(void * pvParams){
     }
 }
 
-void BaroTask07::HandleCommand(Command& cm){
+void IMUTask::HandleCommand(Command& cm){
 	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
@@ -97,10 +86,12 @@ void BaroTask07::HandleCommand(Command& cm){
 
 
 }
-void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
+void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case BARO_SAMPLE_AND_LOG:
-		data = barometer.getSample();
+	case IMU_SAMPLE_AND_LOG:
+		imu.ReadSensors(data);
+		imu_data = imu.ConvertRawMeasurementToStruct(data);
+
 		LogData();
 	default:
 		break;
@@ -109,12 +100,10 @@ void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 
 }
 
-void BaroTask07::LogData(){
-	DataBroker::Publish<BaroData>(&data);
-	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA);
+void IMUTask::LogData(){
+	DataBroker::Publish<IMUData>(&data);
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
 }
-
-
 
