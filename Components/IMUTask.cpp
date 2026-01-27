@@ -14,7 +14,7 @@
 #include "LoggingService.hpp"
 #include "DataBroker.hpp"
 #include "Task.hpp"
-#include "LoggingTask.hpp"
+
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
@@ -32,7 +32,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-IMUTask::IMUTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), imu()
+IMUTask::IMUTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
@@ -59,69 +59,51 @@ void IMUTask::InitTask()
 
 void IMUTask::Run(void * pvParams){
 
-
-	imu.Init(hspi_, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
+	LSM6DO32_Driver imu = LSM6DO32_Driver();
+	imu.Init(hspi, LSM6DO32_CS_PORT, LSM6DO32_CS_PIN);
 
     while (1) {
-    	imu.ReadSensors(data);
-		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
-		LogData();
-
+        /* Process commands in blocking mode */
         Command cm;
-        bool res = qEvtQueue->Receive(cm, 20);
+        bool res = qEvtQueue->ReceiveWait(cm);
         if(res){
 
         	HandleCommand(cm);
         }
-
-        cm.Reset();
     }
 }
 
 void IMUTask::HandleCommand(Command& cm){
-	switch(cm.GetCommand()){
+	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
 		break;
 
 	case TASK_SPECIFIC_COMMAND:
 		break;
-
-	default:
-			SOAR_PRINT("No valid global command given");
 	}
-
 
 
 
 }
 void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case IMUTask::IMU_SAMPLE_AND_LOG:{
+	case IMU_SAMPLE_AND_LOG:
 		imu.ReadSensors(data);
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
+
 		LogData();
-
-
-	}
 	default:
 		break;
 	}
 
 
-
 }
 
 void IMUTask::LogData(){
-
-
-	DataBroker::Publish<IMUData>(&imu_data);
-
-
-	//SOAR_PRINT("Data Sent to LoggingTask\n");
-
+	DataBroker::Publish<IMUData>(&data);
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
+	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
 }
 

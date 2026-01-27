@@ -13,9 +13,6 @@
 #include "SensorDataTypes.hpp"
 #include "Task.hpp"
 #include "LSM6DO32Driver.h"
-#include "main.h"
-
-extern SPI_HandleTypeDef hspi1;
 /************************************
  * MACROS AND DEFINES
  ************************************/
@@ -28,14 +25,16 @@ extern SPI_HandleTypeDef hspi1;
 /************************************
  * CLASS DEFINITIONS
  ************************************/
-
+enum IMU_TASK_COMMANDS{
+	IMU_NONE,
+	IMU_SAMPLE_AND_LOG,
+};
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
 class IMUTask: public Task
 {
 	public:
-
 		static IMUTask& Inst() {
 			static IMUTask inst;
 			return inst;
@@ -43,10 +42,6 @@ class IMUTask: public Task
 
 		void InitTask();
 
-		enum IMU_TASK_COMMANDS{
-			IMU_NONE,
-			IMU_SAMPLE_AND_LOG,
-		};
 
 
 	protected:
@@ -54,12 +49,12 @@ class IMUTask: public Task
 		void Run(void * pvParams); // Main run code
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
-		LSM6DO32_Driver imu;
 		IMUData imu_data;
 		uint8_t data[14];
-		GPIO_TypeDef* LSM6DSO32_CS_PORT = IMU32_CS_GPIO_Port;
-		const uint16_t LSM6DSO32_CS_PIN = IMU32_CS_Pin; //adjust when needed
-		SPI_HandleTypeDef* hspi_ = &hspi1;// adjust this when needed
+		MS5611Driver barometer;
+		GPIO_TypeDef* LSM6DO32_CS_PORT = GPIOA;
+		const uint16_t LSM6DO32_CS_PIN = GPIO_PIN_4; //adjust when needed
+		SPI_HandleTypeDef* hspi_ = 4;// adjust this when needed
 
 
 
