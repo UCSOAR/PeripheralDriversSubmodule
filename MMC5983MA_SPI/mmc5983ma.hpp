@@ -13,17 +13,10 @@
 // if needed: fw declaration for the SPIClass from HAL/SPI wrapper, 
 // class SPIClass; 
 extern "C" {
-    #include "stm32f4xx_hal.h"
+    #include "stm32h7xx_hal.h"
 }
 
-struct MagData {
-    std::uint32_t rawX;
-    std::uint32_t rawY;
-    std::uint32_t rawZ;
-    float scaledX;
-    float scaledY;
-    float scaledZ;
-};
+
 
 // New Status Enum
 enum class MMC5983MA_Status : uint8_t {
