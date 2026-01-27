@@ -23,6 +23,7 @@
 // system includes
 #include "SystemDefines.hpp"
 #include "Task.hpp"
+#include "SensorDataTypes.hpp"
 
 // Driver Includes
 #include "mmc5983ma.hpp"
@@ -53,14 +54,14 @@ public:
 
     void InitTask();
 
-    void GetLatestData(MagData& dataOut);
+    void GetLatestData(MagData1& dataOut);
 
 protected:
     static void RunTask(void* pvParams) { MMC5983MATask::Inst().Run(pvParams); }
     void Run(void* pvParams);
     void HandleCommand(Command& cm);
 
-    MagData _lastReading;
+    MagData1 _lastReading;
 
 
 private:
