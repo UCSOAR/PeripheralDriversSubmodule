@@ -76,7 +76,7 @@ void MMC5983MATask::InitTask() // RTOS Task Init
      SOAR_ASSERT(rtValue == pdPASS, "MMC5983MATask::InitTask() - xTaskCreate() failed");
 }
 
-void MMC5983MATask::GetLatestData(MagData & dataOut)
+void MMC5983MATask::GetLatestData(MagData1 & dataOut)
 {
     dataOut = _lastReading;
 }
@@ -96,7 +96,7 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
         SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
     }
 
-    MagData magData;
+    MagData1 magData;
 
     /* == Main Loop == */
     while (1)
@@ -116,7 +116,7 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
                     SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
                 }
                 // TODO: Send data somewhere
-                DataBroker::Publish<MagData>(&magData);
+                DataBroker::Publish<MagData1>(&magData);
                 Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::MAG_DATA);
                 LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
