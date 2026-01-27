@@ -14,7 +14,7 @@
 #include "LoggingService.hpp"
 #include "DataBroker.hpp"
 #include "Task.hpp"
-#include "LoggingTask.hpp"
+
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
@@ -32,7 +32,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-IMUTask::IMUTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), imu()
+IMUTask::IMUTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
@@ -59,8 +59,8 @@ void IMUTask::InitTask()
 
 void IMUTask::Run(void * pvParams){
 
-
-	imu.Init(hspi_, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
+	LSM6DO32_Driver imu = LSM6DO32_Driver();
+	imu.Init(hspi, LSM6DO32_CS_PORT, LSM6DO32_CS_PIN);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -74,7 +74,7 @@ void IMUTask::Run(void * pvParams){
 }
 
 void IMUTask::HandleCommand(Command& cm){
-	switch(cm.GetCommand()){
+	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
 		break;
@@ -91,7 +91,6 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	case IMU_SAMPLE_AND_LOG:
 		imu.ReadSensors(data);
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
 
 		LogData();
 	default:
@@ -102,9 +101,9 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void IMUTask::LogData(){
-	DataBroker::Publish<IMUData>(&imu_data);
-	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
-	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+	DataBroker::Publish<IMUData>(&data);
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
+	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
 }
 

@@ -18,11 +18,7 @@
 
 #include "DataBroker.hpp"
 #include "Task.hpp"
-/*
-#include "WriteBufferFixedSize.h"
-#include "ReadBufferFixedSize.h"
-#include "cobs.h"
-*/
+
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
@@ -67,7 +63,7 @@ void BaroTask11::InitTask()
 
 void BaroTask11::Run(void * pvParams){
 
-	barometer = MS5607Driver(hspi, MS5607_CS_PORT, MS5607_CS_PIN);
+	barometer = MS5611Driver(hspi, MS5611_CS_PORT, MS5611_CS_PIN);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -107,11 +103,8 @@ void BaroTask11::HandleRequestCommand(uint16_t taskCommand){
 
 void BaroTask11::LogData(){
 	DataBroker::Publish<BaroData>(&data);
-	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA);
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
 }
-
-
-
 

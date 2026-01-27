@@ -8,7 +8,7 @@
 #ifndef LSM6DO32DRIVER_H_
 #define LSM6DO32DRIVER_H_
 
-#include "stm32h7xx_hal.h"
+#include "stm32h7xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
 
 constexpr uint8_t SPI_DUMMY_BYTE = 0x00;

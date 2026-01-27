@@ -26,11 +26,7 @@
 
 #include "DataBroker.hpp"
 #include "Task.hpp"
-/*
-#include "WriteBufferFixedSize.h"
-#include "ReadBufferFixedSize.h"
-#include "cobs.h"
-*/
+
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
