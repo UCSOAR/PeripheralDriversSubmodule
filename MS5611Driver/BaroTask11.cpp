@@ -14,12 +14,15 @@
 #include "SystemDefines.hpp"
 #include "Command.hpp"
 #include "LoggingService.hpp"
-#include "LoggingTask.hpp"
 
 
 #include "DataBroker.hpp"
 #include "Task.hpp"
-
+/*
+#include "WriteBufferFixedSize.h"
+#include "ReadBufferFixedSize.h"
+#include "cobs.h"
+*/
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
@@ -64,15 +67,12 @@ void BaroTask11::InitTask()
 
 void BaroTask11::Run(void * pvParams){
 
-
+	barometer = MS5607Driver(hspi, MS5607_CS_PORT, MS5607_CS_PIN);
 
     while (1) {
-    	data = barometer.getSample();
-		data.id = 1;
-		LogData();
-
+        /* Process commands in blocking mode */
         Command cm;
-        bool res = qEvtQueue->Receive(cm, 20);
+        bool res = qEvtQueue->ReceiveWait(cm);
         if(res){
 
         	HandleCommand(cm);
@@ -81,7 +81,7 @@ void BaroTask11::Run(void * pvParams){
 }
 
 void BaroTask11::HandleCommand(Command& cm){
-	switch(cm.GetCommand()){
+	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
 		break;
@@ -90,16 +90,14 @@ void BaroTask11::HandleCommand(Command& cm){
 		break;
 	}
 
-	cm.Reset();
+
 
 }
 void BaroTask11::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case BARO11_SAMPLE_AND_LOG:
+	case BARO_SAMPLE_AND_LOG:
 		data = barometer.getSample();
-		data.id = 1;
 		LogData();
-
 	default:
 		break;
 	}
@@ -108,14 +106,12 @@ void BaroTask11::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void BaroTask11::LogData(){
-
-
-
 	DataBroker::Publish<BaroData>(&data);
-//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA)); //change if separate publisher
-//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
-
-	//SOAR_PRINT("Data Sent to LoggingTask\n");
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA);
+	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
 }
+
+
+
 
