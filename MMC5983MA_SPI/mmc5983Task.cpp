@@ -12,6 +12,8 @@
  ************************************/
 #include "mmc5983Task.hpp"
 #include "main.h"
+#include "DataBroker.hpp"
+
 
 // FreeRTOS includes
 #include "FreeRTOS.h"
@@ -114,6 +116,10 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
                     SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
                 }
                 // TODO: Send data somewhere
+                DataBroker::Publish<MagData>(&magData);
+                Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::MAG_DATA);
+                LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
+
             }
             else{
 

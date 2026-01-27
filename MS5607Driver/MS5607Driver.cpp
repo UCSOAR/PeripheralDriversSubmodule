@@ -6,6 +6,7 @@
  ******************************************************************************** */
 /************************************ * INCLUDES ************************************/
 #include "MS5607Driver.hpp"
+#include "stm32h7xx_hal_gpio.h"
 /************************************ * PRIVATE MACROS AND DEFINES ************************************/
 /************************************ * VARIABLES ************************************/
 // Barometer Commands (should not be modified, non-const due to HAL and C++ strictness)
@@ -27,7 +28,7 @@ static uint8_t RESET_CMD = 0x1E;
  * @brief gets a single sample of barometer data
  * @returns a barometer data structure consisting of a 'temp' and 'pressure' variable
  */
-MS5607_DATA_t MS5607_Driver::getSample(){
+BaroData MS5607_Driver::getSample(){
 	/**
 	 * Variable Descriptions from MS5607-02BA03 Data Sheet:
 	 *
@@ -56,7 +57,7 @@ MS5607_DATA_t MS5607_Driver::getSample(){
 	// Variables
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
-	MS5611_DATA_t data;
+	BaroData data;
 
 	// Reset the barometer
 	resetBarometer();
