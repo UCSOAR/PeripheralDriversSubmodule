@@ -13,7 +13,6 @@
 #include "mmc5983Task.hpp"
 #include "main.h"
 #include "DataBroker.hpp"
-#include "LoggingTask.hpp"
 
 
 // FreeRTOS includes
@@ -80,6 +79,46 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
     	magnetometer.readData(magData);
     	LogData();
 
+    } 
+    else{
+        SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
+    }
+
+    MagData magData;
+
+    /* == Main Loop == */
+    while (1)
+    {
+        // Check if reading is enabled
+        if (_enableReading){
+
+            _magnetometer->triggerMeasurement();
+            vTaskDelay(pdMS_TO_TICKS(10)); // Wait for measurement to complete
+            
+            // Read sensor data
+            if (_magnetometer->readData(magData) == MMC5983MA_Status::OK){
+                
+                _lastReading = magData;
+
+                if (_enableLogging) {
+                    SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
+                }
+                // TODO: Send data somewhere
+                DataBroker::Publish<MagData>(&magData);
+                Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::MAG_DATA);
+                LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
+
+            }
+            else{
+
+                if (_enableLogging) {
+                    SOAR_PRINT("MMC5983MATask: Failed to read sensor data.\n");
+                }
+            }
+        }
+
+        // Handle incoming commands (optional)
+        // receive with 0 timeout to poll
         Command cm;
         if (qEvtQueue->Receive(cm, 20)) {
             HandleCommand(cm);

@@ -9,9 +9,6 @@
 #include "spi_wrapper.hpp" 
 #include "stm32h7xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
-#include "SPIBusLocks.hpp"
-#include "SystemDefines.hpp"
-#include "main.h"
 #include <cstdint>
 
 using std::uint8_t;

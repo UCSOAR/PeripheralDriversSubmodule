@@ -9,10 +9,6 @@
 #define PERIPHERALDRIVERSSUBMODULE_MS5607DRIVER_INC_BAROTASK07_HPP_
 #include "Task.hpp"
 #include "MS5607Driver.hpp"
-#include "SensorDataTypes.hpp"
-#include "main.h"
-
-extern SPI_HandleTypeDef hspi4;
 /************************************
  * MACROS AND DEFINES
  ************************************/
@@ -25,9 +21,9 @@ extern SPI_HandleTypeDef hspi4;
 /************************************
  * CLASS DEFINITIONS
  ************************************/
-enum BARO07_TASK_COMMANDS {
-	BARO07_NONE,
-	BARO07_SAMPLE_AND_LOG
+enum BARO_TASK_COMMANDS {
+	BARO_NONE,
+	BARO_SAMPLE_AND_LOG
 
 };
 
@@ -52,11 +48,11 @@ class BaroTask07: public Task
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
 		BaroData data;
+		MS5607Driver barometer;
+		GPIO_TypeDef* MS5607_CS_PORT = GPIOA;
+		const uint16_t MS5607_CS_PIN = GPIO_PIN_4; //adjust when needed
+		SPI_HandleTypeDef* hspi_ = 4;// adjust this when needed
 
-		GPIO_TypeDef* MS5607_CS_PORT = BARO07_CS_GPIO_Port;
-		const uint16_t MS5607_CS_PIN = BARO07_CS_Pin; //adjust when needed
-		SPI_HandleTypeDef* hspi_= &hspi4;// adjust this when needed
-		MS5607_Driver barometer{hspi_, MS5607_CS_PORT, MS5607_CS_PIN};
 
 
 
