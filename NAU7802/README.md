@@ -1,7 +1,9 @@
 
 # STM32 C++ Driver for NAU7802
 
-This is a simple, lightweight C++ driver for the Nuvoton NAU7802 24-bit ADC, designed to be used with the STM32 HAL library in a C++ environment (for example, STM32CubeIDE).
+This is a C++ driver for the Nuvoton NAU7802 24-bit ADC, designed to be used with the STM32 HAL library in a C++ environment
+
+##
 
 ### Features
 
@@ -26,6 +28,8 @@ The driver is split into logical components to make it easy to understand and po
   - Uses `I2C_Wrapper` to perform all register operations.
 - `main_read_test.cpp` / `ExampleUsage.cpp`
   - Example `main()` files demonstrating driver initialization and reading.
+- `NAU7802Task.hpp` / `.cpp`
+  - Initializes Wrapper and Tasks and handles task specific commands
 
 ### Complete example
 
