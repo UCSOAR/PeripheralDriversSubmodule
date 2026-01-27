@@ -22,11 +22,15 @@
 #include "SystemDefines.hpp"
 #include "Command.hpp"
 #include "LoggingService.hpp"
-#include "LoggingTask.hpp"
+
 
 #include "DataBroker.hpp"
 #include "Task.hpp"
-
+/*
+#include "WriteBufferFixedSize.h"
+#include "ReadBufferFixedSize.h"
+#include "cobs.h"
+*/
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
@@ -44,7 +48,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), barometer(hspi_, MS5607_CS_PORT, MS5607_CS_PIN)
+BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
@@ -71,6 +75,7 @@ void BaroTask07::InitTask()
 
 void BaroTask07::Run(void * pvParams){
 
+	barometer = MS5607Driver(hspi, MS5607_CS_PORT, MS5607_CS_PIN);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -84,7 +89,7 @@ void BaroTask07::Run(void * pvParams){
 }
 
 void BaroTask07::HandleCommand(Command& cm){
-	switch(cm.GetCommand()){
+	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
 		break;
@@ -98,9 +103,8 @@ void BaroTask07::HandleCommand(Command& cm){
 }
 void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case BARO07_SAMPLE_AND_LOG:
+	case BARO_SAMPLE_AND_LOG:
 		data = barometer.getSample();
-		data.id = 0;
 		LogData();
 	default:
 		break;
@@ -111,8 +115,8 @@ void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 
 void BaroTask07::LogData(){
 	DataBroker::Publish<BaroData>(&data);
-	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA));
-	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA);
+	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
 }
 

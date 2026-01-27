@@ -13,7 +13,6 @@
 #include "mmc5983Task.hpp"
 #include "main.h"
 #include "DataBroker.hpp"
-#include "LoggingTask.hpp"
 
 
 // FreeRTOS includes
@@ -110,8 +109,8 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
                 }
                 // TODO: Send data somewhere
                 DataBroker::Publish<MagData>(&magData);
-                Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
-                LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+                Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::MAG_DATA);
+                LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
             }
             else{
