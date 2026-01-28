@@ -23,7 +23,7 @@ class MS5611_Driver{
 public:
 	MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_);
 
-	BaroData getSample();
+	Baro11Data getSample();
 
 private:
 	// constants

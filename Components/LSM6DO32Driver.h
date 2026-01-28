@@ -74,7 +74,7 @@ public:
 	LSM6DO32_Driver(const LSM6DO32_Driver&) = delete;
 	LSM6DO32_Driver& operator=(const LSM6DO32_Driver&) = delete;
 
-	const IMUData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
+	const IMU32GData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
 
 	void SetCSPin(GPIO_TypeDef* gpio, uint16_t pin);
 
