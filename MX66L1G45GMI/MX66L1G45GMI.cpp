@@ -25,7 +25,6 @@ extern SPI_HandleTypeDef hspi1;
 
 #define MX66_SPI hspi1
 
-
 /************************************
  * VARIABLES
  ************************************/
@@ -71,6 +70,7 @@ void SPI_Read(uint8_t *data, uint16_t len)
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
+uint32_t MX66_ReadID(void)
 uint32_t MX66_ReadID(void)
 {
 	uint8_t tData = 0x9F;
