@@ -22,9 +22,9 @@
 /************************************
  * CLASS DEFINITIONS
  ************************************/
-enum BARO_TASK_COMMANDS {
-	BARO_NONE,
-	BARO_SAMPLE_AND_LOG
+enum BARO07_TASK_COMMANDS {
+	BARO07_NONE,
+	BARO07_SAMPLE_AND_LOG
 
 };
 
@@ -48,7 +48,7 @@ class BaroTask07: public Task
 		void Run(void * pvParams); // Main run code
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
-		BaroData data;
+		Baro07Data data;
 		MS5607Driver barometer;
 		GPIO_TypeDef* MS5607_CS_PORT = GPIOA;
 		const uint16_t MS5607_CS_PIN = GPIO_PIN_4; //adjust when needed
