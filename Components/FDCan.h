@@ -8,9 +8,9 @@
 #ifndef FDCAN_H_
 #define FDCAN_H_
 
-#include "stm32h7xx.h"
+#include "stm32g4xx.h"
 
-constexpr size_t MAX_FDCAN_RX_BUFFERS = 64;
+constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;
 
 class FDCanController {
  public:
@@ -47,6 +47,16 @@ class FDCanController {
   HAL_StatusTypeDef GetRxFIFO(uint8_t* out, uint32_t* msgIDOut);
   HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
 
+  struct RXBuffer {
+	  uint8_t data[64];
+	  bool available = false;
+  };
+
+
+  RXBuffer* GetRXBuf(uint16_t index);
+
+  RXBuffer* GetBufferFromCanID(uint16_t canid);
+
  protected:
   struct LogRegister {
     uint8_t startingRXBuf = 0;
@@ -54,6 +64,7 @@ class FDCanController {
     uint16_t byteLength = 0;
     uint16_t startingMsgID = 0;
   };
+  RXBuffer buffers[MAX_FDCAN_RX_BUFFERS];
 
   FDCAN_HandleTypeDef *fdcan;
 

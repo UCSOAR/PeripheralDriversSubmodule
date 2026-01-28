@@ -95,18 +95,53 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID) {
   return true;
 }
 
-/* @brief Callback for receiving a CAN message.
- * @param CAN handle
+/* @brief Get a pointer to the RX buffer at an index.
+ * @param index Index of the buffer to get
+ * @return Pointer to the RX buffer struct at index
  */
-void RXMsgCallback(FDCAN_HandleTypeDef *fdcan) {
-  if (callbackcontroller) callbackcontroller->RaiseFXFlag();
+FDCanController::RXBuffer* FDCanController::GetRXBuf(uint16_t index) {
+	return &buffers[index];
 }
 
-// TODO
-// make it able to register all the logs after being initialized. needed because
-// the autonode needs to use the driver to send a join request, THEN decide what its log IDs are
+/* @brief Gets the pointer to the RX buffer that contains the given CAN ID in the log registered to it.
+ * @param canid The CAN ID to look for
+ * @return Pointer to the RX buffer that a registered log maps the ID to. nullptr if none found.
+ */
+FDCanController::RXBuffer* FDCanController::GetBufferFromCanID(uint16_t canid) {
+	for (uint16_t i = 0; i < numRegisteredLogs; i++) {
+		const LogRegister& thisReg = registeredLogs[i];
+		if(thisReg.startingRXBuf <= canid && thisReg.endingRXBuf >= canid) {
+			return GetRXBuf(thisReg.startingRXBuf+(canid-thisReg.startingMsgID));
+		}
+	}
+	return nullptr;
+}
+
+/* Overridden callback that fires when an RX message is received.
+ * Immediately reroutes the message to an RX buffer associated with the CAN ID.
+ */
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+    if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
+    {
+        FDCAN_RxHeaderTypeDef rxHeader;
+        uint8_t buf[64];
 
 
+        HAL_FDCAN_GetRxMessage(hfdcan,
+                               FDCAN_RX_FIFO0,
+                               &rxHeader,
+                               buf);
+        FDCanController::RXBuffer* rxbuf = callbackcontroller->GetBufferFromCanID(rxHeader.Identifier);
+        if(rxbuf) {
+			memcpy(rxbuf->data,buf,sizeof(buf));
+			rxbuf->available = true;
+
+
+			callbackcontroller->RaiseFXFlag();
+        }
+    }
+}
 
 /* @brief Constructor. Also initializes FDCAN filters and callback.
  * Calls CANError if error in initialization. Two controllers should not
@@ -117,8 +152,6 @@ FDCanController::FDCanController(FDCAN_HandleTypeDef *fdcan,
                                  FDCanController::LogInitStruct *logs,
                                  uint16_t numLogs) {
   this->fdcan = fdcan;
-
-
 
   InitFDCAN();
 }
@@ -139,10 +172,10 @@ HAL_StatusTypeDef FDCanController::RegisterFilterRXBuf(uint16_t msgID,
 
   filter.IdType = FDCAN_STANDARD_ID;
   filter.FilterIndex = nextUnregisteredFilterID;
-  filter.FilterConfig = FDCAN_FILTER_TO_RXBUFFER;
+  filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
   filter.FilterID1 = msgID;
-  filter.RxBufferIndex = rxBufferNum;
-  filter.IsCalibrationMsg = 0;
+  //filter.RxBufferIndex = rxBufferNum;
+  //filter.IsCalibrationMsg = 0;
 
   nextUnregisteredFilterID++;
   return HAL_FDCAN_ConfigFilter(fdcan, &filter);
@@ -228,50 +261,6 @@ const uint32_t FDCanController::FDGetModDLC(uint16_t unroundedLen) {
 
 inline void FDCanController::RaiseFXFlag() { RXFlag = true; }
 
-/* @brief Faster version of HAL_FDCAN_GetRxMessage that assumes an RX buffer
- * 		  and does not return an Rx Header.
- * @param fdcan Handle to the FDCAN
- * @param buf RX buffer number
- * @param data Pointer to buffer that will receive data from this buffer.
- */
-HAL_StatusTypeDef fastGetRXMsg(FDCAN_HandleTypeDef *fdcan, uint8_t buf,
-                               uint8_t *data) {
-  uint32_t *RxAddress;
-  HAL_FDCAN_StateTypeDef state = fdcan->State;
-
-  if (state == HAL_FDCAN_STATE_BUSY) {
-    /* Calculate Rx buffer address */
-    RxAddress = (uint32_t *)(fdcan->msgRam.RxBufferSA +
-                             (buf * fdcan->Init.RxBufferSize * 4U)) +
-                1;
-
-    uint32_t DataLength = ((*RxAddress & ((uint32_t)0x000F0000U)) >> 16U);
-
-    RxAddress++;
-
-    /* Retrieve Rx payload */
-    static const uint8_t DLCtoBytes[] = {0, 1,  2,  3,  4,  5,  6,  7,
-                                         8, 12, 16, 20, 24, 32, 48, 64};
-    memcpy(data, (uint8_t *)RxAddress, DLCtoBytes[DataLength]);
-
-    /* Clear the New Data flag of the current Rx buffer */
-    if (buf < FDCAN_RX_BUFFER32) {
-      fdcan->Instance->NDAT1 = ((uint32_t)1U << buf);
-    } else /* FDCAN_RX_BUFFER32 <= RxLocation <= FDCAN_RX_BUFFER63 */
-    {
-      fdcan->Instance->NDAT2 = ((uint32_t)1U << (buf & 0x1FU));
-    }
-
-    /* Return function status */
-    return HAL_OK;
-  } else {
-    /* Update error code */
-    fdcan->ErrorCode |= HAL_FDCAN_ERROR_NOT_STARTED;
-
-    return HAL_ERROR;
-  }
-}
-
 /* @brief Receives the first full message collected in the dedicated RX buffers
  * into the out buffer.
  * @param out Output data. Must be the size of the maximum expected message
@@ -299,6 +288,13 @@ uint16_t FDCanController::ReceiveFirstLogFromRXBuf(uint8_t *out,
   return 0;
 }
 
+/* Retrieves a log of a given type.
+ * @param out Output array the data will be put into.
+ * Must be big enough for the log type, rounded up to the nearest 64 bytes!
+ * Excess space in the FDCAN frame the log doesn't fill will be padded with zeros.
+ * @param logIndexFilter The log index to read.
+ * @return The size of the data returned in bytes, or zero if no log was read.
+ */
 uint16_t FDCanController::ReceiveLogTypeFromRXBuf(uint8_t *out,
                                                   uint16_t logIndexFilter) {
   if (!RXFlag) {
@@ -309,8 +305,8 @@ uint16_t FDCanController::ReceiveLogTypeFromRXBuf(uint8_t *out,
   if (thisRegisteredLog.byteLength == 0) {
     return 0;
   }
-  if (HAL_FDCAN_IsRxBufferMessageAvailable(fdcan,
-                                           thisRegisteredLog.endingRXBuf)) {
+
+  if (buffers[thisRegisteredLog.endingRXBuf].available) {
     if (readingRXBufSemaphore) {
       return 0;  // something else using the semaphore
     }
@@ -320,7 +316,8 @@ uint16_t FDCanController::ReceiveLogTypeFromRXBuf(uint8_t *out,
     uint8_t *d = out;
     for (uint8_t b = thisRegisteredLog.startingRXBuf;
          b <= thisRegisteredLog.endingRXBuf; b++) {
-      fastGetRXMsg(fdcan, b, d);
+      memcpy(d,buffers[b].data,64);
+      buffers[b].available = false;
       d += 64;
     }
 
@@ -344,17 +341,18 @@ bool FDCanController::SendByLogIndex(const uint8_t *msg, uint16_t logIndex) {
                      registeredLogs[logIndex].startingMsgID);
 }
 
+/* @brief Registers log types to the driver so that they can be sent and received.
+ * @param logs Pointer to an array of log initialization structs.
+ * @param numLogs Number of elements in logs.
+ * @return HAL_OK if successful
+ */
 HAL_StatusTypeDef FDCanController::RegisterLogs(LogInitStruct *logs, uint16_t numLogs) {
 
 	  for (uint16_t i = 0; i < numLogs; i++) {
 	    numFDFilters += (logs[i].byteLength - 1) / 64 + 1;
 	  }
 
-	  fdcan->Init.RxBuffersNbr = numFDFilters;
 	  fdcan->Init.StdFiltersNbr = numFDFilters;
-	  fdcan->Init.RxBufferSize = FDCAN_DATA_BYTES_64;
-	  fdcan->Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_64;
-	  fdcan->Init.TxElmtSize = FDCAN_DATA_BYTES_64;
 
 	  if (HAL_FDCAN_Init(fdcan) != HAL_OK) {
 	    CANError();
@@ -389,6 +387,11 @@ HAL_StatusTypeDef FDCanController::RegisterFilterRXFIFO(uint16_t msgIDMin,
   return HAL_FDCAN_ConfigFilter(fdcan, &filter);
 }
 
+/* @brief Gets a message from the RX FIFO.
+ * @param out The data output. Must be at least 64 bytes long.
+ * @param msgIDOut Where the CAN ID of the message will be stored.
+ * @return HAL_OK on success.
+ */
 HAL_StatusTypeDef FDCanController::GetRxFIFO(uint8_t *out, uint32_t *msgIDOut) {
 	if(HAL_FDCAN_GetRxFifoFillLevel(fdcan, 0) == 0) {
 		return HAL_ERROR;
@@ -399,6 +402,9 @@ HAL_StatusTypeDef FDCanController::GetRxFIFO(uint8_t *out, uint32_t *msgIDOut) {
 	return HAL_OK;
 }
 
+/* @brief Initializes and starts the FDCAN peripheral.
+ * @return HAL_OK on success.
+ */
 HAL_StatusTypeDef FDCanController::InitFDCAN() {
 	HAL_StatusTypeDef stat;
 	if (HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT,
@@ -409,17 +415,18 @@ HAL_StatusTypeDef FDCanController::InitFDCAN() {
 
 	  // Turn on callback for receiving msg
 	  stat =
-	      HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_BUFFER_NEW_MESSAGE, 0);
+	      HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 	  if (stat != HAL_OK) {
 	    CANError();
 	  }
 
-	  // Set callback
-	  stat = HAL_FDCAN_RegisterCallback(fdcan, HAL_FDCAN_RX_BUFFER_NEW_MSG_CB_ID,
-	                                    RXMsgCallback);
+	  stat =HAL_FDCAN_ActivateNotification(fdcan,
+	                                 FDCAN_IT_TX_COMPLETE,
+	                                 0);
 	  if (stat != HAL_OK) {
 	    CANError();
 	  }
+
 
 	  stat = HAL_FDCAN_Start(fdcan);
 	  if (stat != HAL_OK) {
