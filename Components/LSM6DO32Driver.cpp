@@ -6,6 +6,7 @@
  */
 
 #include <LSM6DO32Driver.h>
+#include "stm32h7xx_hal_gpio.h"
 
 /* @brief Initialize the driver. Must be called before any other functions can be used.
  * @param hspi_ Pointer to the SPI handle
@@ -94,8 +95,8 @@ void LSM6DO32_Driver::SampleFIFOs(int numReads, uint8_t *out, size_t outBufferSi
  * @param temp Buffer includes temperature data
  * @return Struct containing extracted data
  */
-const LSM6DSO32_DATA_t LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel, bool gyro, bool temp) {
-	LSM6DSO32_DATA_t out;
+const IMU32GData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel, bool gyro, bool temp) {
+	 IMU32GData out;
 	size_t i = 0;
 
 	// Accel gyro and temp are little-endian

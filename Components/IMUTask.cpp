@@ -100,7 +100,7 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void IMUTask::LogData(){
-	DataBroker::Publish<IMUData>(&data);
+	DataBroker::Publish<IMU32GData>(&data);
 	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
 
