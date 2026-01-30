@@ -16,6 +16,24 @@
 constexpr uint8_t LSM6DSO_ID = 0x6C;
 typedef uint8_t LSM6DSO_REGISTER_t;
 
+struct Accel {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+};
+
+struct Gyro {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+};
+
+struct IMU16Data {
+	Accel accel;
+	Gyro gyro;
+	int16_t temp;
+};
+
 
 class LSM6DSO_Driver{
 	
@@ -51,6 +69,8 @@ class LSM6DSO_Driver{
 		void setRegister(LSM6DSO_REGISTER_t reg, uint8_t val);
 		uint8_t getRegister(LSM6DSO_REGISTER_t reg);
 		void readRegisters();
+		void readSensors(uint8_t *out);
+		void bytesToStruct(const uint8_t *raw_bytes, bool accel, bool gyro, bool temp);
 
 
 	private:
@@ -63,12 +83,13 @@ class LSM6DSO_Driver{
 
 };
 
-namespace LSM6DS0_REG{
+namespace LSM6DSO_REG{
 
 	constexpr LSM6DSO_REGISTER_t FIFO_CTRL_2 = 0x08;
 	constexpr LSM6DSO_REGISTER_t FIFO_CTRL_3 = 0x09;
 	constexpr LSM6DSO_REGISTER_t FIFO_CTRL_4 = 0x0A;
 	
+	constexpr LSM6DSO_REGISTER_t WHO_AM_I = 0x0F;
 
 	constexpr LSM6DSO_REGISTER_t CTRL1_XL  = 0x10;
 	constexpr LSM6DSO_REGISTER_t CTRL2_G   = 0x11;
