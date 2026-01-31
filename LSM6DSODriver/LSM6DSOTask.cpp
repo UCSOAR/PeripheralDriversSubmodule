@@ -1,14 +1,13 @@
 /*
- * IMUTask.cpp
+ * LSM6DSOTask.cpp
  *
- *  Created on: Jan 27, 2026
+ *  Created on: Jan 30, 2026
  *      Author: jaddina
  */
-
 /************************************
  * INCLUDES
  ************************************/
-#include "IMUTask.hpp"
+#include "LSM6DSOTask.hpp"
 #include "SystemDefines.hpp"
 #include "Command.hpp"
 #include "LoggingService.hpp"
@@ -32,35 +31,35 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-IMUTask::IMUTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
+LSM6DSOTask::LSM6DSOTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
 
 /**
- * @brief Initialize the IMUTask
+ * @brief Initialize the LSM6DSOTask
  *        Do not modify this function aside from adding the task name
  */
-void IMUTask::InitTask()
+void LSM6DSOTask::InitTask()
 {
     // Make sure the task is not already initialized
     SOAR_ASSERT(rtTaskHandle == nullptr, "Cannot initialize watchdog task twice");
 
     BaseType_t rtValue =
-        xTaskCreate((TaskFunction_t)IMUTask::RunTask,
-            (const char*)"IMUTask",
+        xTaskCreate((TaskFunction_t)LSM6DSOTask::RunTask,
+            (const char*)"LSM6DSOTask",
             (uint16_t)TASK_LOGGING_QUEUE_DEPTH_WORDS,
             (void*)this,
             (UBaseType_t)TASK_LOGGING_PRIORITY,
             (TaskHandle_t*)&rtTaskHandle);
 
-                SOAR_ASSERT(rtValue == pdPASS, "IMUTask::InitTask() - xTaskCreate() failed");
+                SOAR_ASSERT(rtValue == pdPASS, "LSM6DSOTask::InitTask() - xTaskCreate() failed");
 }
 
-void IMUTask::Run(void * pvParams){
+void LSM6DSOTask::Run(void * pvParams){
 
-	LSM6DSO32_Driver imu = LSM6DSO32_Driver();
-	imu.Init(hspi, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
+	LSM6DSO_Driver imu = LSM6DSO_Driver();
+	imu.Init(hspi, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -73,7 +72,7 @@ void IMUTask::Run(void * pvParams){
     }
 }
 
-void IMUTask::HandleCommand(Command& cm){
+void LSM6DSOTask::HandleCommand(Command& cm){
 	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
@@ -86,13 +85,12 @@ void IMUTask::HandleCommand(Command& cm){
 
 
 }
-void IMUTask::HandleRequestCommand(uint16_t taskCommand){
+void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case IMU_SAMPLE_AND_LOG:
-		imu.ReadSensors(data);
-		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
-
+		imu.readSensors(data);
+		imu_data = imu.bytesToStruct(data, true, true, true);
+		imu_data.id = 0;
 		LogData();
 	default:
 		break;
@@ -101,10 +99,9 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 
 }
 
-void IMUTask::LogData(){
+void LSM6DSOTask::LogData(){
 	DataBroker::Publish<IMUData>(&imu_data);
 	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }
-
