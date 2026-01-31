@@ -11,7 +11,8 @@
 #include "MS5607Driver.hpp"
 #include "SensorDataTypes.hpp"
 #include "main.h"
-#include "main.c"
+
+extern SPI_HandleTypeDef hspi4;
 /************************************
  * MACROS AND DEFINES
  ************************************/

@@ -14,7 +14,8 @@
 #include "Task.hpp"
 #include "LSM6DO32Driver.h"
 #include "main.h"
-#include "main.c"
+
+extern SPI_HandleTypeDef hspi1;
 /************************************
  * MACROS AND DEFINES
  ************************************/

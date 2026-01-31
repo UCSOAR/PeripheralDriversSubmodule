@@ -12,6 +12,7 @@
 #include "Command.hpp"
 #include "LoggingService.hpp"
 #include "DataBroker.hpp"
+#include "LoggingTask.hpp"
 #include "Task.hpp"
 
 /************************************
@@ -31,7 +32,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-LSM6DSOTask::LSM6DSOTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
+LSM6DSOTask::LSM6DSOTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), imu()
 {
 
 }
@@ -58,8 +59,7 @@ void LSM6DSOTask::InitTask()
 
 void LSM6DSOTask::Run(void * pvParams){
 
-	LSM6DSO_Driver imu = LSM6DSO_Driver();
-	imu.Init(hspi, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
+	imu.Init(hspi_, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -73,15 +73,22 @@ void LSM6DSOTask::Run(void * pvParams){
 }
 
 void LSM6DSOTask::HandleCommand(Command& cm){
-	switch(cm.getCommand()){
+	switch(cm.GetCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
+		break;
+	case DATA_BROKER_COMMAND:
+		SOAR_PRINT("Not data command");
 		break;
 
 	case TASK_SPECIFIC_COMMAND:
 		break;
-	}
 
+	case COMMAND_NONE:
+		SOAR_PRINT("No command");
+		break;
+
+	}
 
 
 }
@@ -101,7 +108,7 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 
 void LSM6DSOTask::LogData(){
 	DataBroker::Publish<IMUData>(&imu_data);
-	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
+	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }

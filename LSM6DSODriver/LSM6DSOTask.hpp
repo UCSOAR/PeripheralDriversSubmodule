@@ -11,6 +11,9 @@
 #include "SensorDataTypes.hpp"
 #include "Task.hpp"
 #include "lsm6dso.hpp"
+#include "main.h"
+
+extern SPI_HandleTypeDef hspi3;
 /************************************
  * MACROS AND DEFINES
  ************************************/
@@ -47,11 +50,12 @@ class LSM6DSOTask: public Task
 		void Run(void * pvParams); // Main run code
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
+		LSM6DSO_Driver imu;
 		IMUData imu_data;
 		uint8_t data[14];
-		GPIO_TypeDef* LSM6DSO_CS_PORT = GPIOA;
-		const uint16_t LSM6DSO_CS_PIN = GPIO_PIN_4; //adjust when needed
-		SPI_HandleTypeDef* hspi_ = 4;// adjust this when needed
+		GPIO_TypeDef* LSM6DSO_CS_PORT = IMU16_INT_GPIO_Port;
+		const uint16_t LSM6DSO_CS_PIN = IMU16_INT_Pin; //adjust when needed
+		SPI_HandleTypeDef* hspi_ = &hspi3;// adjust this when needed
 
 
 
