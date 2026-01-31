@@ -58,30 +58,49 @@ void MX66_Init(MX66_Config* config) {
 
 // Internal Helper Wrappers
 
+
 void MX66_Delay(uint32_t ms) {
-	// Todo: clear error or assert if driver used before init
-	SOAR_ASSERT(io_driver.Delay != nullptr);
-	if(io_driver.Delay) io_driver.Delay(ms);
+	if(io_driver.Delay) {
+		io_driver.Delay(ms);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] MX66_Delay called before MX66_Init!\n");
+	}
 }
+
 
 void csLOW(void) {
-	SOAR_ASSERT(io_driver.SetCS != nullptr);
-    if(io_driver.SetCS) io_driver.SetCS(false);
+	if(io_driver.SetCS) {
+		io_driver.SetCS(false);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] csLOW called before MX66_Init!\n");
+	}
 }
+
 
 void csHIGH(void) {
-	SOAR_ASSERT(io_driver.SetCS != nullptr);
-    if(io_driver.SetCS) io_driver.SetCS(true);
+	if(io_driver.SetCS) {
+		io_driver.SetCS(true);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] csHIGH called before MX66_Init!\n");
+	}
 }
+
 
 void SPI_Write(uint8_t *data, uint16_t len) {
-	SOAR_ASSERT(io_driver.Write != nullptr);
-    if(io_driver.Write) io_driver.Write(data, len);
+	if(io_driver.Write) {
+		io_driver.Write(data, len);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] SPI_Write called before MX66_Init!\n");
+	}
 }
 
+
 void SPI_Read(uint8_t *data, uint16_t len) {
-	SOAR_ASSERT(io_driver.Read != nullptr);
-    if(io_driver.Read) io_driver.Read(data, len);
+	if(io_driver.Read) {
+		io_driver.Read(data, len);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] SPI_Read called before MX66_Init!\n");
+	}
 }
 
 /************************************

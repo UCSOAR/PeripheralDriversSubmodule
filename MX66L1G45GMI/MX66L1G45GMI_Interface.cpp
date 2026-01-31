@@ -68,24 +68,16 @@ void IMPL_Read(uint8_t* data, uint16_t len) {
     DMAControl::Transfer(&hspi1, 0, nullptr, data, len);
     // BLOCKING WAIT
     int tick1 = HAL_GetTick();
- 
-    {
+
     while (HAL_GetTick() - tick1 < 500) { // 500ms timeout
         if(HAL_SPI_GetState(&hspi1) == HAL_SPI_STATE_READY) break;
         MX66_Delay(1);
     }
-
+    if (HAL_GetTick() - tick1 >= 500) {
+        SOAR_PRINT("IMPL_Read: DMA Transfer Timeout\n");
+        return;
     }
-    
-    //while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
-
-    /*
-    Unbounded busy-spin: while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY); can hang 
-    forever if the SPI enters an error state or the DMA never starts. Add a timeout and handle HAL_SPI_STATE_ERROR
-     (and consider yielding/delaying in RTOS builds).
-    */
 }
-
 // Setup Function
 void Setup_Flash_Interface() {
     static MX66_Config cfg;

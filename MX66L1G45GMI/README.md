@@ -38,7 +38,7 @@ The driver is split into three distinct layers:
 // Delay Implementation
 void IMPL_Delay(uint32_t ms) {
     // Change this line to switch between HAL_Delay, osDelay, vTaskDelay, etc
-    osDelay(ms); 
+    HAL_Delay(ms); 
 }
 
 // ... code ...
