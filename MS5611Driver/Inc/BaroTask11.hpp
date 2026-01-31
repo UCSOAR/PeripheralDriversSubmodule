@@ -12,7 +12,7 @@
 #include "MS5611Driver.hpp"
 #include "SensorDataTypes.hpp"
 #include "main.h"
-#include "main.c"
+extern SPI_HandleTypeDef hspi2;
 /************************************
  * MACROS AND DEFINES
  ************************************/
