@@ -42,29 +42,65 @@ extern SPI_HandleTypeDef hspi1;
 //-------------------------------------------------------------------------------------------------
 // STM32 SPI Driver
 //-------------------------------------------------------------------------------------------------
-void MX66_Delay(uint32_t time)
-{
-	HAL_Delay(time);
+
+// Create a static instance of the config
+static MX66_Config io_driver = {nullptr, nullptr, nullptr, nullptr};
+
+// Init function
+void MX66_Init(MX66_Config* config) {
+    if(config != nullptr) {
+        io_driver = *config;
+    }
+	else {
+		SOAR_PRINT("MX66_Init: config is nullptr!\n");
+	}
 }
 
-void csLOW(void)
-{
-	HAL_GPIO_WritePin(SPI_FLASH_CS_GPIO_Port, SPI_FLASH_CS_Pin, GPIO_PIN_RESET);
+// Internal Helper Wrappers
+
+
+void MX66_Delay(uint32_t ms) {
+	if(io_driver.Delay) {
+		io_driver.Delay(ms);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] MX66_Delay called before MX66_Init!\n");
+	}
 }
 
-void csHIGH(void)
-{
-	HAL_GPIO_WritePin(SPI_FLASH_CS_GPIO_Port, SPI_FLASH_CS_Pin, GPIO_PIN_SET);
+
+void csLOW(void) {
+	if(io_driver.SetCS) {
+		io_driver.SetCS(false);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] csLOW called before MX66_Init!\n");
+	}
 }
 
-void SPI_Write(uint8_t *data, uint16_t len)
-{
-	HAL_SPI_Transmit(&MX66_SPI, data, len, 2000);
+
+void csHIGH(void) {
+	if(io_driver.SetCS) {
+		io_driver.SetCS(true);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] csHIGH called before MX66_Init!\n");
+	}
 }
 
-void SPI_Read(uint8_t *data, uint16_t len)
-{
-	HAL_SPI_Receive(&MX66_SPI, data, len, 5000);
+
+void SPI_Write(uint8_t *data, uint16_t len) {
+	if(io_driver.Write) {
+		io_driver.Write(data, len);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] SPI_Write called before MX66_Init!\n");
+	}
+}
+
+
+void SPI_Read(uint8_t *data, uint16_t len) {
+	if(io_driver.Read) {
+		io_driver.Read(data, len);
+	} else {
+		SOAR_PRINT("[MX66 ERROR] SPI_Read called before MX66_Init!\n");
+	}
 }
 
 /************************************
@@ -173,7 +209,7 @@ void write_enable(void)
 	csLOW();
 	SPI_Write(&tData, 1);
 	csHIGH();
-	HAL_Delay(5);
+	MX66_Delay(5);
 }
 
 void write_disable(void)
@@ -182,7 +218,7 @@ void write_disable(void)
 	csLOW();
 	SPI_Write(&tData, 1);
 	csHIGH();
-	HAL_Delay(5);
+	MX66_Delay(5);
 }
 
 void MX66_Erase_Chip(void)
