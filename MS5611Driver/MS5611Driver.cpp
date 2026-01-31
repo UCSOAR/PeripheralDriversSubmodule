@@ -24,23 +24,6 @@ static uint8_t RESET_CMD = 0x1E;
 /************************************ * FUNCTION DECLARATIONS ************************************/
 /************************************ * FUNCTION DEFINITIONS ************************************/
 
-namespace {
-class SPI2BusGuard {
-public:
-	SPI2BusGuard() : locked_(BusLocks::spi2.Lock(100)) {}
-	~SPI2BusGuard() {
-		if (locked_) {
-			BusLocks::spi2.Unlock();
-		}
-	}
-
-	bool Locked() const { return locked_; }
-
-private:
-	bool locked_;
-};
-}
-
 MS5611_Driver::MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_){
 	hspi = hspi_;
 	cs_gpio = cs_gpio_;
@@ -52,7 +35,7 @@ MS5611_Driver::MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, u
  * @brief gets a single sample of barometer data
  * @returns a barometer data structure consisting of a 'temp' and 'pressure' variable
  */
-Baro11Data MS5611_Driver::getSample(){
+BaroData MS5611_Driver::getSample(){
 	/**
 	 * Variable Descriptions from MS5607-02BA03 Data Sheet:
 	 *
@@ -82,7 +65,7 @@ Baro11Data MS5611_Driver::getSample(){
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
 	uint8_t dataInBuffer;
-	Baro11Data data;
+	BaroData data;
 
 	// Reset the barometer
 	resetBarometer();
@@ -274,4 +257,5 @@ void MS5611_Driver::resetBarometer()
 	osDelay(4); // 2.8ms reload after Reset command
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
 }
+
 

@@ -52,14 +52,14 @@ public:
 
     void InitTask();
 
-    void GetLatestData(MagData1& dataOut);
+    void GetLatestData(MagData& dataOut);
 
 protected:
     static void RunTask(void* pvParams) { MMC5983MATask::Inst().Run(pvParams); }
     void Run(void* pvParams);
     void HandleCommand(Command& cm);
 
-    MagData1 _lastReading;
+    MagData _lastReading;
 
 
 private:
@@ -81,7 +81,8 @@ private:
 
 
     // Chip Select Port
-
+    GPIO_TypeDef* MMC_CS_PORT = MAG_CS_GPIO_Port;
+    const uint16_t MMC_CS_PIN = MAG_CS_Pin; // Adjust as needed
 
 
 

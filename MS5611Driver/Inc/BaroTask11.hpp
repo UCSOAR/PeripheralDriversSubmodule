@@ -11,6 +11,8 @@
 #include "Task.hpp"
 #include "MS5611Driver.hpp"
 #include "SensorDataTypes.hpp"
+#include "main.h"
+#include "main.c"
 /************************************
  * MACROS AND DEFINES
  ************************************/
@@ -23,7 +25,10 @@
 /************************************
  * CLASS DEFINITIONS
  ************************************/
-
+enum BARO_TASK_COMMANDS{
+	BARO11_SAMPLE_AND_LOG,
+	NONE
+};
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
@@ -45,10 +50,10 @@ class BaroTask11: public Task
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
 		BaroData data;
-		MS5611Driver barometer;
-		GPIO_TypeDef* MS5611_CS_PORT = GPIOA;
-		const uint16_t MS5611_CS_PIN = GPIO_PIN_4; //adjust when needed
-		SPI_HandleTypeDef* hspi_ = 4;// adjust this when needed
+		MS5611_Driver barometer;
+		GPIO_TypeDef* MS5611_CS_PORT = BARO11_CS_GPIO_Port;
+		const uint16_t MS5611_CS_PIN = BARO11_CS_Pin; //adjust when needed
+		SPI_HandleTypeDef* hspi_ = &hspi2;// adjust this when needed
 
 
 
