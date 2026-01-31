@@ -8,7 +8,7 @@
 #ifndef LSM6DO32DRIVER_H_
 #define LSM6DO32DRIVER_H_
 
-#include "stm32h7xx_hal_gpio.h"
+#include "stm32h7xx_hal.h"
 #include "SensorDataTypes.hpp"
 
 constexpr uint8_t SPI_DUMMY_BYTE = 0x00;
@@ -64,7 +64,7 @@ public:
 	uint8_t GetRegister(LSM6DSO32_REGISTER_t reg);
 	void GetMultipleRegisters(LSM6DSO32_REGISTER_t startreg, int numBytes, uint8_t* out);
 	void ReadSensors(uint8_t* out);
-	void ReadFIFOs(int numReads, uint8_t* out);
+	void SampleFIFOs(int numReads, uint8_t* out, size_t outBufferSize);
 
 	void SetAccelODR(LSM6D032_SAMPLE_SPEED speed);
 	void SetGyroODR(LSM6D032_SAMPLE_SPEED speed);
@@ -74,7 +74,7 @@ public:
 	LSM6DO32_Driver(const LSM6DO32_Driver&) = delete;
 	LSM6DO32_Driver& operator=(const LSM6DO32_Driver&) = delete;
 
-	const IMU32GData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
+	const IMUData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
 
 	void SetCSPin(GPIO_TypeDef* gpio, uint16_t pin);
 
