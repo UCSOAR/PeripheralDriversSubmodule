@@ -28,7 +28,7 @@ static uint8_t RESET_CMD = 0x1E;
  * @brief gets a single sample of barometer data
  * @returns a barometer data structure consisting of a 'temp' and 'pressure' variable
  */
-Baro07Data MS5607_Driver::getSample(){
+BaroData MS5607_Driver::getSample(){
 	/**
 	 * Variable Descriptions from MS5607-02BA03 Data Sheet:
 	 *
@@ -57,18 +57,18 @@ Baro07Data MS5607_Driver::getSample(){
 	// Variables
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
-	Baro07Data data;
+	BaroData data;
 
 	// Reset the barometer
 	resetBarometer();
 
 	// Read PROM for calibration coefficients
-	uint16_t c1Sens = ReadCalibrationCoefficients(PROM_READ_SENS_CMD);
-	uint16_t c2Off = ReadCalibrationCoefficients(PROM_READ_OFF_CMD);
-	uint16_t c3Tcs = ReadCalibrationCoefficients(PROM_READ_TCS_CMD);
-	uint16_t c4Tco = ReadCalibrationCoefficients(PROM_READ_TCO_CMD);
-	uint16_t c5Tref = ReadCalibrationCoefficients(PROM_READ_TREF_CMD);
-	uint16_t c6Tempsens = ReadCalibrationCoefficients(PROM_READ_TEMPSENS_CMD);
+	uint16_t c1Sens = readCalibrationCoefficients(PROM_READ_SENS_CMD);
+	uint16_t c2Off = readCalibrationCoefficients(PROM_READ_OFF_CMD);
+	uint16_t c3Tcs = readCalibrationCoefficients(PROM_READ_TCS_CMD);
+	uint16_t c4Tco = readCalibrationCoefficients(PROM_READ_TCO_CMD);
+	uint16_t c5Tref = readCalibrationCoefficients(PROM_READ_TREF_CMD);
+	uint16_t c6Tempsens = readCalibrationCoefficients(PROM_READ_TEMPSENS_CMD);
 
 	/**
 	 * Repeatedly read digital pressure and temperature.
@@ -112,7 +112,7 @@ Baro07Data MS5607_Driver::getSample(){
 
 	/* Store Data --------------------------------------------------------*/
 	data.pressure = p;
-	data.temperature = temp;
+	data.temp = temp;
 
 	return data;
 

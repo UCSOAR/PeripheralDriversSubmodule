@@ -6,7 +6,7 @@
 
 #ifndef MMC5983MA_HPP
 #define MMC5983MA_HPP
-
+#include "SensorDataTypes.hpp"
 #include "mmc5983ma_regs.hpp"
 #include "spi_wrapper.hpp" 
 #include <cstdint>

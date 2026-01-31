@@ -22,7 +22,7 @@
 #include "SystemDefines.hpp"
 #include "Command.hpp"
 #include "LoggingService.hpp"
-
+#include "LoggingTask.hpp"
 
 #include "DataBroker.hpp"
 #include "Task.hpp"
@@ -44,7 +44,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
+BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), barometer(hspi_, MS5607_CS_PORT, MS5607_CS_PIN)
 {
 
 }
@@ -71,7 +71,6 @@ void BaroTask07::InitTask()
 
 void BaroTask07::Run(void * pvParams){
 
-	barometer = MS5607Driver(hspi, MS5607_CS_PORT, MS5607_CS_PIN);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -85,7 +84,7 @@ void BaroTask07::Run(void * pvParams){
 }
 
 void BaroTask07::HandleCommand(Command& cm){
-	switch(cm.getCommand()){
+	switch(cm.GetCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
 		break;
@@ -112,7 +111,7 @@ void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 
 void BaroTask07::LogData(){
 	DataBroker::Publish<BaroData>(&data);
-	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA);
+	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA));
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }
