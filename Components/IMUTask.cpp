@@ -59,8 +59,8 @@ void IMUTask::InitTask()
 
 void IMUTask::Run(void * pvParams){
 
-	LSM6DO32_Driver imu = LSM6DO32_Driver();
-	imu.Init(hspi, LSM6DO32_CS_PORT, LSM6DO32_CS_PIN);
+	LSM6DSO32_Driver imu = LSM6DSO32_Driver();
+	imu.Init(hspi, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
 
     while (1) {
         /* Process commands in blocking mode */
@@ -91,6 +91,8 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	case IMU_SAMPLE_AND_LOG:
 		imu.ReadSensors(data);
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
+		imu_data.id = 1;
+
 		LogData();
 	default:
 		break;
@@ -100,9 +102,9 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void IMUTask::LogData(){
-	DataBroker::Publish<IMU32GData>(&data);
+	DataBroker::Publish<IMUData>(&imu_data);
 	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
-	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }
 

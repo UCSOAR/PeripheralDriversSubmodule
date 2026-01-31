@@ -101,6 +101,7 @@ void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case BARO07_SAMPLE_AND_LOG:
 		data = barometer.getSample();
+		data.id = 0;
 		LogData();
 	default:
 		break;
@@ -110,9 +111,9 @@ void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void BaroTask07::LogData(){
-	DataBroker::Publish<Baro07Data>(&data);
-	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO07_DATA);
-	LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
+	DataBroker::Publish<BaroData>(&data);
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::BARO_DATA);
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }
 

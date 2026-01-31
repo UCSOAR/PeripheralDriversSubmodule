@@ -12,7 +12,6 @@
 #include "Command.hpp"
 #include "LoggingService.hpp"
 #include "DataBroker.hpp"
-#include "LoggingTask.hpp"
 #include "Task.hpp"
 
 /************************************
@@ -32,7 +31,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-LSM6DSOTask::LSM6DSOTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), imu()
+LSM6DSOTask::LSM6DSOTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
@@ -59,16 +58,13 @@ void LSM6DSOTask::InitTask()
 
 void LSM6DSOTask::Run(void * pvParams){
 
-	imu.Init(hspi_, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
+	LSM6DSO_Driver imu = LSM6DSO_Driver();
+	imu.Init(hspi, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
 
     while (1) {
-		imu.readSensors(data);
-		imu_data = imu.bytesToStruct(data, true, true, true);
-		imu_data.id = 0;
-
-		LogData();
+        /* Process commands in blocking mode */
         Command cm;
-        bool res = qEvtQueue->Receive(cm, 20);
+        bool res = qEvtQueue->ReceiveWait(cm);
         if(res){
 
         	HandleCommand(cm);
@@ -77,33 +73,25 @@ void LSM6DSOTask::Run(void * pvParams){
 }
 
 void LSM6DSOTask::HandleCommand(Command& cm){
-	switch(cm.GetCommand()){
+	switch(cm.getCommand()){
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
-		break;
-	case DATA_BROKER_COMMAND:
-		SOAR_PRINT("Not data command");
 		break;
 
 	case TASK_SPECIFIC_COMMAND:
 		break;
-
-	case COMMAND_NONE:
-		SOAR_PRINT("No command");
-		break;
-
 	}
-	cm.Reset();
+
 
 
 }
 void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case LSM6DSOTask::IMU_SAMPLE_AND_LOG: {
-
+	case IMU_SAMPLE_AND_LOG:
+		imu.readSensors(data);
+		imu_data = imu.bytesToStruct(data, true, true, true);
+		imu_data.id = 0;
 		LogData();
-
-	}
 	default:
 		break;
 	}
@@ -112,11 +100,8 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void LSM6DSOTask::LogData(){
-
 	DataBroker::Publish<IMUData>(&imu_data);
-//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
-//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
-
-	//SOAR_PRINT("Data Sent to LoggingTask\n");
+	Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::IMU_DATA); //change if separate publisher
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }

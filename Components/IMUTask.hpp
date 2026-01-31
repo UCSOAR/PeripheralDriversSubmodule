@@ -49,11 +49,10 @@ class IMUTask: public Task
 		void Run(void * pvParams); // Main run code
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
-		IMU32GData imu_data;
+		IMUData imu_data;
 		uint8_t data[14];
-		MS5611Driver barometer;
-		GPIO_TypeDef* LSM6DO32_CS_PORT = GPIOA;
-		const uint16_t LSM6DO32_CS_PIN = GPIO_PIN_4; //adjust when needed
+		GPIO_TypeDef* LSM6DSO32_CS_PORT = GPIOA;
+		const uint16_t LSM6DSO32_CS_PIN = GPIO_PIN_4; //adjust when needed
 		SPI_HandleTypeDef* hspi_ = 4;// adjust this when needed
 
 
