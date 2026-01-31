@@ -1,14 +1,12 @@
 /*
- * IMUTask.hpp
+ * LSM6DSODriver.hpp
  *
- *  Created on: Jan 27, 2026
+ *  Created on: Jan 30, 2026
  *      Author: jaddina
  */
 
-#ifndef PERIPHERALDRIVERSSUBMODULE_COMPONENTS_IMUTASK_HPP_
-#define PERIPHERALDRIVERSSUBMODULE_COMPONENTS_IMUTASK_HPP_
-
-
+#ifndef PERIPHERALDRIVERSSUBMODULE_LSM6DSODRIVER_LSM6DSODRIVER_HPP_
+#define PERIPHERALDRIVERSSUBMODULE_LSM6DSODRIVER_LSM6DSODRIVER_HPP_
 
 #include "SensorDataTypes.hpp"
 #include "Task.hpp"
@@ -32,11 +30,11 @@ enum IMU_TASK_COMMANDS{
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
-class IMUTask: public Task
+class LSM6DSOTask: public Task
 {
 	public:
-		static IMUTask& Inst() {
-			static IMUTask inst;
+		static LSM6DSOTask& Inst() {
+			static LSM6DSOTask inst;
 			return inst;
 		}
 
@@ -45,14 +43,14 @@ class IMUTask: public Task
 
 
 	protected:
-		static void RunTask(void* pvParams) { IMUTask::Inst().Run(pvParams); } // Static Task Interface, passes control to the instance Run();
+		static void RunTask(void* pvParams) { LSM6DSOTask::Inst().Run(pvParams); } // Static Task Interface, passes control to the instance Run();
 		void Run(void * pvParams); // Main run code
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
 		IMUData imu_data;
 		uint8_t data[14];
-		GPIO_TypeDef* LSM6DSO32_CS_PORT = GPIOA;
-		const uint16_t LSM6DSO32_CS_PIN = GPIO_PIN_4; //adjust when needed
+		GPIO_TypeDef* LSM6DSO_CS_PORT = GPIOA;
+		const uint16_t LSM6DSO_CS_PIN = GPIO_PIN_4; //adjust when needed
 		SPI_HandleTypeDef* hspi_ = 4;// adjust this when needed
 
 
@@ -61,11 +59,16 @@ class IMUTask: public Task
 
 	private:
 		// Private Functions
-		IMUTask();        // Private constructor
-		IMUTask(const IMUTask&);                        // Prevent copy-construction
-		IMUTask& operator=(const IMUTask&);														// Prevent assignment
+		LSM6DSOTask();        // Private constructor
+		LSM6DSOTask(const LSM6DSOTask&);                        // Prevent copy-construction
+		LSM6DSOTask& operator=(const LSM6DSOTask&);														// Prevent assignment
 		void LogData();
 };
 
 
-#endif /* PERIPHERALDRIVERSSUBMODULE_COMPONENTS_IMUTASK_HPP_ */
+
+
+
+
+
+#endif /* PERIPHERALDRIVERSSUBMODULE_LSM6DSODRIVER_LSM6DSODRIVER_HPP_ */
