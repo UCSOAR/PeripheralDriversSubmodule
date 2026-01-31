@@ -13,34 +13,17 @@
 
 
 #include "stm32h7xx_hal_gpio.h"
+#include "SensorDataTypes.hpp"
 
 constexpr uint8_t LSM6DSO_ID = 0x6C;
 typedef uint8_t LSM6DSO_REGISTER_t;
-
-struct Accel {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-};
-
-struct Gyro {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-};
-
-struct IMU16Data {
-	Accel accel;
-	Gyro gyro;
-	int16_t temp;
-};
 
 
 class LSM6DSO_Driver{
 	
 	public:
 		LSM6DSO_Driver();
-		enum LSM6D032_SAMPLE_SPEED {
+		enum LSM6DS0_SAMPLE_SPEED {
 			FREQ_12p5_HZ=0b0001,
 			FREQ_26_HZ=0b0010,
 			FREQ_52_HZ=0b0011,
@@ -52,14 +35,14 @@ class LSM6DSO_Driver{
 			FREQ_3333_HZ=0b1001,
 			FREQ_6667_HZ=0b1010
 		};
-		enum LSM6D0_ACCEL_SCALE_SELECT {
+		enum LSM6DS0_ACCEL_SCALE_SELECT {
 			SCALE_2g = 0b00,
 			SCALE_16g = 0b01,
 			SCALE_4g = 0b10,
 			SCALE_8g = 0b11
 		};
 
-		enum LSM6D0_GYRO_SCALE_SELECT {
+		enum LSM6DS0_GYRO_SCALE_SELECT {
 			SCALE_250dps = 0b00,
 			SCALE_500dps = 0b01,
 			SCALE_1000dps = 0b10,
@@ -69,9 +52,9 @@ class LSM6DSO_Driver{
 		void Init(SPI_HandleTypeDef* hspi_, uint8_t cs_pin_, GPIO_TypeDef* cs_gpio_);
 		void setRegister(LSM6DSO_REGISTER_t reg, uint8_t val);
 		uint8_t getRegister(LSM6DSO_REGISTER_t reg);
-		void readRegisters();
+		void readRegisters(uint8_t startreg, uint8_t *out, uint16_t numBytes);
 		void readSensors(uint8_t *out);
-		void bytesToStruct(const uint8_t *raw_bytes, bool accel, bool gyro, bool temp);
+		IMUData bytesToStruct(const uint8_t *raw_bytes, bool accel, bool gyro, bool temp);
 
 
 	private:
@@ -94,6 +77,7 @@ namespace LSM6DSO_REG{
 
 	constexpr LSM6DSO_REGISTER_t CTRL1_XL  = 0x10;
 	constexpr LSM6DSO_REGISTER_t CTRL2_G   = 0x11;
+	constexpr LSM6DSO_REGISTER_t CTRL3_C = 0x12;
 
 	constexpr LSM6DSO_REGISTER_t STATUS_REG   = 0x1E;
 

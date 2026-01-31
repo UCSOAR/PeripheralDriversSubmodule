@@ -56,7 +56,9 @@ uint8_t LSM6DSO_Driver::getRegister(LSM6DSO_REGISTER_t reg){
 	CSLow();
 	HAL_StatusTypeDef result = HAL_SPI_TransmitReceive(hspi, tx, rx, 2, 1000);
 	CSHigh();
-	return rx[1];
+	if(HAL_OK == result){
+		return rx[1];
+	}
 }
 
 void LSM6DSO_Driver::readRegisters(uint8_t startreg, uint8_t *out, uint16_t numBytes){
@@ -79,7 +81,7 @@ void LSM6DSO_Driver::readRegisters(uint8_t startreg, uint8_t *out, uint16_t numB
 
 }
 
-IMU16Data LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bool gyro, bool temp){
+IMUData LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bool gyro, bool temp){
 
 	IMU16Data out;
 	uint8_t i = 0;
@@ -101,7 +103,6 @@ IMU16Data LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bo
 		out.accel.x = (int16_t)(raw_bytes[i+ 1] << 8 | raw_bytes[i]);
 		out.accel.y = (int16_t)(raw_bytes[i+ 3] << 8 | raw_bytes[i+ 2]);
 		out.accel.z = (int16_t)(raw_bytes[i+ 5] << 8 | raw_bytes[i+ 4]);
-		i+=6;
 	}
 
 	return out;
@@ -113,13 +114,13 @@ void LSM6DSO_Driver::readSensors(uint8_t *out){
 
 
 
-LSM6DSO_Driver::CSHigh(){
+void LSM6DSO_Driver::CSHigh(){
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
 }
 
 
-LSM6DSO_Driver::CSHigh(){
+void LSM6DSO_Driver::CSHigh(){
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
 }
