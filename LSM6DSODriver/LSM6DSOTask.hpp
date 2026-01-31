@@ -10,7 +10,7 @@
 
 #include "SensorDataTypes.hpp"
 #include "Task.hpp"
-#include "lsm6dso.hpp"
+#include "LSM6DO32Driver.h"
 /************************************
  * MACROS AND DEFINES
  ************************************/
