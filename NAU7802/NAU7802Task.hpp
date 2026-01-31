@@ -38,8 +38,17 @@ public:
         static NAU7802Task inst;
         return inst;
     }
+    
+    // Command Definitions:
+    enum NAU7802_Commands {
+        NAU_CMD_START_READ   = 1, // Start reading data
+        NAU_CMD_STOP_READ    = 2, // Stop reading data
+        NAU_CMD_DISABLE_LOG  = 3, // Disable logging
+        NAU_CMD_ENABLE_LOG   = 4  // Enable logging
+    };
 
-    // call in main passing &hi2c1 before InitTask
+
+
     void Init(I2C_HandleTypeDef* hi2c);
 
     void InitTask();
@@ -58,6 +67,10 @@ private:
     // Obj to allow delayed inits
     I2C_Wrapper* _i2c_wrapper;
     NAU7802* _adc;
+
+    // Task Control Flags
+    bool _enableReading;
+    bool _enableLogging;
 };
 
 #endif /* NAU7802_TASK_HPP_ */
