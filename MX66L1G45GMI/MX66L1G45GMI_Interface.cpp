@@ -49,16 +49,16 @@ void IMPL_Write(const uint8_t* data, uint16_t len) {
     if (len <= 32) {
         HAL_SPI_Transmit(&hspi1, (uint8_t*)data, len, 100);
     } else {
-        // Use DMA Tool for data
-        if ((DMAControl::Transfer(&hspi1, 0, (uint8_t*)data, nullptr, len)) == HAL_ERROR)
+        // Use DMA for larger data transfers (TX-only)
+        if (DMAControl::Transfer(&hspi1, 0, (uint8_t*)data, nullptr, len) != HAL_OK)
         {
             SOAR_PRINT("IMPL_Write: DMA Transfer Error\n");
+            return;
         }
-        
 
         // BLOCKING WAIT: Protects the stack buffer 'tData' inside the driver
         while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)
-
+            ;
     }
 }
 
@@ -67,7 +67,10 @@ void IMPL_Read(uint8_t* data, uint16_t len) {
     // Use DMA Tool
     DMAControl::Transfer(&hspi1, 0, nullptr, data, len);
     // BLOCKING WAIT
-    for (int TIMEOUT = 1000000; TIMEOUT > 0; TIMEOUT--) {
+    int tick1 = HAL_GetTick();
+ 
+    {
+    while (HAL_GetTick() - tick1 < 500) { // 500ms timeout
         if(HAL_SPI_GetState(&hspi1) == HAL_SPI_STATE_READY) break;
         MX66_Delay(1);
     }
@@ -75,7 +78,6 @@ void IMPL_Read(uint8_t* data, uint16_t len) {
     }
     
     //while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
-
 
     /*
     Unbounded busy-spin: while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY); can hang 
