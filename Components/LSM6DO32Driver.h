@@ -8,7 +8,7 @@
 #ifndef LSM6DO32DRIVER_H_
 #define LSM6DO32DRIVER_H_
 
-#include "stm32h7xx_hal_gpio.h"
+#include "stm32h7xx_hal.h"
 #include "SensorDataTypes.hpp"
 
 constexpr uint8_t SPI_DUMMY_BYTE = 0x00;
@@ -74,7 +74,7 @@ public:
 	LSM6DO32_Driver(const LSM6DO32_Driver&) = delete;
 	LSM6DO32_Driver& operator=(const LSM6DO32_Driver&) = delete;
 
-	const IMU32GData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
+	const IMUData ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel = true, bool gyro = true, bool temp = true);
 
 	void SetCSPin(GPIO_TypeDef* gpio, uint16_t pin);
 
