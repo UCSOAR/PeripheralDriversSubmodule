@@ -42,10 +42,6 @@ extern SPI_HandleTypeDef hspi1;
 //-------------------------------------------------------------------------------------------------
 // STM32 SPI Driver
 //-------------------------------------------------------------------------------------------------
-void MX66_Delay(uint32_t time)
-{
-	HAL_Delay(time);
-}
 
 // Create a static instance of the config
 static MX66_Config io_driver = {nullptr, nullptr, nullptr, nullptr};
@@ -55,26 +51,36 @@ void MX66_Init(MX66_Config* config) {
     if(config != nullptr) {
         io_driver = *config;
     }
+	else {
+		SOAR_PRINT("MX66_Init: config is nullptr!\n");
+	}
 }
 
-// Internal Helper Wrappes
+// Internal Helper Wrappers
+
 void MX66_Delay(uint32_t ms) {
+	// Todo: clear error or assert if driver used before init
+	SOAR_ASSERT(io_driver.Delay != nullptr);
 	if(io_driver.Delay) io_driver.Delay(ms);
 }
 
 void csLOW(void) {
+	SOAR_ASSERT(io_driver.SetCS != nullptr);
     if(io_driver.SetCS) io_driver.SetCS(false);
 }
 
 void csHIGH(void) {
+	SOAR_ASSERT(io_driver.SetCS != nullptr);
     if(io_driver.SetCS) io_driver.SetCS(true);
 }
 
 void SPI_Write(uint8_t *data, uint16_t len) {
+	SOAR_ASSERT(io_driver.Write != nullptr);
     if(io_driver.Write) io_driver.Write(data, len);
 }
 
 void SPI_Read(uint8_t *data, uint16_t len) {
+	SOAR_ASSERT(io_driver.Read != nullptr);
     if(io_driver.Read) io_driver.Read(data, len);
 }
 

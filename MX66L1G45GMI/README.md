@@ -30,7 +30,7 @@ The driver is split into three distinct layers:
 - Connects the Abstract Driver to the actual STM32 hardware
 - Implements `IMPL_Write`, `IMPL_Read`, `IMPL_SetCS`, and `IMPL_Delay`
 - Uses a hybrid strategy: Polling for small commands (≤ 32 bytes) and DMA for large data payloads
-- note: Delay implementation on `MX66L1G45GMI_Interface.cpp` is subgect to change via
+- note: Delay implementation on `MX66L1G45GMI_Interface.cpp` is subject to change via editing `IMPL_Delay` below.
 
 ```cpp
 // ... code ...
@@ -48,7 +48,7 @@ void IMPL_Delay(uint32_t ms) {
 
 - Template-based utility
 - Automated Cache Coherency (D-Cache cleaning/invalidating for G4/H7)
-- Protocol-specific DMA calls (`HAL_SPI_Transmit_DMA`, etc.)
+- Protocol-specific DMA calls (e.g., `HAL_SPI_TransmitReceive_DMA` for SPI)  
 
 ---
 

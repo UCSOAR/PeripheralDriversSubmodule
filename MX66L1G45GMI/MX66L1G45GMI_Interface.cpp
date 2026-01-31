@@ -14,6 +14,7 @@
 #include "DMATransfer.hpp"
 #include "stm32g4xx_hal.h"
 
+#include "main.h"
 
 /************************************
  * PRIVATE MACROS AND DEFINES
@@ -49,10 +50,15 @@ void IMPL_Write(const uint8_t* data, uint16_t len) {
         HAL_SPI_Transmit(&hspi1, (uint8_t*)data, len, 100);
     } else {
         // Use DMA Tool for data
-        DMAControl::Transfer(&hspi1, 0, (uint8_t*)data, nullptr, len);
+        if ((DMAControl::Transfer(&hspi1, 0, (uint8_t*)data, nullptr, len)) == HAL_ERROR)
+        {
+            SOAR_PRINT("IMPL_Write: DMA Transfer Error\n");
+        }
         
+
         // BLOCKING WAIT: Protects the stack buffer 'tData' inside the driver
-        while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+        while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)
+
     }
 }
 
@@ -61,7 +67,21 @@ void IMPL_Read(uint8_t* data, uint16_t len) {
     // Use DMA Tool
     DMAControl::Transfer(&hspi1, 0, nullptr, data, len);
     // BLOCKING WAIT
-    while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+    for (int TIMEOUT = 1000000; TIMEOUT > 0; TIMEOUT--) {
+        if(HAL_SPI_GetState(&hspi1) == HAL_SPI_STATE_READY) break;
+        MX66_Delay(1);
+    }
+
+    }
+    
+    //while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY);
+
+
+    /*
+    Unbounded busy-spin: while(HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY); can hang 
+    forever if the SPI enters an error state or the DMA never starts. Add a timeout and handle HAL_SPI_STATE_ERROR
+     (and consider yielding/delaying in RTOS builds).
+    */
 }
 
 // Setup Function
