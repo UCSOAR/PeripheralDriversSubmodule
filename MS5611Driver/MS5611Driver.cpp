@@ -35,7 +35,7 @@ MS5611_Driver::MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, u
  * @brief gets a single sample of barometer data
  * @returns a barometer data structure consisting of a 'temp' and 'pressure' variable
  */
-Baro11Data MS5611_Driver::getSample(){
+BaroData MS5611_Driver::getSample(){
 	/**
 	 * Variable Descriptions from MS5607-02BA03 Data Sheet:
 	 *
@@ -65,7 +65,7 @@ Baro11Data MS5611_Driver::getSample(){
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
 	uint8_t dataInBuffer;
-	Baro11Data data;
+	BaroData data;
 
 	// Reset the barometer
 	resetBarometer();

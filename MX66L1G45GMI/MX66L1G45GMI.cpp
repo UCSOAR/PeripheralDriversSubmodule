@@ -10,7 +10,14 @@
 /************************************
  * INCLUDES
  ************************************/
+#include "MX66L1G45GMI.hpp"
+#include "main.h"
+#include <cstdint>
+#include <cstring>
+#include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_gpio.h"
+#include "SystemDefines.hpp"
+
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/

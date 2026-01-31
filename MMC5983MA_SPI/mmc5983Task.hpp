@@ -52,14 +52,14 @@ public:
 
     void InitTask();
 
-    void GetLatestData(MagData1& dataOut);
+    void GetLatestData(MagData& dataOut);
 
 protected:
     static void RunTask(void* pvParams) { MMC5983MATask::Inst().Run(pvParams); }
     void Run(void* pvParams);
     void HandleCommand(Command& cm);
 
-    MagData1 _lastReading;
+    MagData _lastReading;
 
 
 private:
