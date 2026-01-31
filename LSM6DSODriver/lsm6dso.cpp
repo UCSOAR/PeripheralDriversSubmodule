@@ -113,13 +113,13 @@ void LSM6DSO_Driver::readSensors(uint8_t *out){
 
 
 
-LSM6DSO_Driver::CSHigh(){
+void LSM6DSO_Driver::CSHigh(){
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
 }
 
 
-LSM6DSO_Driver::CSHigh(){
+void LSM6DSO_Driver::CSLow(){
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
 }
