@@ -24,10 +24,9 @@ constexpr int CMD_TIMEOUT = 150;
  */
 class MS5611_Driver{
 public:
-	MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_):
-		hspi(hspi_), cs_gpio(cs_gpio_), cs_pin(cs_pin_){}
+	MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_);
 
-	Baro11Data getSample();
+	BaroData getSample();
 
 private:
 	// constants

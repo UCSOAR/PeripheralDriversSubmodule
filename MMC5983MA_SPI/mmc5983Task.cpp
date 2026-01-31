@@ -13,6 +13,7 @@
 #include "mmc5983Task.hpp"
 #include "main.h"
 #include "DataBroker.hpp"
+#include "LoggingTask.hpp"
 
 
 // FreeRTOS includes
@@ -76,7 +77,7 @@ void MMC5983MATask::InitTask() // RTOS Task Init
      SOAR_ASSERT(rtValue == pdPASS, "MMC5983MATask::InitTask() - xTaskCreate() failed");
 }
 
-void MMC5983MATask::GetLatestData(MagData1 & dataOut)
+void MMC5983MATask::GetLatestData(MagData & dataOut)
 {
     dataOut = _lastReading;
 }
@@ -96,7 +97,7 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
         SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
     }
 
-    MagData1 magData;
+    MagData magData;
 
     /* == Main Loop == */
     while (1)
@@ -116,9 +117,9 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
                     SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
                 }
                 // TODO: Send data somewhere
-                DataBroker::Publish<MagData1>(&magData);
-                Command logCommand(DATA_BROKER_COMMAND, DataBrokerMessageTypes::MAG_DATA);
-                LoggingTask::Inst().GetEventQueue()->Send(flashCommand);
+                DataBroker::Publish<MagData>(&magData);
+                Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
+                LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
             }
             else{
