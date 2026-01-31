@@ -13,10 +13,16 @@
 /************************************
  * INCLUDES
  ************************************/
-
+#include <stdbool.h>
+#include <cstdint>
 /************************************
  * MACROS AND DEFINES
  ************************************/
+// MX66L1G45GMI Flash Memory Specifications
+#define FS_PAGE_SIZE 256         // Page size for programming (256 bytes)
+#define FS_SECTOR_SIZE 4096      // Sector size for erase (4KB)
+#define FS_BLOCK_SIZE 65536      // Block size for erase (64KB)
+#define FS_TOTAL_SIZE 0x08000000 // Total: 128MB (1Gb / 8 bits per byte)
 
 /************************************
  * TYPEDEFS
@@ -29,9 +35,10 @@
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
+
 uint32_t MX66_ReadID(void);
 
-uint8_t MX66_ReadStatus(int reg);								// Read status reg1,2,3
+uint8_t MX66_ReadStatus(int reg); // Read status reg1,2,3
 
 void MX66_WriteStatus(int reg, uint8_t newstatus);
 
@@ -57,14 +64,12 @@ void MX66_Write_Block(uint32_t block, uint16_t offset, uint32_t size, const uint
 
 bool isWriteProtected(void);
 
-
-
-
-
-
-
-
-
+// Low-level helper APIs used by the driver implementation
+void MX66_Delay(uint32_t time);
+void csLOW(void);
+void csHIGH(void);
+void SPI_Write(uint8_t *data, uint16_t len);
+void SPI_Read(uint8_t *data, uint16_t len);
 
 
 #endif /* MX66L1G45GMI_HPP_ */
