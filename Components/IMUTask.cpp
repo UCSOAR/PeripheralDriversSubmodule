@@ -97,6 +97,7 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
 		imu_data.id = 1;
 
+
 		LogData();
 	default:
 		break;
@@ -106,9 +107,23 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void IMUTask::LogData(){
+	//Print driver output
+	SOAR_PRINT("IMU32 accelX: %d\n", imu_data.accel.x);
+	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.accel.y);
+	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.accel.x);
+
+	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.gyro.x);
+	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.gyro.y);
+	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.gyro.z);
+
+	SOAR_PRINT("IMU32 temperature: %d\n", imu_data.temp);
+
 	DataBroker::Publish<IMUData>(&imu_data);
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
+	SOAR_PRINT("Data Sent to LoggingTask\n");
+
 
 }
 

@@ -110,9 +110,16 @@ void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void BaroTask07::LogData(){
+
+	 SOAR_PRINT("Baro07 temperature: %d\n", data.temp);
+	 SOAR_PRINT("Baro07 pressure: %d\n", data.pressure);
+
+
 	DataBroker::Publish<BaroData>(&data);
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA));
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
+	SOAR_PRINT("Data Sent to LoggingTask\n");
 
 }
 
