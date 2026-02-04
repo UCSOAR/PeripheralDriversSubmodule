@@ -28,16 +28,14 @@ extern SPI_HandleTypeDef hspi1;
 /************************************
  * CLASS DEFINITIONS
  ************************************/
-enum IMU_TASK_COMMANDS{
-	IMU_NONE,
-	IMU_SAMPLE_AND_LOG,
-};
+
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
 class IMUTask: public Task
 {
 	public:
+
 		static IMUTask& Inst() {
 			static IMUTask inst;
 			return inst;
@@ -45,6 +43,10 @@ class IMUTask: public Task
 
 		void InitTask();
 
+		enum IMU_TASK_COMMANDS{
+			IMU_NONE,
+			IMU_SAMPLE_AND_LOG,
+		};
 
 
 	protected:

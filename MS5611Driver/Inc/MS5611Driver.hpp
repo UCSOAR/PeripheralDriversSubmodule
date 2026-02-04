@@ -11,10 +11,7 @@
 #include "cmsis_os.h"
 #include "SensorDataTypes.hpp"
 /************************************ * MACROS AND DEFINES ************************************/
-constexpr int TEMP_LOW = 2000;
-constexpr int TEMP_VERY_LOW = -1500;
-constexpr int CMD_SIZE = 1;
-constexpr int CMD_TIMEOUT = 150;
+
 /************************************ * TYPEDEFS ************************************/
 
 /************************************ * CLASS DEFINITIONS ************************************/

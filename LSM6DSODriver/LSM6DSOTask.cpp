@@ -94,7 +94,7 @@ void LSM6DSOTask::HandleCommand(Command& cm){
 }
 void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case IMU_SAMPLE_AND_LOG:
+	case LSM6DSOTask::IMU_SAMPLE_AND_LOG:
 		imu.readSensors(data);
 		imu_data = imu.bytesToStruct(data, true, true, true);
 		imu_data.id = 0;
