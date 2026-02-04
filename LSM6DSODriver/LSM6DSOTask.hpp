@@ -26,10 +26,7 @@ extern SPI_HandleTypeDef hspi3;
 /************************************
  * CLASS DEFINITIONS
  ************************************/
-enum IMU_TASK_COMMANDS{
-	IMU_NONE,
-	IMU_SAMPLE_AND_LOG,
-};
+
 /************************************
  * FUNCTION DECLARATIONS
  ************************************/
@@ -43,6 +40,10 @@ class LSM6DSOTask: public Task
 
 		void InitTask();
 
+		enum IMU_TASK_COMMANDS{
+			IMU_NONE,
+			IMU_SAMPLE_AND_LOG,
+		};
 
 
 	protected:

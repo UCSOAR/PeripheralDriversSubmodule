@@ -81,14 +81,18 @@ void IMUTask::HandleCommand(Command& cm){
 
 	case TASK_SPECIFIC_COMMAND:
 		break;
+
+	default:
+			SOAR_PRINT("No valid global command given");
 	}
+
 
 
 
 }
 void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case IMU_SAMPLE_AND_LOG:
+	case IMUTask::IMU_SAMPLE_AND_LOG:
 		imu.ReadSensors(data);
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
 		imu_data.id = 1;

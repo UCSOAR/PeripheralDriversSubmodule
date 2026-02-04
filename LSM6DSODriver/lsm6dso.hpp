@@ -17,6 +17,7 @@
 
 #include "stm32h7xx_hal.h"
 #include "SensorDataTypes.hpp"
+#include "CubeDefines.hpp"
 
 constexpr uint8_t LSM6DSO_ID = 0x6C;
 typedef uint8_t LSM6DSO_REGISTER_t;

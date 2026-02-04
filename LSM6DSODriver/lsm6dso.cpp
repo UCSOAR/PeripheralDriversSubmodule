@@ -43,16 +43,22 @@ void LSM6DSO_Driver::Init(SPI_HandleTypeDef* hspi_, uint8_t cs_pin_, GPIO_TypeDe
 
 void LSM6DSO_Driver::setRegister(LSM6DSO_REGISTER_t reg, uint8_t val){
 
-	uint8_t tx[2] = {0b00000000 | (0x7f & reg), val};// write MSB must be 0 ensures MSB is 0
+	uint8_t tx[2] = {(uint8_t)(0b00000000 | (0x7f & reg)), val};// write MSB must be 0 ensures MSB is 0
 	//transmit spi message
 	CSLow();
 	HAL_StatusTypeDef result = HAL_SPI_Transmit(hspi, tx, 2, 1000);
 	CSHigh();
+	if(result == HAL_OK){
+		return;
+	}
+	else{
+		SOAR_PRINT("set register error");
+	}
 
 }
 
 uint8_t LSM6DSO_Driver::getRegister(LSM6DSO_REGISTER_t reg){
-	uint8_t tx[2] = {0b10000000 | (0x7f & reg), 0x00};  //read MSB must be 1 ensures MSB is 1
+	uint8_t tx[2] = {(uint8_t)(0b10000000 | (0x7f & reg)), 0x00};  //read MSB must be 1 ensures MSB is 1
 	uint8_t rx[2]= {0,0};
 	//transmit address of reg and recieve reg data spi message
 	CSLow();
@@ -61,6 +67,7 @@ uint8_t LSM6DSO_Driver::getRegister(LSM6DSO_REGISTER_t reg){
 	if(HAL_OK == result){
 		return rx[1];
 	}
+	return 0;
 }
 
 void LSM6DSO_Driver::readRegisters(uint8_t startreg, uint8_t *out, uint16_t numBytes){
