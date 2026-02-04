@@ -107,8 +107,21 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 }
 
 void LSM6DSOTask::LogData(){
+
+	SOAR_PRINT("IMU16 accelX: %d\n", imu_data.accel.x);
+	SOAR_PRINT("IMU16 accelY: %d\n", imu_data.accel.y);
+	SOAR_PRINT("IMU16 accelY: %d\n", imu_data.accel.x);
+
+	SOAR_PRINT("IMU16 accelY: %d\n", imu_data.gyro.x);
+	SOAR_PRINT("IMU16 accelY: %d\n", imu_data.gyro.y);
+	SOAR_PRINT("IMU16 accelY: %d\n", imu_data.gyro.z);
+
+	SOAR_PRINT("IMU16 temperature: %d\n", imu_data.temp);
+
 	DataBroker::Publish<IMUData>(&imu_data);
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
+	SOAR_PRINT("Data Sent to LoggingTask\n");
 
 }

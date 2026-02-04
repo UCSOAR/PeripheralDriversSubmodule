@@ -117,9 +117,19 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
                     SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
                 }
                 // TODO: Send data somewhere
+                SOAR_PRINT("Mag rawX: %d\n", magData.rawX);
+                SOAR_PRINT("Mag rawY: %d\n", magData.rawY);
+                SOAR_PRINT("Mag rawZ: %d\n", magData.rawZ);
+
+                SOAR_PRINT("Mag scaledX: %f\n", magData.scaledX);
+			    SOAR_PRINT("Mag scaledY: %f\n", magData.scaledY);
+			    SOAR_PRINT("Mag scaledZ: %f\n", magData.scaledZ);
+
                 DataBroker::Publish<MagData>(&magData);
                 Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
                 LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
+                SOAR_PRINT("Data Sent to LoggingTask\n");
 
             }
             else{
