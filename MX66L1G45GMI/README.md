@@ -66,48 +66,59 @@ void IMPL_Delay(uint32_t ms) {
 ## 4. Usage & Initialization
 
 > **Critical Setup Note:**
-> To ensure the DMA channels are ready before the SPI peripheral attempts to link to them, the initialization order in `main.c` is necessary for correct functioning.
+> DMA must be initialized before SPI in your `main.c` or equivalent startup file. This is required for correct operation of the flash driver.
 
-### Example `main.cpp`
+### Initialization Example
 
-```cpp
-void Setup_Flash_Interface(); 
-#include "MX66L1G45GMI.hpp"
+```c
+// In your main.c or main.cpp:
+
+// 1. Initialize DMA and SPI peripherals in this order:
+MX_DMA_Init(); // DMA *MUST* be initialized BEFORE SPI
+MX_SPI1_Init();
+
+// 2. Initialize the Flash Driver:
+extern bool MX66L1G45GMI_INIT();
 
 int main(void)
 {
-  HAL_Init();
-  SystemClock_Config();
-  MX_GPIO_Init();
-
-  // CRITICAL: Initialize DMA before SPI
-  MX_DMA_Init(); // <--- DMA MUST be initialized BEFORE SPI
-  MX_SPI1_Init();
-
-  // Inject the hardware dependencies into the driver
-  Setup_Flash_Interface();
-
-  // Verify Connection
-  uint32_t flashID = MX66_ReadID();
-
-  // Expected ID for MX66L1G45GMI is 0xC2201B
-  // Manufacturer: 0xC2 (Macronix) | Type: 0x20 | Density: 0x1B (1Gb)
-  if (flashID == 0xC2201B) {
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-  }
-
-  while (1)
-  {
-    // main loop
-  }
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_SPI1_Init();
+    
+    if (MX66L1G45GMI_INIT() != HAL_OK) {
+        // Handle error: Flash not detected
+    }
+    while (1)
+    {
+        // main loop
+    }
 }
 ```
+
+**What does `MX66L1G45GMI_INIT()` do?**
+
+- Injects hardware interface functions (SPI, CS, Delay, DMA) into the driver
+- Verifies the flash chip is present (checks for ID 0xC2201B)
+- Returns `HAL_OK` if successful, `HAL_ERROR` if not
+
+**Note:**
+
+- You do NOT need to call `Setup_Flash_Interface()` directly; it is called inside `MX66L1G45GMI_INIT()`.
 
 ---
 
 ## 5. API Reference
 
 ### 5.1. Identification
+
+```c
+bool MX66L1G45GMI_INIT(void);
+```
+
+Initializes the driver and checks for the correct flash chip. Returns `HAL_OK` or `HAL_ERROR`.
 
 ```c
 uint32_t MX66_ReadID(void);
@@ -124,7 +135,7 @@ void MX66_Read(uint32_t block, uint16_t offset, uint32_t size, uint8_t *rData);
 Standard read starting at a specific block and offset.
 
 ```c
-void MX66_FastRead(...);
+void MX66_FastRead(uint32_t block, uint16_t offset, uint32_t size, uint8_t *rData);
 ```
 
 Uses the 0x0B command with dummy cycles for higher clock frequencies.
@@ -141,7 +152,15 @@ Writes data within a single 256-byte page. **Note:** Does not handle page roll-o
 void MX66_Write_Block(uint32_t block, uint16_t offset, uint32_t size, const uint8_t *data);
 ```
 
-**Recommended.** Automatically handles data splitting across multiple pages if the data exceeds page boundaries.
+Writes data across multiple pages, handling page boundaries automatically.
+
+---
+
+## 6. Notes on Implementation
+
+- The interface layer (`MX66L1G45GMI_Interface.cpp`) uses polling for small SPI commands (≤32 bytes) and DMA for larger transfers.
+- All hardware-specific details (SPI handle, CS pin, delay) are abstracted and injected at runtime.
+- Timeout and error handling are implemented for DMA reads.
 
 ### 5.4. Erase Operations
 
