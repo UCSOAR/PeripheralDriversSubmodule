@@ -3,7 +3,7 @@
  * @file    MX66L1G45GMI.hpp
  * @author  shiva
  * @date    Mar 26, 2025
- * @brief
+ * @brief   Header for MX66L1G45GMI Flash Memory Driver.
  ********************************************************************************
  */
 
@@ -28,6 +28,19 @@
  * TYPEDEFS
  ************************************/
 
+// ---< Config Struct >---
+typedef void (*MX66_WriteFunc)(const uint8_t* data, uint16_t len); // Write function pointer
+typedef void (*MX66_ReadFunc)(uint8_t* data, uint16_t len); // Read function pointer
+typedef void (*MX66_CSFunc)(bool state); // Chip Select function pointer
+typedef void (*MX66_DelayFunc)(uint32_t ms); // Delay function pointer
+
+struct MX66_Config {
+    MX66_WriteFunc Write;
+    MX66_ReadFunc  Read;
+    MX66_CSFunc    SetCS;
+    MX66_DelayFunc Delay;
+};
+
 /************************************
  * CLASS DEFINITIONS
  ************************************/
@@ -36,9 +49,11 @@
  * FUNCTION DECLARATIONS
  ************************************/
 
-uint32_t MX66_ReadID(void);
+uint32_t MX66_ReadID(void); // Read Manufacturer and Device ID
 
 uint8_t MX66_ReadStatus(int reg); // Read status reg1,2,3
+
+void MX66_Init(MX66_Config* config);
 
 void MX66_WriteStatus(int reg, uint8_t newstatus);
 

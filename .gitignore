@@ -1,6 +1,8 @@
 # Ignore .pre-commit-config.yaml
 .pre-commit-config.yaml
 
+#Ignore Makefile
+Makefile
 # Ignore other Branch specific dirs
 PeripheralDriversSubmodule/NAU7802/*
 PeripheralDriversSubmodule/MX66L1G45GMI/*
