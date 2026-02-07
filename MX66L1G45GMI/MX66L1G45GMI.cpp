@@ -10,11 +10,13 @@
 /************************************
  * INCLUDES
  ************************************/
-#include "MX66L1G45GMI.hpp"
+#include <MX66L1G45GMI.hpp>
 #include "main.h"
 #include <cstdint>
 #include <cstring>
 #include "stm32g4xx_hal.h"
+#include "stm32g4xx_hal_spi.h"
+
 #include "stm32g4xx_hal_gpio.h"
 #include "SystemDefines.hpp"
 
@@ -72,15 +74,36 @@ void SPI_Read(uint8_t *data, uint16_t len)
  ************************************/
 uint32_t MX66_ReadID(void)
 {
-	uint8_t tData = 0x9F;
-	uint8_t rData[3];
+
+
+
+	// RDID sequence: send 0x9F command, then receive 3 bytes (Manufacturer ID + Device ID)
+	uint8_t tData[4] = {0x9f, 0x00, 0x00, 0x00};
+	uint8_t rData[4] = {0,0,0,0};
+
 	csLOW();
-	SPI_Write(&tData, 1);
-	SPI_Read(rData, 3);
+
+
+	HAL_SPI_TransmitReceive(&MX66_SPI, tData, rData, 4, 1000);
+	uint32_t ret = (((uint32_t)rData[1] << 16) | ((uint32_t)rData[2] << 8) | (uint32_t)rData[3]);
+
 	csHIGH();
-	uint32_t ret = ((rData[0] << 16) | (rData[1] << 8) | rData[2]);
+
+
 	return ret;
 }
+
+void MX66_ReleaseFromDeepPowerDown(void)
+{
+	// RDP (Release from Deep Power-Down): 0xAB
+	uint8_t tData = 0xAB;
+	csLOW();
+	SPI_Write(&tData, 1);
+	csHIGH();
+	MX66_Delay(1);
+}
+
+
 
 uint8_t MX66_ReadStatus(int reg)
 {
@@ -228,7 +251,7 @@ void MX66_Erase_Block(uint32_t block)
 
 	write_enable();
 
-	tData[0] = 0xD8;
+	tData[0] = 0x5C;
 	tData[1] = (memAddr >> 16) & 0xFF;
 	tData[2] = (memAddr >> 8) & 0xFF;
 	tData[3] = (memAddr) & 0xFF;
