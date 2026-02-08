@@ -25,6 +25,8 @@ void LSM6DSO_Driver::Init(SPI_HandleTypeDef* hspi_, uint8_t cs_pin_, GPIO_TypeDe
 	//read from WHO_AM_I reg to confirm initialization
 
 	uint8_t ID = getRegister(LSM6DSO_REG::WHO_AM_I);
+
+	SOAR_PRINT("WHO_AM_I %d", ID);
 	if(ID != LSM6DSO_ID){
 		return;
 	}
@@ -113,6 +115,16 @@ IMUData LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bool
 		out.accel.y = (int16_t)(raw_bytes[i+ 3] << 8 | raw_bytes[i+ 2]);
 		out.accel.z = (int16_t)(raw_bytes[i+ 5] << 8 | raw_bytes[i+ 4]);
 	}
+
+	out.accel.x *= 0.000061f;
+	out.accel.y *= 0.000061f;
+	out.accel.z *= 0.000061f;
+
+	out.gyro.x *= 0.00875f;
+	out.gyro.y *= 0.00875f;
+	out.gyro.z *= 0.00875f;
+
+	out.temp = 25.0f + (out.temp / 256.0f);
 
 	return out;
 }
