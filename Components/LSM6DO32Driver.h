@@ -107,6 +107,7 @@ namespace LSM6DSO32_REG {
 
 	constexpr LSM6DSO32_REGISTER_t CTRL1_XL  = 0x10;
 	constexpr LSM6DSO32_REGISTER_t CTRL2_G   = 0x11;
+	constexpr LSM6DSO32_REGISTER_t CTRL3_C   = 0x12;
 
 	constexpr LSM6DSO32_REGISTER_t STATUS_REG    = 0x1E;
 

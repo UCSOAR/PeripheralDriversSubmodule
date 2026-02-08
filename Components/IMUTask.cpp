@@ -93,12 +93,13 @@ void IMUTask::HandleCommand(Command& cm){
 void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case IMUTask::IMU_SAMPLE_AND_LOG:
-		imu.ReadSensors(data);
-		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
-
-
-		LogData();
+		while(1){
+			imu.ReadSensors(data);
+			imu_data = imu.ConvertRawMeasurementToStruct(data);
+			imu_data.id = 1;
+			osDelay(1000);
+			LogData();
+		}
 	default:
 		break;
 	}
@@ -110,17 +111,17 @@ void IMUTask::LogData(){
 	//Print driver output
 	SOAR_PRINT("IMU32 accelX: %d\n", imu_data.accel.x);
 	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.accel.y);
-	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.accel.x);
+	SOAR_PRINT("IMU32 accelZ: %d\n", imu_data.accel.z);
 
-	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.gyro.x);
-	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.gyro.y);
-	SOAR_PRINT("IMU32 accelY: %d\n", imu_data.gyro.z);
+	SOAR_PRINT("IMU32 gyroX: %d\n", imu_data.gyro.x);
+	SOAR_PRINT("IMU32 gyroY: %d\n", imu_data.gyro.y);
+	SOAR_PRINT("IMU32 gyroZ: %d\n", imu_data.gyro.z);
 
 	SOAR_PRINT("IMU32 temperature: %d\n", imu_data.temp);
 
-	DataBroker::Publish<IMUData>(&imu_data);
-	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
-	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+//	DataBroker::Publish<IMUData>(&imu_data);
+//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
+//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 	SOAR_PRINT("Data Sent to LoggingTask\n");
 
