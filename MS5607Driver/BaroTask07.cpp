@@ -99,9 +99,11 @@ void BaroTask07::HandleCommand(Command& cm){
 void BaroTask07::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case BARO07_SAMPLE_AND_LOG:
-		data = barometer.getSample();
-		data.id = 0;
-		LogData();
+		while(1){
+			data = barometer.getSample();
+			data.id = 0;
+			LogData();
+		}
 	default:
 		break;
 	}

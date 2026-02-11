@@ -95,12 +95,13 @@ void LSM6DSOTask::HandleCommand(Command& cm){
 void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case LSM6DSOTask::IMU_SAMPLE_AND_LOG:
-
-		imu.readSensors(data);
-		imu_data = imu.bytesToStruct(data, true, true, true);
-		imu_data.id = 0;
-		LogData();
-		osDelay(1000);
+		while(1){
+			imu.readSensors(data);
+			imu_data = imu.bytesToStruct(data, true, true, true);
+			imu_data.id = 0;
+			LogData();
+			osDelay(1000);
+		}
 
 	default:
 		break;

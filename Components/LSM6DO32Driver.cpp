@@ -29,7 +29,7 @@ void LSM6DO32_Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uin
 
 
 	SetRegister(LSM6DSO32_REG::CTRL3_C, 0b01000100);
-	SetRegister(LSM6DSO32_REG::CTRL1_XL,0b01010000);
+	SetRegister(LSM6DSO32_REG::CTRL1_XL,0b01011100);
 	SetRegister(LSM6DSO32_REG::CTRL2_G,0b01010000);
 	SetRegister(LSM6DSO32_REG::FIFO_CTRL4, 0b00000000);
 }
@@ -122,13 +122,13 @@ const IMUData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf,
 	}
 	out.temp = 25.0f + out.temp / 256.0f;
 
-	out.accel.x *= 0.000122f;
-	out.accel.y *= 0.000122f;
-	out.accel.z *= 0.000122f;
+	out.accel.x *= 0.732;
+	out.accel.y *= 0.732;
+	out.accel.z *= 0.732;
 
-	out.gyro.x *= 0.00875f;
-	out.gyro.y *= 0.00875f;
-	out.gyro.z *= 0.00875f;
+	out.gyro.x *= 8.75;
+	out.gyro.y *= 8.75;
+	out.gyro.z *= 8.75;
 
 
 	return out;

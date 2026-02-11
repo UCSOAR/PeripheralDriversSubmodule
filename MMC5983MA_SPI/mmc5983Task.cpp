@@ -25,11 +25,11 @@
  ************************************/
 /* temp definitions if not SystemDefines.hpp*/
 #ifndef MMC_TASK_QUEUE_DEPTH
-#define MMC_TASK_QUEUE_DEPTH 5
+#define MMC_TASK_QUEUE_DEPTH 10
 #endif
 
 #ifndef MMC_TASK_STACK_DEPTH
-#define MMC_TASK_STACK_DEPTH 256 // Adjust..
+#define MMC_TASK_STACK_DEPTH 512 // Adjust..
 #endif
 
 #ifndef MMC_TASK_PRIORITY
@@ -46,23 +46,26 @@
     _spi_wrapper = nullptr;
     _magnetometer = nullptr;
 
-    _enableReading = true;
-    _enableLogging = true;
 }
 
-void MMC5983MATask::Init(SPI_HandleTypeDef* hspi)
-{
-    SOAR_ASSERT(hspi != nullptr, "MMC5983MATask: Received Null SPI Handle");
-    
-    _spi_wrapper = new SPI_Wrapper(hspi);
-    _magnetometer = new MMC5983MA(_spi_wrapper, MMC_CS_PORT, MMC_CS_PIN);
-}
+
 
 
 void MMC5983MATask::InitTask() // RTOS Task Init
 {
     // Make sure dependencies are set
-    SOAR_ASSERT(_magnetometer != nullptr, "MMC5983MATask: Driver not initialized. Call Init(hspi) first.");
+	_spi_wrapper = new SPI_Wrapper(&hspi2);
+	_magnetometer = new MMC5983MA(_spi_wrapper, MMC_CS_PORT, MMC_CS_PIN);
+
+	if (_magnetometer->begin() != MMC5983MA_Status::OK){
+	        // Handle initialization error
+		SOAR_PRINT("MMC5983MATask: Sensor initialization failed.\n");
+	}
+	else{
+		SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
+	}
+
+
 
     // Assert Task not already created
     SOAR_ASSERT(rtTaskHandle == nullptr, "Cannot initialize MMC5983MA task twice");
@@ -77,80 +80,16 @@ void MMC5983MATask::InitTask() // RTOS Task Init
      SOAR_ASSERT(rtValue == pdPASS, "MMC5983MATask::InitTask() - xTaskCreate() failed");
 }
 
-void MMC5983MATask::GetLatestData(MagData & dataOut)
-{
-    dataOut = _lastReading;
-}
 
 void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
 {
-   /*   -Driver Setup-  */
-
-   // Initialize 1x Gain
-    if (_magnetometer->begin() != MMC5983MA_Status::OK){
-        // Handle initialization error
-        SOAR_PRINT("MMC5983MATask: Sensor initialization failed.\n");
-        _enableReading = false;
-
-    } 
-    else{
-        SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
-    }
-
-    MagData magData;
-
-    /* == Main Loop == */
-    while (1)
-    {
-        // Check if reading is enabled
-        if (_enableReading){
-
-            _magnetometer->triggerMeasurement();
-            vTaskDelay(pdMS_TO_TICKS(10)); // Wait for measurement to complete
-            
-            // Read sensor data
-            if (_magnetometer->readData(magData) == MMC5983MA_Status::OK){
-                
-                _lastReading = magData;
-
-                if (_enableLogging) {
-                    SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
-                }
-                // TODO: Send data somewhere
-                SOAR_PRINT("Mag rawX: %d\n", magData.rawX);
-                SOAR_PRINT("Mag rawY: %d\n", magData.rawY);
-                SOAR_PRINT("Mag rawZ: %d\n", magData.rawZ);
-
-                SOAR_PRINT("Mag scaledX: %f\n", magData.scaledX);
-			    SOAR_PRINT("Mag scaledY: %f\n", magData.scaledY);
-			    SOAR_PRINT("Mag scaledZ: %f\n", magData.scaledZ);
-
-                DataBroker::Publish<MagData>(&magData);
-                Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
-                LoggingTask::Inst().GetEventQueue()->Send(logCommand);
-
-                SOAR_PRINT("Data Sent to LoggingTask\n");
-
-            }
-            else{
-
-                if (_enableLogging) {
-                    SOAR_PRINT("MMC5983MATask: Failed to read sensor data.\n");
-                }
-            }
-        }
-
         // Handle incoming commands (optional)
         // receive with 0 timeout to poll
         Command cm;
         if (qEvtQueue->Receive(cm, 0)) {
             HandleCommand(cm);
         }
-        
-        // Yield / Delay to allow other tasks to run
-        // TODO: Adjust delay as needed
-        osDelay(10);
-    }
+
 }
 
 void MMC5983MATask::HandleCommand(Command & cm)
@@ -160,22 +99,27 @@ void MMC5983MATask::HandleCommand(Command & cm)
     // TODO: Add command cases (Gain change, calibration, etc.) IF NEEDED
     
     case MMC5983MA_Commands::MMC_CMD_START_READ: // Start Readings
-        _enableReading = true;
+
         SOAR_PRINT("MMC5983MATask: Enabled Readings.\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_STOP_READ: // Stop Readings
-        _enableReading = false;
+
         SOAR_PRINT("MMC5983MATask: Disabled Readings.\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_ENABLE_LOG: // Enable Logging
-        _enableLogging = true;
-        SOAR_PRINT("MMC5983MATask: Enabled Logging.\n");
+
+		_magnetometer->triggerMeasurement();
+		vTaskDelay(pdMS_TO_TICKS(10));
+		_magnetometer->readData(magData);
+		LogData();
+
+		SOAR_PRINT("Data Sent to LoggingTask\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_DISABLE_LOG: // Disable Logging
-        _enableLogging = false;
+
         SOAR_PRINT("MMC5983MATask: Disabled Logging.\n");
         break;
 
@@ -185,4 +129,20 @@ void MMC5983MATask::HandleCommand(Command & cm)
     }
 
     cm.Reset();
+}
+
+void MMC5983MATask::LogData(){
+
+	SOAR_PRINT("Mag rawX: %d\n", magData.rawX);
+	SOAR_PRINT("Mag rawY: %d\n", magData.rawY);
+	SOAR_PRINT("Mag rawZ: %d\n", magData.rawZ);
+
+	SOAR_PRINT("Mag scaledX: %f\n", magData.scaledX);
+	SOAR_PRINT("Mag scaledY: %f\n", magData.scaledY);
+	SOAR_PRINT("Mag scaledZ: %f\n", magData.scaledZ);
+
+	DataBroker::Publish<MagData>(&magData);
+	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
 }

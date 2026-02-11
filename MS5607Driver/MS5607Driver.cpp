@@ -108,7 +108,7 @@ BaroData MS5607_Driver::getSample(){
 		sens = sens - sens2;
 	}
 
-	int32_t p = (((pressureReading * sens) >> 21) - off) >> 15;   // Divide this value by 100 to get millibars
+	int64_t p = ((((int64_t)pressureReading * sens) >> 21) - off) >> 15;   // Divide this value by 100 to get millibars
 
 	/* Store Data --------------------------------------------------------*/
 	data.pressure = p;
@@ -159,6 +159,8 @@ void MS5607_Driver::resetBarometer()
 	HAL_SPI_Transmit(hspi, &RESET_CMD, CMD_SIZE, CMD_TIMEOUT);
 	osDelay(4); // 2.8ms reload after Reset command
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
+
+
 }
 
 /**

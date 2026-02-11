@@ -29,6 +29,7 @@
 #include "mmc5983ma.hpp"
 #include "spi_wrapper.hpp"
 
+extern SPI_HandleTypeDef hspi2;
 /************************************
  * CLASS DEFINITIONS
  ************************************/
@@ -49,19 +50,12 @@ public:
     };
 
 
-
-    void Init(SPI_HandleTypeDef* hspi);
-
     void InitTask();
-
-    void GetLatestData(MagData& dataOut);
 
 protected:
     static void RunTask(void* pvParams) { MMC5983MATask::Inst().Run(pvParams); }
     void Run(void* pvParams);
     void HandleCommand(Command& cm);
-
-    MagData _lastReading;
 
 
 private:
@@ -69,14 +63,13 @@ private:
     MMC5983MATask();
     MMC5983MATask(const MMC5983MATask&);
     MMC5983MATask& operator=(const MMC5983MATask&);
+    void LogData();
 
     // Obj to allow delayed inits
     SPI_Wrapper* _spi_wrapper;
     MMC5983MA* _magnetometer;
+    MagData magData;
 
-    // Task Control Flags
-    bool _enableReading;
-    bool _enableLogging;
 
     // Chip Select Port
     GPIO_TypeDef* MMC_CS_PORT = MAG_CS_GPIO_Port;
