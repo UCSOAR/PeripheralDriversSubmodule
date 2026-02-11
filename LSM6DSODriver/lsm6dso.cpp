@@ -35,7 +35,7 @@ void LSM6DSO_Driver::Init(SPI_HandleTypeDef* hspi_, uint8_t cs_pin_, GPIO_TypeDe
 	 * automatic increment of register addresses with multiple byte reads*/
 	setRegister(LSM6DSO_REG::CTRL3_C,0b01000100);
 	//set CTRL1_XL reg 208Hz and 2g for Accel
-	setRegister(LSM6DSO_REG::CTRL1_XL,0b01010000);
+	setRegister(LSM6DSO_REG::CTRL1_XL,0b01010100);
 	//set CTRL2_G reg 208Hz and 250dps for Gyro
 	setRegister(LSM6DSO_REG::CTRL2_G,0b01010000);
 	//bypass FIFO mode
@@ -116,13 +116,13 @@ IMUData LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bool
 		out.accel.z = (int16_t)(raw_bytes[i+ 5] << 8 | raw_bytes[i+ 4]);
 	}
 
-	out.accel.x *= 0.000061f;
-	out.accel.y *= 0.000061f;
-	out.accel.z *= 0.000061f;
+	out.accel.x *= 0.732; // mg/LSB
+	out.accel.y *= 0.732;
+	out.accel.z *= 0.732;
 
-	out.gyro.x *= 0.00875f;
-	out.gyro.y *= 0.00875f;
-	out.gyro.z *= 0.00875f;
+	out.gyro.x *= 8.75; //mdps/LSB
+	out.gyro.y *= 8.75;
+	out.gyro.z *= 8.75;
 
 	out.temp = 25.0f + (out.temp / 256.0f);
 

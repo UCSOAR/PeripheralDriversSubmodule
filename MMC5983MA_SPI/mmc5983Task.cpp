@@ -52,11 +52,18 @@
 void MMC5983MATask::InitTask() // RTOS Task Init
 {
     // Make sure dependencies are set
+	_spi_wrapper = new SPI_Wrapper(&hspi2);
+	_magnetometer = new MMC5983MA(_spi_wrapper, MMC_CS_PORT, MMC_CS_PIN);
 
-    const MMC5983MA_Status initStatus = magnetometer.Init(_hspi, MMC_CS_PORT, MMC_CS_PIN);
-    SOAR_ASSERT(initStatus == MMC5983MA_Status::OK,
-                "MMC5983MA init failed, status=%d",
-                static_cast<int>(initStatus));
+	if (_magnetometer->begin() != MMC5983MA_Status::OK){
+	        // Handle initialization error
+		SOAR_PRINT("MMC5983MATask: Sensor initialization failed.\n");
+	}
+	else{
+		SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
+	}
+
+
 
     // Assert Task not already created
     SOAR_ASSERT(rtTaskHandle == nullptr, "Cannot initialize MMC5983MA task twice");
@@ -71,74 +78,16 @@ void MMC5983MATask::InitTask() // RTOS Task Init
      SOAR_ASSERT(rtValue == pdPASS, "MMC5983MATask::InitTask() - xTaskCreate() failed");
 }
 
-void MMC5983MATask::GetLatestData(MagData & dataOut)
-{
-    dataOut = _lastReading;
-}
 
 void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
 {
-    while (1) {
-    	magnetometer.triggerMeasurement();
-
-    	magnetometer.readData(magData);
-    	LogData();
-
-    } 
-    else{
-        SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
-    }
-
-    MagData magData;
-
-    /* == Main Loop == */
-    while (1)
-    {
-        // Check if reading is enabled
-        if (_enableReading){
-
-            _magnetometer->triggerMeasurement();
-            vTaskDelay(pdMS_TO_TICKS(10)); // Wait for measurement to complete
-            
-            // Read sensor data
-            if (_magnetometer->readData(magData) == MMC5983MA_Status::OK){
-                
-                _lastReading = magData;
-
-                if (_enableLogging) {
-                    SOAR_PRINT("MMC5983MATask: Magnetometer Reading: %ld, %ld, %ld\n", magData.rawX, magData.rawY, magData.rawZ);
-                }
-                // TODO: Send data somewhere
-                SOAR_PRINT("Mag rawX: %d\n", magData.rawX);
-                SOAR_PRINT("Mag rawY: %d\n", magData.rawY);
-                SOAR_PRINT("Mag rawZ: %d\n", magData.rawZ);
-
-                SOAR_PRINT("Mag scaledX: %f\n", magData.scaledX);
-			    SOAR_PRINT("Mag scaledY: %f\n", magData.scaledY);
-			    SOAR_PRINT("Mag scaledZ: %f\n", magData.scaledZ);
-
-                DataBroker::Publish<MagData>(&magData);
-                Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
-                LoggingTask::Inst().GetEventQueue()->Send(logCommand);
-
-                SOAR_PRINT("Data Sent to LoggingTask\n");
-
-            }
-            else{
-
-                if (_enableLogging) {
-                    SOAR_PRINT("MMC5983MATask: Failed to read sensor data.\n");
-                }
-            }
-        }
-
         // Handle incoming commands (optional)
         // receive with 0 timeout to poll
         Command cm;
         if (qEvtQueue->Receive(cm, 20)) {
             HandleCommand(cm);
         }
-    }
+
 }
 
 void MMC5983MATask::HandleCommand(Command & cm)
@@ -159,7 +108,12 @@ void MMC5983MATask::HandleCommand(Command & cm)
 
     case MMC5983MA_Commands::MMC_CMD_ENABLE_LOG: // Enable Logging
 
-		//SOAR_PRINT("Data Sent to LoggingTask\n");
+		_magnetometer->triggerMeasurement();
+		vTaskDelay(pdMS_TO_TICKS(10));
+		_magnetometer->readData(magData);
+		LogData();
+
+		SOAR_PRINT("Data Sent to LoggingTask\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_DISABLE_LOG: // Disable Logging
@@ -177,16 +131,16 @@ void MMC5983MATask::HandleCommand(Command & cm)
 
 void MMC5983MATask::LogData(){
 
+	SOAR_PRINT("Mag rawX: %d\n", magData.rawX);
+	SOAR_PRINT("Mag rawY: %d\n", magData.rawY);
+	SOAR_PRINT("Mag rawZ: %d\n", magData.rawZ);
 
-	MagData data = {
-			magData.scaledX,
-			magData.scaledY,
-			magData.scaledZ
-	};
+	SOAR_PRINT("Mag scaledX: %f\n", magData.scaledX);
+	SOAR_PRINT("Mag scaledY: %f\n", magData.scaledY);
+	SOAR_PRINT("Mag scaledZ: %f\n", magData.scaledZ);
 
-
-	DataBroker::Publish<MagData>(&data);
-//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
-//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+	DataBroker::Publish<MagData>(&magData);
+	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 }

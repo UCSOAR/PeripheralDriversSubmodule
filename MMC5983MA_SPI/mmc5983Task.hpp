@@ -52,14 +52,10 @@ public:
 
     void InitTask();
 
-    void GetLatestData(MagData& dataOut);
-
 protected:
     static void RunTask(void* pvParams) { MMC5983MATask::Inst().Run(pvParams); }
     void Run(void* pvParams);
     void HandleCommand(Command& cm);
-
-    MagData _lastReading;
 
 
 private:
@@ -69,15 +65,10 @@ private:
     MMC5983MATask& operator=(const MMC5983MATask&);
     void LogData();
 
-    SPI_HandleTypeDef* _hspi = &hspi2;
-    GPIO_TypeDef* MMC_CS_PORT = MAG_CS_GPIO_Port;
-    const uint16_t MMC_CS_PIN = MAG_CS_Pin; // Adjust as needed
-
     // Obj to allow delayed inits
-
-
-    MMC5983MA magnetometer;
-    MagDriverData magData;
+    SPI_Wrapper* _spi_wrapper;
+    MMC5983MA* _magnetometer;
+    MagData magData;
 
 
     // Chip Select Port
