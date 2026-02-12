@@ -44,7 +44,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), barometer(hspi_, MS5607_CS_PORT, MS5607_CS_PIN)
+BaroTask07::BaroTask07():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
