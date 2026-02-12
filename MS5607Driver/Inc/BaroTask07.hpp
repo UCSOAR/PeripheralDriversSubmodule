@@ -12,7 +12,7 @@
 #include "SensorDataTypes.hpp"
 #include "main.h"
 
-extern SPI_HandleTypeDef hspi2;
+extern SPI_HandleTypeDef hspi4;
 /************************************
  * MACROS AND DEFINES
  ************************************/
@@ -52,11 +52,11 @@ class BaroTask07: public Task
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
 		BaroData data;
-		MS5607_Driver barometer;
+
 		GPIO_TypeDef* MS5607_CS_PORT = BARO07_CS_GPIO_Port;
 		const uint16_t MS5607_CS_PIN = BARO07_CS_Pin; //adjust when needed
-		SPI_HandleTypeDef* hspi_= &hspi2;// adjust this when needed
-
+		SPI_HandleTypeDef* hspi_= &hspi4;// adjust this when needed
+		MS5607_Driver barometer{hspi_, MS5607_CS_PORT, MS5607_CS_PIN};
 
 
 
