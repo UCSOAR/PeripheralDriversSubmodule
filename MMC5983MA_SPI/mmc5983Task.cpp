@@ -54,13 +54,7 @@ void MMC5983MATask::InitTask() // RTOS Task Init
     // Make sure dependencies are set
 
 
-	if (_magnetometer.begin() != MMC5983MA_Status::OK){
-	        // Handle initialization error
-		SOAR_PRINT("MMC5983MATask: Sensor initialization failed.\n");
-	}
-	else{
-		SOAR_PRINT("MMC5983MATask: Sensor initialized successfully.\n");
-	}
+	magnetometer.Init(_hspi, MMC_CS_PORT, MMC_CS_PIN);
 
 
 
@@ -107,9 +101,9 @@ void MMC5983MATask::HandleCommand(Command & cm)
 
     case MMC5983MA_Commands::MMC_CMD_ENABLE_LOG: // Enable Logging
 		while(1){
-			_magnetometer.triggerMeasurement();
+			magnetometer.triggerMeasurement();
 			vTaskDelay(pdMS_TO_TICKS(10));
-			_magnetometer.readData(magData);
+			magnetometer.readData(magData);
 			LogData();
 			osDelay(1000);
 			SOAR_PRINT("Data Sent to LoggingTask\n");
