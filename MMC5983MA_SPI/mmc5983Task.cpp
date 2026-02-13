@@ -43,8 +43,6 @@
  // Constructor
  MMC5983MATask::MMC5983MATask() : Task(MMC_TASK_QUEUE_DEPTH)
 {
-    _spi_wrapper = nullptr;
-    _magnetometer = nullptr;
 
 }
 
@@ -54,10 +52,9 @@
 void MMC5983MATask::InitTask() // RTOS Task Init
 {
     // Make sure dependencies are set
-	_spi_wrapper = new SPI_Wrapper(&hspi2);
-	_magnetometer = new MMC5983MA(_spi_wrapper, MMC_CS_PORT, MMC_CS_PIN);
 
-	if (_magnetometer->begin() != MMC5983MA_Status::OK){
+
+	if (_magnetometer.begin() != MMC5983MA_Status::OK){
 	        // Handle initialization error
 		SOAR_PRINT("MMC5983MATask: Sensor initialization failed.\n");
 	}
@@ -109,13 +106,15 @@ void MMC5983MATask::HandleCommand(Command & cm)
         break;
 
     case MMC5983MA_Commands::MMC_CMD_ENABLE_LOG: // Enable Logging
+		while(1){
+			_magnetometer.triggerMeasurement();
+			vTaskDelay(pdMS_TO_TICKS(10));
+			_magnetometer.readData(magData);
+			LogData();
+			osDelay(1000);
+			SOAR_PRINT("Data Sent to LoggingTask\n");
+		}
 
-		_magnetometer->triggerMeasurement();
-		vTaskDelay(pdMS_TO_TICKS(10));
-		_magnetometer->readData(magData);
-		LogData();
-
-		SOAR_PRINT("Data Sent to LoggingTask\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_DISABLE_LOG: // Disable Logging

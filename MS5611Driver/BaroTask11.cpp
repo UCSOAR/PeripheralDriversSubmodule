@@ -37,7 +37,7 @@
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-BaroTask11::BaroTask11():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), barometer(hspi_, MS5611_CS_PORT, MS5611_CS_PIN)
+BaroTask11::BaroTask11():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS)
 {
 
 }
@@ -87,20 +87,15 @@ void BaroTask11::HandleCommand(Command& cm){
 		break;
 	}
 
-
+	cm.Reset();
 
 }
 void BaroTask11::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case BARO11_SAMPLE_AND_LOG:
-
-		while(1){
-
-			data = barometer.getSample();
-			data.id = 1;
-			LogData();
-			osDelay(1000);
-		}
+		data = barometer.getSample();
+		data.id = 1;
+		LogData();
 
 	default:
 		break;
@@ -111,12 +106,12 @@ void BaroTask11::HandleRequestCommand(uint16_t taskCommand){
 
 void BaroTask11::LogData(){
 
-	SOAR_PRINT("Baro11 temperature: %d\n", data.temp);
-	SOAR_PRINT("Baro11 pressure: %d\n", data.pressure);
 
-//	DataBroker::Publish<BaroData>(&data);
-//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA)); //change if separate publisher
-//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
+	DataBroker::Publish<BaroData>(&data);
+	osDelay(10);
+	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA)); //change if separate publisher
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 	SOAR_PRINT("Data Sent to LoggingTask\n");
 
