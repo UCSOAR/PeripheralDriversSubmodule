@@ -31,18 +31,20 @@ MMC5983MA_Status MMC5983MA::Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, 
 	_csPort = csPort;
 	_csPin  = csPin;
 
+    HAL_Delay(10);
     // Set the chip select pin HIGH (idle) by default.
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
 
     uint8_t productID = getProductID();
 
-    if (productID != MMC5983MA_PRODUCT_ID_VALUE) {
-        return MMC5983MA_Status::ERR_INVALID_ARG;
-    }
-
-    // Default 200 Hz bandwidth after confirming the device responded correctly.
-    writeRegister(MMC5983MA_IT_CONTROL1, MMC5983MA_BW_200HZ);
-    return MMC5983MA_Status::OK;
+   if (productID == MMC5983MA_PRODUCT_ID_VALUE) {
+	   return MMC5983MA_Status::OK;
+   }
+   else {
+	   return MMC5983MA_Status::ERR_INVALID_ARG;
+   }
+   //default 200Hz sampling rate
+   writeRegister(MMC5983MA_IT_CONTROL1, MMC5983MA_BW_200HZ);
 }
 
 
@@ -215,37 +217,19 @@ uint8_t MMC5983MA::readRegister(uint8_t reg){
     uint8_t rx_data[] = {0, 0};
 
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_RESET);
-	HAL_StatusTypeDef result = HAL_SPI_TransmitReceive(&hspi2, cmd_byte, rx_data, 2, 1000);
+	HAL_SPI_TransmitReceive(_hspi, cmd_byte, rx_data, 2, 1000);
 	HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
-	if(HAL_OK == result){
-		return rx_data[1];
-	}
 
 
+	return rx_data[1];
 
-    // Pull CS Low
-//    HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_RESET);
-//    HAL_SPI_TransmitReceive(&hspi2, cmd_byte, rx_data ,sizeof(rx_data) ,2000);
 
-    // 1. Send the command byte
-   // _spi->transfer(cmd_byte);
-
-    // 2. Send dummy byte (0x00) to clock out the data
-   // uint8_t rx_value = _spi->transfer(0x00);
-
-    // Pull CS High
-//    HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
-
-    return rx_data[1];
 }
 
 /**
  * @brief Reads multiple bytes from the sensor.
  */
 void MMC5983MA::readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len) {
-    SPI2BusGuard guard;
-    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
-
     // 1. Create the command byte (same as readRegister)
 	uint8_t tx[len+1];
 	uint8_t rx[len+1];
