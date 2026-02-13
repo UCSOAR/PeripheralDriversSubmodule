@@ -64,16 +64,18 @@ private:
     MMC5983MATask(const MMC5983MATask&);
     MMC5983MATask& operator=(const MMC5983MATask&);
     void LogData();
+    GPIO_TypeDef* MMC_CS_PORT = MAG_CS_GPIO_Port;
+    const uint16_t MMC_CS_PIN = MAG_CS_Pin; // Adjust as needed
 
     // Obj to allow delayed inits
-    SPI_Wrapper* _spi_wrapper;
-    MMC5983MA* _magnetometer;
+    SPI_Wrapper _spi_wrapper{&hspi2};
+
+    MMC5983MA _magnetometer{&_spi_wrapper, MMC_CS_PORT, MMC_CS_PIN};
     MagData magData;
 
 
     // Chip Select Port
-    GPIO_TypeDef* MMC_CS_PORT = MAG_CS_GPIO_Port;
-    const uint16_t MMC_CS_PIN = MAG_CS_Pin; // Adjust as needed
+
 
 
 

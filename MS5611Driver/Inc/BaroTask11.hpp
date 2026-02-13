@@ -50,10 +50,11 @@ class BaroTask11: public Task
 		void HandleCommand(Command& cm);
 		void HandleRequestCommand(uint16_t taskCommand);
 		BaroData data;
-		MS5611_Driver barometer;
+
 		GPIO_TypeDef* MS5611_CS_PORT = BARO11_CS_GPIO_Port;
 		const uint16_t MS5611_CS_PIN = BARO11_CS_Pin; //adjust when needed
 		SPI_HandleTypeDef* hspi_ = &hspi2;// adjust this when needed
+		MS5611_Driver barometer{hspi_, MS5611_CS_PORT, MS5611_CS_PIN};
 
 
 

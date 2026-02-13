@@ -9,6 +9,7 @@
 #include "spi_wrapper.hpp" 
 #include "stm32h7xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
+#include "main.h"
 #include <cstdint>
 
 using std::uint8_t;
@@ -16,23 +17,6 @@ using std::uint16_t;
 using std::uint32_t;
 
 extern SPI_HandleTypeDef hspi2;
-
-namespace {
-class SPI2BusGuard {
-public:
-    SPI2BusGuard() : locked_(BusLocks::spi2.Lock(100)) {}
-    ~SPI2BusGuard() {
-        if (locked_) {
-            BusLocks::spi2.Unlock();
-        }
-    }
-
-    bool Locked() const { return locked_; }
-
-private:
-    bool locked_;
-};
-}
 /**
  * @brief Constructor
  */
@@ -231,13 +215,28 @@ uint8_t MMC5983MA::readRegister(uint8_t reg){
     uint8_t rx_data[] = {0, 0};
 
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(_hspi, cmd_byte, rx_data, 2, 1000);
+	HAL_StatusTypeDef result = HAL_SPI_TransmitReceive(&hspi2, cmd_byte, rx_data, 2, 1000);
 	HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
+	if(HAL_OK == result){
+		return rx_data[1];
+	}
 
 
-	return rx_data[1];
 
+    // Pull CS Low
+//    HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_RESET);
+//    HAL_SPI_TransmitReceive(&hspi2, cmd_byte, rx_data ,sizeof(rx_data) ,2000);
 
+    // 1. Send the command byte
+   // _spi->transfer(cmd_byte);
+
+    // 2. Send dummy byte (0x00) to clock out the data
+   // uint8_t rx_value = _spi->transfer(0x00);
+
+    // Pull CS High
+//    HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
+
+    return rx_data[1];
 }
 
 /**
