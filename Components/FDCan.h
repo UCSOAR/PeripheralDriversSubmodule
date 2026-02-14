@@ -1,5 +1,5 @@
 /*
- * FDCan.hpp
+ * FDCan.h
  *
  *  Created on: Aug 24, 2024
  *      Author: goada
@@ -11,6 +11,8 @@
 #include "stm32g4xx.h"
 
 constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;
+constexpr size_t MAX_FDCAN_LOGS = 8;
+
 
 class FDCanController {
  public:
@@ -29,34 +31,38 @@ class FDCanController {
 
   bool SendStringByLogIndex(const char *msg, uint16_t logIndex);
 
-  bool SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID);
+  bool SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, uint16_t timeout = 1000);
+
+  bool AddLogType(LogInitStruct log);
 
   HAL_StatusTypeDef RegisterLogs(LogInitStruct *logs, uint16_t numLogs);
 
   uint16_t ReceiveFirstLogFromRXBuf(uint8_t *out, uint16_t *msgID);
-  uint16_t ReceiveLogTypeFromRXBuf(uint8_t *out, uint16_t logIndexFilter);
+  uint16_t ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logIndexFilter);
 
-  HAL_StatusTypeDef RegisterLogType(uint16_t msgIDStart, uint8_t rxBufStart,
-                                    uint16_t length);
-
-  static const uint16_t FDRoundDataSize(uint16_t unroundedLen);
-  static const uint32_t FDGetModDLC(uint16_t unroundedLen);
+  static uint16_t FDRoundDataSize(uint16_t unroundedLen);
+  static uint32_t FDGetModDLC(uint16_t unroundedLen);
+  static uint16_t FDGetByteLengthOfDLC(uint16_t DLC);
 
   inline void RaiseFXFlag();
 
   HAL_StatusTypeDef GetRxFIFO(uint8_t* out, uint32_t* msgIDOut);
-  HAL_StatusTypeDef RegisterFilterRXFIFO(uint16_t msgIDMin, uint16_t msgIDMax);
 
   struct RXBuffer {
 	  uint8_t data[64];
-	  bool available = false;
+	  volatile bool available = false;
   };
 
+  enum SelectedBuffer {
+	  Buf_A,
+	  Buf_B
+  };
+  SelectedBuffer selectedBufsForLog[MAX_FDCAN_LOGS];
 
-  RXBuffer* GetRXBuf(uint16_t index);
+  RXBuffer* GetRXBuf(uint16_t index,SelectedBuffer side);
 
-  RXBuffer* GetBufferFromCanID(uint16_t canid);
-
+  RXBuffer* GetFrontBufferFromCanID(uint16_t canid);
+  RXBuffer* GetBackBufferFromCanID(uint16_t canid);
  protected:
   struct LogRegister {
     uint8_t startingRXBuf = 0;
@@ -64,7 +70,20 @@ class FDCanController {
     uint16_t byteLength = 0;
     uint16_t startingMsgID = 0;
   };
-  RXBuffer buffers[MAX_FDCAN_RX_BUFFERS];
+
+  bool RebuildFilters();
+
+  RXBuffer buffersA[MAX_FDCAN_RX_BUFFERS];
+  RXBuffer buffersB[MAX_FDCAN_RX_BUFFERS];
+
+//  struct BufferTracker {
+//	  RXBuffer* front;
+//	  RXBuffer* back;
+//  };
+
+  //BufferTracker buffersByCanID[2048];
+
+
 
   FDCAN_HandleTypeDef *fdcan;
 
@@ -72,19 +91,17 @@ class FDCanController {
 
   uint8_t nextUnregisteredFilterID = 0;
   uint8_t numRegisteredLogs = 0;
-  LogRegister registeredLogs[MAX_FDCAN_RX_BUFFERS];
+  LogRegister registeredLogs[MAX_FDCAN_LOGS];
 
-  HAL_StatusTypeDef RegisterFilterRXBuf(uint16_t msgID, uint8_t rxBufferNum);
+  HAL_StatusTypeDef RegisterFilterRXBuf(uint16_t startingID, uint16_t endingID);
 
-  HAL_StatusTypeDef InitFDCAN();
-
+  // Raised when there is at least 1 rx msg
   volatile bool RXFlag = false;
 
-  bool readingRXBufSemaphore = false;
+  volatile bool readingRXBufSemaphore = false;
 };
 
 extern FDCanController *callbackcontroller;
-void RXMsgCallback(FDCAN_HandleTypeDef *hfdcan);
 
 void CANError();
 
