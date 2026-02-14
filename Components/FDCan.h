@@ -79,7 +79,7 @@ class FDCanController {
   struct BufferTracker {
 	  RXBuffer* A;
 	  RXBuffer* B;
-	  SelectedBuffer selected;
+	  SelectedBuffer* logOwnerSelection;
   };
 
   BufferTracker buffersByCanID[2048];

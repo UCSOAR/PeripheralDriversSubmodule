@@ -147,7 +147,7 @@ FDCanController::RXBuffer* FDCanController::GetFrontBufferFromCanID(uint16_t can
 //		}
 //	}
 //	return nullptr;
-	if(buffersByCanID[canid].selected == Buf_A) {
+	if(*buffersByCanID[canid].logOwnerSelection == Buf_A) {
 		return buffersByCanID[canid].A;
 	}
 	return buffersByCanID[canid].B;
@@ -168,7 +168,7 @@ FDCanController::RXBuffer* FDCanController::GetBackBufferFromCanID(uint16_t cani
 //		}
 //	}
 //	return nullptr;
-	if(buffersByCanID[canid].selected == Buf_A) {
+	if(*buffersByCanID[canid].logOwnerSelection == Buf_A) {
 		return buffersByCanID[canid].B;
 	}
 	return buffersByCanID[canid].A;
@@ -416,9 +416,6 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 
   // swap!!!!!!!
   selectedBufsForLog[logIndex] = currentBack;
-  for(uint16_t i = thisRegisteredLog.startingRXBuf; i <= thisRegisteredLog.endingRXBuf; i++) {
-	  buffersByCanID[thisRegisteredLog.startingMsgID+i-thisRegisteredLog.startingRXBuf].selected = currentBack;
-  }
   __enable_irq();
 
   uint8_t *d = out;
@@ -529,6 +526,7 @@ bool FDCanController::RebuildFilters() {
 		for(uint16_t canid = msgID; canid <= msgID+frames-1; canid++) {
 			buffersByCanID[canid].A = &buffersA[registeredLogs[i].startingRXBuf + canid - msgID];
 			buffersByCanID[canid].B = &buffersB[registeredLogs[i].startingRXBuf + canid - msgID];
+			buffersByCanID[canid].logOwnerSelection = &selectedBufsForLog[i];
 		}
 
 
