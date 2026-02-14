@@ -76,12 +76,13 @@ class FDCanController {
   RXBuffer buffersA[MAX_FDCAN_RX_BUFFERS];
   RXBuffer buffersB[MAX_FDCAN_RX_BUFFERS];
 
-//  struct BufferTracker {
-//	  RXBuffer* front;
-//	  RXBuffer* back;
-//  };
+  struct BufferTracker {
+	  RXBuffer* A;
+	  RXBuffer* B;
+	  SelectedBuffer selected;
+  };
 
-  //BufferTracker buffersByCanID[2048];
+  BufferTracker buffersByCanID[2048];
 
 
 

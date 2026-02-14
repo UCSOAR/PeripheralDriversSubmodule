@@ -138,15 +138,19 @@ FDCanController::RXBuffer* FDCanController::GetRXBuf(uint16_t index, FDCanContro
  * @return Pointer to the RX buffer that a registered log maps the ID to. nullptr if none found.
  */
 FDCanController::RXBuffer* FDCanController::GetFrontBufferFromCanID(uint16_t canid) {
-	for (uint16_t i = 0; i < numRegisteredLogs; i++) {
-		const LogRegister& thisReg = registeredLogs[i];
-
-		if(thisReg.startingMsgID <= canid && thisReg.startingMsgID + ((thisReg.byteLength-1)/64) >= canid) {
-
-			return GetRXBuf(thisReg.startingRXBuf+(canid-thisReg.startingMsgID),selectedBufsForLog[i]);
-		}
+//	for (uint16_t i = 0; i < numRegisteredLogs; i++) {
+//		const LogRegister& thisReg = registeredLogs[i];
+//
+//		if(thisReg.startingMsgID <= canid && thisReg.startingMsgID + ((thisReg.byteLength-1)/64) >= canid) {
+//
+//			return GetRXBuf(thisReg.startingRXBuf+(canid-thisReg.startingMsgID),selectedBufsForLog[i]);
+//		}
+//	}
+//	return nullptr;
+	if(buffersByCanID[canid].selected == Buf_A) {
+		return buffersByCanID[canid].A;
 	}
-	return nullptr;
+	return buffersByCanID[canid].B;
 }
 
 /* @brief Gets the pointer to the RX buffer that contains the given CAN ID in the log registered to it.
@@ -154,16 +158,20 @@ FDCanController::RXBuffer* FDCanController::GetFrontBufferFromCanID(uint16_t can
  * @return Pointer to the RX buffer that a registered log maps the ID to. nullptr if none found.
  */
 FDCanController::RXBuffer* FDCanController::GetBackBufferFromCanID(uint16_t canid) {
-	for (uint16_t i = 0; i < numRegisteredLogs; i++) {
-		const LogRegister& thisReg = registeredLogs[i];
-
-		if(thisReg.startingMsgID <= canid && thisReg.startingMsgID + ((thisReg.byteLength-1)/64) >= canid) {
-
-			return GetRXBuf(thisReg.startingRXBuf+(canid-thisReg.startingMsgID),
-					(selectedBufsForLog[i] == FDCanController::SelectedBuffer::Buf_A) ? FDCanController::SelectedBuffer::Buf_B : FDCanController::SelectedBuffer::Buf_A);
-		}
+//	for (uint16_t i = 0; i < numRegisteredLogs; i++) {
+//		const LogRegister& thisReg = registeredLogs[i];
+//
+//		if(thisReg.startingMsgID <= canid && thisReg.startingMsgID + ((thisReg.byteLength-1)/64) >= canid) {
+//
+//			return GetRXBuf(thisReg.startingRXBuf+(canid-thisReg.startingMsgID),
+//					(selectedBufsForLog[i] == FDCanController::SelectedBuffer::Buf_A) ? FDCanController::SelectedBuffer::Buf_B : FDCanController::SelectedBuffer::Buf_A);
+//		}
+//	}
+//	return nullptr;
+	if(buffersByCanID[canid].selected == Buf_A) {
+		return buffersByCanID[canid].B;
 	}
-	return nullptr;
+	return buffersByCanID[canid].A;
 }
 
 /* Overridden callback that fires when an RX message is received.
@@ -186,6 +194,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 #ifdef AIUDJAISDFJAEIOAOISDHLAFHA
 //printf("got can msg id %lu\n",rxHeader.Identifier);
 #endif
+
 				FDCanController::RXBuffer* rxbuf = callbackcontroller->GetBackBufferFromCanID(rxHeader.Identifier);
 				if(rxbuf) {
 #ifdef AIUDJAISDFJAEIOAOISDHLAFHA
@@ -407,6 +416,9 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 
   // swap!!!!!!!
   selectedBufsForLog[logIndex] = currentBack;
+  for(uint16_t i = thisRegisteredLog.startingRXBuf; i <= thisRegisteredLog.endingRXBuf; i++) {
+	  buffersByCanID[thisRegisteredLog.startingMsgID+i-thisRegisteredLog.startingRXBuf].selected = currentBack;
+  }
   __enable_irq();
 
   uint8_t *d = out;
@@ -491,6 +503,7 @@ bool FDCanController::AddLogType(LogInitStruct log) {
  */
 bool FDCanController::RebuildFilters() {
 	numFDFilters = numRegisteredLogs;
+	memset(buffersByCanID,0x00,sizeof(buffersByCanID));
 
 
 	fdcan->Init.StdFiltersNbr = numFDFilters;
@@ -512,6 +525,12 @@ bool FDCanController::RebuildFilters() {
 
 		registeredLogs[i].startingRXBuf = nextRXBuf;
 		registeredLogs[i].endingRXBuf = nextRXBuf+frames-1;
+
+		for(uint16_t canid = msgID; canid <= msgID+frames-1; canid++) {
+			buffersByCanID[canid].A = &buffersA[registeredLogs[i].startingRXBuf + canid - msgID];
+			buffersByCanID[canid].B = &buffersB[registeredLogs[i].startingRXBuf + canid - msgID];
+		}
+
 
 		nextRXBuf += frames;
 		if(nextRXBuf > MAX_FDCAN_RX_BUFFERS) {
