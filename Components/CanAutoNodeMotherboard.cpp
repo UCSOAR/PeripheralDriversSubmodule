@@ -30,6 +30,26 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 		return false;
 	}
 
+	// to get rid of this node, first we will identify the MOTHERBOARD log indexes to remove ON THE MOTHERBOARD
+	uint8_t indicesToRemove[daughterNodes[foundIndex].numberOfLogs];
+	for(uint8_t i = 0; i < daughterNodes[foundIndex].numberOfLogs; i++) {
+		indicesToRemove[i] = daughterNodes[foundIndex].startingLogIndexOnMotherboard+i;
+	}
+	controller->RemoveLogIndices(indicesToRemove, sizeof(indicesToRemove)/sizeof(indicesToRemove[0]));
+	nextFreeMotherboardLogIndex -= daughterNodes[foundIndex].numberOfLogs;
+
+	// next, we shall update all other nodes to shift their motherboard log index offsets down to fill in the gap.
+	// this change will be reflected to all remaining daughters in the upcoming update
+	// note that this does not reassign can ids. this is fine, now that this node is gone its space in the
+	//can address space is freed and can be reassigned. i dont care about fragmentation, if you are connecting and kicking over 2000 nodes in a random order, there is some other problem
+	for(uint8_t i = 0; i < nodesInNetwork; i++) {
+		if(i != foundIndex && daughterNodes[i].startingLogIndexOnMotherboard > daughterNodes[foundIndex].startingLogIndexOnMotherboard) {
+			daughterNodes[i].startingLogIndexOnMotherboard -= daughterNodes[foundIndex].numberOfLogs;
+		}
+
+	}
+
+	// now actually remove the kicked node
 	daughterNodes[foundIndex] = daughterNodes[--nodesInNetwork];
 
 	for(uint16_t i = 0; i < recentlyJoinedNum; i++) {
@@ -38,6 +58,8 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 			break;
 		}
 	}
+
+	heartbeatGracePeriod[foundIndex] = heartbeatGracePeriod[nodesInNetwork];
 
 	if(!controller->SendByMsgID((uint8_t*)(&uniqueBoardID), sizeof(uniqueBoardID), KICK_REQUEST_ID)) {
 #ifdef CANAUTONODEDEBUG
@@ -52,6 +74,8 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 		PrintBoardID(uniqueBoardID);
 		SOAR_PRINT(")\n");
 #endif
+
+
 	return SendFullUpdate();
 }
 
@@ -86,8 +110,11 @@ bool CanAutoNodeMotherboard::KickNode(uint16_t slotNumber) {
 CanAutoNodeMotherboard::CanAutoNodeMotherboard(FDCAN_HandleTypeDef *fdcan) {
 	controller = new FDCanController(fdcan,nullptr,0);
 	callbackcontroller = controller;
-	controller->RegisterFilterRXFIFO(0, MAX_RESERVED_CAN_ID);
+	//controller->RegisterFilterRXFIFO(0, MAX_RESERVED_CAN_ID);
+	memset(heartbeatGracePeriod,0x00,sizeof(heartbeatGracePeriod));
 
+	FDCanController::LogInitStruct reservedLogs[] = {{64,JOIN_REQUEST_ID},{64,ACK_ID},{64,UPDATE_ID},{64,KICK_REQUEST_ID},{64,HEARTBEAT_ID}};
+	controller->RegisterLogs(reservedLogs, sizeof(reservedLogs)/sizeof(reservedLogs[0]));
 }
 
 
@@ -99,10 +126,8 @@ bool CanAutoNodeMotherboard::CheckForJoinRequest() {
 
 	uint8_t msg[64] = {123};
 	uint32_t id = 0;
-	while(controller->GetRxFIFO(msg, &id) == HAL_OK) {
-		if(id != JOIN_REQUEST_ID) {
-			continue;
-		}
+	while(controller->ReceiveLogIndexFromRXBuf(msg, JOIN_REQUEST_ID)) {
+
 
 		return ReceiveJoinRequest(msg);
 
@@ -186,11 +211,12 @@ bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 		SOAR_PRINT("Adding new node at ID range [%d,%d)\n",bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs);
 #endif
 		Node newNode;
-		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs},
+		newNode = {{bestStartingFreeCANID,bestStartingFreeCANID+requiredTotalCANIDs}, // 1 too many?
 				request.uniqueID,
 				request.numberOfLogs,
 				request.boardType,
 				request.slotNumber};
+		strncpy(newNode.nodeName,request.nodeName,MAX_NAME_STR_LEN);
 
 		FDCanController::LogInitStruct newLogs[request.numberOfLogs];
 		uint16_t thisID = bestStartingFreeCANID;
@@ -204,6 +230,7 @@ bool CanAutoNodeMotherboard::ReceiveJoinRequest(uint8_t* msg) {
 		daughterNodes[nodesInNetwork] = newNode;
 		recentlyJoined[recentlyJoinedNum++] = &daughterNodes[nodesInNetwork];
 		controller->RegisterLogs(newLogs, request.numberOfLogs);
+		heartbeatGracePeriod[nodesInNetwork] = 0;
 		nodesInNetwork++;
 		newNode.startingLogIndexOnMotherboard = nextFreeMotherboardLogIndex;
 		nextFreeMotherboardLogIndex += request.numberOfLogs;
@@ -242,7 +269,7 @@ bool CanAutoNodeMotherboard::SendAck(acknowledgementStatus status) {
  */
 bool CanAutoNodeMotherboard::SendFullUpdate() {
 
-	uint8_t msg[13];
+	uint8_t msg[sizeof(Node)+1];
 	msgFromNode(thisNode, msg+1);
 	msg[0] = CAN_UPDATE_MOTHERBOARD;
 
@@ -293,9 +320,9 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 		HAL_Delay(1);
 		uint8_t out[64];
 		uint32_t id = 0;
-		if(controller->GetRxFIFO(out, &id) == HAL_OK) {
-			switch(id) {
-			case HEARTBEAT_ID: {
+		if(controller->ReceiveLogIndexFromRXBuf(out, HEARTBEAT_ID)) {
+
+
 				UniqueBoardID responseID = MsgToData<UniqueBoardID>(out);
 				bool foundResponder = false;
 				for(int node = 0; node < nodesInNetwork; node++) {
@@ -314,6 +341,16 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 						break;
 					}
 				}
+				bool gotAllOfThem = true;
+				for(uint8_t j = 0; j < nodesInNetwork; j++) {
+					if(!received[j]) {
+						gotAllOfThem = false;
+						break;
+					}
+				}
+				if(gotAllOfThem) {
+					return true; // just leave early, we got all the responses
+				}
 				if(!foundResponder) {
 					// ??? a node that wasn't in the network just responded to the heartbeat?  get out
 #ifdef CANAUTONODEDEBUG
@@ -323,11 +360,10 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 #endif
 					KickNode(responseID);
 				}
-				break;
-			}
-			default:
-				break;
-			}
+
+
+
+
 		}
 	}
 
@@ -338,7 +374,12 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 		PrintBoardID(daughterNodes[i].uniqueID);
 		SOAR_PRINT(", kicking\n");
 #endif
+		if(heartbeatGracePeriod[i] > 0) {
+printf("node %d ignored once, given grace...\n",i);
+			heartbeatGracePeriod[i]--;
+		} else {
 			KickNode(daughterNodes[i].uniqueID);
+		}
 		}
 	}
 
@@ -393,7 +434,7 @@ uint16_t CanAutoNodeMotherboard::GetNamesOfNewlyJoinedBoards(char(*outputArr)[MA
 
 	uint16_t num = 0;
 	for(uint16_t i = 0; i < recentlyJoinedNum; i++) {
-		strcpy(outputArr[num++],daughterNodes[i].nodeName,MAX_NAME_STR_LEN);
+		strncpy(outputArr[num++],daughterNodes[i].nodeName,MAX_NAME_STR_LEN);
 		if(i >= outputBufferLen) {
 			break;
 		}

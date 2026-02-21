@@ -69,8 +69,13 @@ bool CanAutoNodeDaughter::RequestToJoinNetwork() {
 	for(uint16_t i = 0; i < numLogs; i++) {
 		request.logSizesInBytes[i] = (logsToInit[i].sizeInBytes);
 	}
-	strcpy(request.nodeName,thisNode.nodeName);
+	strncpy(request.nodeName,thisNode.nodeName,MAX_NAME_STR_LEN);
 
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("requesting to join with my id: ");
+	PrintBoardID(request.uniqueID);
+	SOAR_PRINT(", number of logs: %d\n",request.numberOfLogs);
+#endif
 	uint8_t msg[sizeof(JoinRequest)];
 	DataToMsg<JoinRequest>(request, msg);
 
@@ -90,11 +95,9 @@ bool CanAutoNodeDaughter::CheckForAcknowledgement() {
 		return false;
 	}
 	uint8_t msg[64] = {123};
-	uint32_t id = 0;
-	while(controller->GetRxFIFO(msg, &id) == HAL_OK) {
-		if(id != ACK_ID) {
-			continue;
-		}
+
+	while(controller->ReceiveLogIndexFromRXBuf(msg, ACK_ID)) {
+
 
 		acknowledgementStatus incomingStatus = static_cast<acknowledgementStatus>(msg[0]);
 		switch(incomingStatus) {
@@ -133,11 +136,9 @@ bool CanAutoNodeDaughter::CheckForUpdate() {
 		return false;
 	}
 	uint8_t msg[64] = {123};
-	uint32_t id = 0;
-	while(controller->GetRxFIFO(msg, &id) == HAL_OK) {
-		if(id != UPDATE_ID) {
-			continue;
-		}
+
+	while(controller->ReceiveLogIndexFromRXBuf(msg, UPDATE_ID)) {
+
 
 		return ReceiveUpdate(msg);
 
@@ -161,51 +162,49 @@ bool CanAutoNodeDaughter::ProcessMessage() {
 		return false;
 	}
 	uint8_t msg[64] = {123};
-	uint32_t id = 0;
 	bool gotOne = false;
-	while(controller->GetRxFIFO(msg, &id) == HAL_OK) {
+	while(controller->ReceiveLogIndexFromRXBuf(msg, KICK_REQUEST_ID)) {
 		gotOne = true;
-		switch(id) {
-		case KICK_REQUEST_ID: {
-			UniqueBoardID kickedBoard = MsgToData<UniqueBoardID>(msg);
-			if(kickedBoard == this->thisNode.uniqueID) {
-#ifdef CANAUTONODEDEBUG
-	SOAR_PRINT("This node just got kicked!\n");
-#endif
-				ChangeState(UNINITIALIZED);
-				return true;
-			}
-#ifdef CANAUTONODEDEBUG
-	SOAR_PRINT("Saw ");
-	PrintBoardID(kickedBoard);
-	SOAR_PRINT("just get kicked\n");
-#endif
 
-			ChangeState(WAITING_FOR_UPDATE);
+		UniqueBoardID kickedBoard = MsgToData<UniqueBoardID>(msg);
+		if(kickedBoard == this->thisNode.uniqueID) {
+#ifdef CANAUTONODEDEBUG
+			SOAR_PRINT("This node just got kicked!\n");
+#endif
+			ChangeState(UNINITIALIZED);
 			return true;
 		}
-		case JOIN_REQUEST_ID:
-		{
 #ifdef CANAUTONODEDEBUG
-	SOAR_PRINT("Saw a join request from another board\n");
+		SOAR_PRINT("Saw ");
+		PrintBoardID(kickedBoard);
+		SOAR_PRINT("just get kicked\n");
 #endif
-			ChangeState( WAITING_FOR_UPDATE);
-			return true;
-		}
 
-		case HEARTBEAT_ID: {
-
-			if(MsgToData<UniqueBoardID>(msg) == Motherboard.uniqueID) {
-#ifdef CANAUTONODEDEBUG
-	SOAR_PRINT("Received heartbeat");
-#endif
-				SendHeartbeat();
-			}
-			return true;
-		}
-		}
-
+		ChangeState(WAITING_FOR_UPDATE);
+		gotOne = true;
 	}
+	while(controller->ReceiveLogIndexFromRXBuf(msg, JOIN_REQUEST_ID)) {
+
+
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Saw a join request from another board\n");
+#endif
+		ChangeState( WAITING_FOR_UPDATE);
+		gotOne = true;
+	}
+	while(controller->ReceiveLogIndexFromRXBuf(msg, HEARTBEAT_ID)) {
+
+
+		if(MsgToData<UniqueBoardID>(msg) == Motherboard.uniqueID) {
+#ifdef CANAUTONODEDEBUG
+			SOAR_PRINT("Received heartbeat\n");
+#endif
+			SendHeartbeat();
+		}
+		gotOne = true;
+	}
+
+
 	return gotOne;
 }
 
@@ -265,7 +264,13 @@ CanAutoNodeDaughter::CanAutoNodeDaughter(FDCAN_HandleTypeDef *fdcan, const LogIn
 	} else {
 		memset(this->thisNode.nodeName,0x00,MAX_NAME_STR_LEN);
 	}
-	controller->RegisterFilterRXFIFO(0, MAX_RESERVED_CAN_ID);
+
+
+	//controller->RegisterFilterRXFIFO(0, MAX_RESERVED_CAN_ID);
+
+	FDCanController::LogInitStruct reservedLogs[] = {{64,JOIN_REQUEST_ID},{64,ACK_ID},{64,UPDATE_ID},{64,KICK_REQUEST_ID},{64,HEARTBEAT_ID}};
+	controller->RegisterLogs(reservedLogs, sizeof(reservedLogs)/sizeof(reservedLogs[0]));
+
 
 }
 
@@ -279,7 +284,8 @@ bool CanAutoNodeDaughter::SendMessageToMotherboardByLogID(uint16_t logID, const 
 	if(GetCurrentState() != READY) {
 		return false;
 	}
-	return controller->SendByLogIndex(msg, logID);
+	printf("sending to motherboard log index %d\n",logID);
+	return controller->SendByLogIndex(msg, logID+MAX_RESERVED_CAN_ID+1);
 }
 
 /* Handle receiving part of an update, updating internal node references and changing state when ready.
@@ -297,18 +303,33 @@ bool CanAutoNodeDaughter::ReceiveUpdate(const uint8_t *msg) {
 	case CAN_UPDATE_LAST_DAUGHTER: // shouldn't have to worry about last and fsb being the same because the update will only be sent after a new node is added
 		ChangeState(READY);
 	case CAN_UPDATE_DAUGHTER:
-		if(receivedNode != thisNode) {
+		if(receivedNode.uniqueID != thisNode.uniqueID) {
 			this->daughterNodes[this->nodesInNetwork++] = receivedNode;
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Received update for someone else... initializedLogs: %d, numLogs: %d, according to the update numLogs: %d\n",initializedLogs,numLogs,receivedNode.numberOfLogs);
+
+#endif
 		} else {
 			this->thisNode = receivedNode;
+
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Received update for me... initializedLogs: %d, numLogs: %d, according to the update numLogs: %d\n",initializedLogs,numLogs,receivedNode.numberOfLogs);
+
+#endif
 			if(!initializedLogs) {
 				uint16_t canid = receivedNode.canIDRange.start;
 				for(uint16_t i = 0; i < numLogs; i++) {
 					uint16_t requiredIDs = (logsToInit[i].sizeInBytes-1)/64+1;
 					determinedLogs[i] = {logsToInit[i].sizeInBytes, canid};
 					canid += requiredIDs;
+#ifdef CANAUTONODEDEBUG
+	SOAR_PRINT("Registering log %d at canid %d byte size %d\n",i,determinedLogs[i].startingMsgID,determinedLogs[i].byteLength);
+
+#endif
+
 				}
 				controller->RegisterLogs(determinedLogs, numLogs);
+
 				initializedLogs = true;
 			}
 

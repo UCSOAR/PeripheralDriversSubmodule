@@ -48,6 +48,8 @@ private:
 	Node* recentlyJoined[MAX_NODES_IN_NETWORK];
 	uint16_t recentlyJoinedNum = 0;
 
+	uint8_t heartbeatGracePeriod[MAX_NODES_IN_NETWORK];
+
 };
 
 #endif

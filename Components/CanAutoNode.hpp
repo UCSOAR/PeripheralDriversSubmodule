@@ -15,6 +15,9 @@
 
 #include "FDCan.h"
 #include <cstring>
+#include <random>
+
+#define SOAR_PRINT(fmt, ...) printf((fmt), ##__VA_ARGS__)
 
 
 constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
@@ -35,8 +38,8 @@ constexpr uint16_t MAX_RESERVED_CAN_ID = 4; // Make sure to update if adding a n
 
 
 #ifdef CANAUTONODEDEBUG
-#include "Task.hpp"
-#include "SystemDefines.hpp"
+//#include "Task.hpp"
+//#include "SystemDefines.hpp"
 #endif
 
 class CanAutoNode {
@@ -118,7 +121,7 @@ protected:
 
 		char nodeName[MAX_NAME_STR_LEN];
 
-		uint16_t startingLogIndexOnMotherboard = 0;
+		uint16_t startingLogIndexOnMotherboard = MAX_RESERVED_CAN_ID+1;
 
 		bool operator==(const Node&) const = default;
 		bool operator!=(const Node&) const = default;

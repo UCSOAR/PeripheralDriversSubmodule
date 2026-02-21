@@ -157,7 +157,8 @@ bool CanAutoNode::SendHeartbeat() {
 
 	uint8_t msg[sizeof(HeartbeatInfo)] = {};
 	memcpy(msg,&beat,sizeof(msg));
-	return controller->SendByMsgID(msg, sizeof(msg), HEARTBEAT_ID);
+	return controller->SendByLogIndex(msg, HEARTBEAT_ID);
+	//return controller->SendByMsgID(msg, sizeof(msg), HEARTBEAT_ID);
 
 }
 
@@ -234,7 +235,7 @@ bool CanAutoNode::ReadMessageFromRXBuf(uint8_t logIndex, uint16_t logSize, uint8
 			return false;
 		}
 		uint8_t paddedOut[paddedSize];
-		if(!controller->ReceiveLogTypeFromRXBuf(paddedOut, logIndex)) {
+		if(!controller->ReceiveLogIndexFromRXBuf(paddedOut, logIndex)) {
 			return false;
 		}
 		memcpy(out,paddedOut,logSize);
@@ -244,7 +245,7 @@ bool CanAutoNode::ReadMessageFromRXBuf(uint8_t logIndex, uint16_t logSize, uint8
 #ifdef CANAUTONODEDEBUG
 	SOAR_PRINT("Buffer large enough, attempting read...\n");
 #endif
-	return (controller->ReceiveLogTypeFromRXBuf(out, logIndex));
+	return (controller->ReceiveLogIndexFromRXBuf(out, logIndex));
 }
 
 bool CanAutoNode::BoardExistsWithName(const char* name) {
@@ -261,10 +262,10 @@ bool CanAutoNode::BoardExistsWithName(const char* name) {
 
 uint16_t CanAutoNode::GetNamesOfAllBoards(char(* outputArr)[MAX_NAME_STR_LEN], uint16_t outputArrayLen) {
 	uint16_t num = 0;
-	strcpy(outputArr[num++],thisNode.nodeName,MAX_NAME_STR_LEN);
-
+	strncpy(outputArr[num++],thisNode.nodeName,MAX_NAME_STR_LEN);
+	//
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
-		strcpy(outputArr[num++],daughterNodes[i].nodeName,MAX_NAME_STR_LEN);
+		strncpy(outputArr[num++],daughterNodes[i].nodeName,MAX_NAME_STR_LEN);
 		if(num >= outputArrayLen) {
 			break;
 		}
@@ -274,7 +275,7 @@ uint16_t CanAutoNode::GetNamesOfAllBoards(char(* outputArr)[MAX_NAME_STR_LEN], u
 
 }
 
-UniqueBoardID CanAutoNode::GetIDOfBoardWithName(const char* name) {
+CanAutoNode::UniqueBoardID CanAutoNode::GetIDOfBoardWithName(const char* name) {
 
 	if(strcmp(thisNode.nodeName,name) == 0) {
 		return thisNode.uniqueID;
@@ -285,7 +286,7 @@ UniqueBoardID CanAutoNode::GetIDOfBoardWithName(const char* name) {
 			return node.uniqueID;
 		}
 	}
-	return 0;
+	return {0};
 }
 
 uint16_t CanAutoNode::GetNumberOfLogIndicesInBoard(UniqueBoardID board) {
