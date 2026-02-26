@@ -82,7 +82,7 @@ protected:
     // Member variables
     Mutex gpsDataMutex;
     uint8_t gpsTaskRxBuffer[GPS_TASK_RX_BUFFER_SIZE];
-    GPSData* data;
+    GpsData* data;
 
 private:
     // Private Functions

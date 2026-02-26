@@ -25,7 +25,7 @@ extern UART_HandleTypeDef huart7;
  */
 GPSTask::GPSTask() : Task(TASK_GPS_QUEUE_DEPTH_OBJS)
 {
-    data = (GPSData*)malloc(sizeof(GPSData));
+    data = (GpsData*)malloc(sizeof(GpsData));
 }
 
 /**
@@ -157,11 +157,9 @@ void GPSTask::HandleCommand(Command& cm)
         break;
     }
     case DATA_COMMAND: {
-    	HandleGPSRxComplete();
-    	 if (cm.GetTaskCommand() == EVENT_GPS_RX_PARSE_READY){
-    	      ParseGpsData();
-    	 }
-    	 break;
+        if (cm.GetTaskCommand() == EVENT_GPS_RX_PARSE_READY)
+            ParseGpsData();
+        break;
     }
     default:
         SOAR_PRINT("GPSTask - Received Unsupported Command {%d}\n", cm.GetCommand());
@@ -206,7 +204,7 @@ void GPSTask::HandleRequestCommand(uint16_t taskCommand)
  */
 bool GPSTask::ReceiveData()
 {
-    HAL_UART_Receive(&huart7, (uint8_t*)&gpsTaskRxBuffer, GPS_TASK_RX_BUFFER_SIZE, 1000);
+    HAL_UART_Receive_DMA(&huart7, (uint8_t*)&gpsTaskRxBuffer, GPS_TASK_RX_BUFFER_SIZE);
     return true;
 }
 
@@ -224,7 +222,7 @@ void GPSTask::LogDataToFlash()
 {
 
 
-    	DataBroker::Publish<GPSData>(data);
+    	DataBroker::Publish<GpsData>(data);
     	osDelay(10);
     	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::GPS_DATA)); //change if separate publisher
     	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
