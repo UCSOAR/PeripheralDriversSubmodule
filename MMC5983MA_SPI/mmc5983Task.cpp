@@ -100,15 +100,13 @@ void MMC5983MATask::HandleCommand(Command & cm)
         break;
 
     case MMC5983MA_Commands::MMC_CMD_ENABLE_LOG: // Enable Logging
-		while(1){
-			magnetometer.triggerMeasurement();
-			vTaskDelay(pdMS_TO_TICKS(10));
-			magnetometer.readData(magData);
-			LogData();
-			osDelay(1000);
-			SOAR_PRINT("Data Sent to LoggingTask\n");
-		}
 
+		magnetometer.triggerMeasurement();
+		vTaskDelay(pdMS_TO_TICKS(10));
+		magnetometer.readData(magData);
+		LogData();
+
+		SOAR_PRINT("Data Sent to LoggingTask\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_DISABLE_LOG: // Disable Logging
