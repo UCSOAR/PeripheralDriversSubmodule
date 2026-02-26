@@ -70,6 +70,8 @@ void IMUTask::Run(void * pvParams){
 
         	HandleCommand(cm);
         }
+
+        cm.Reset();
     }
 }
 
@@ -86,17 +88,22 @@ void IMUTask::HandleCommand(Command& cm){
 			SOAR_PRINT("No valid global command given");
 	}
 
-	cm.Reset();
+
 
 
 }
 void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case IMUTask::IMU_SAMPLE_AND_LOG:
-		imu.ReadSensors(data);
-		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
-		LogData();
+	case IMUTask::IMU_SAMPLE_AND_LOG:{
+		int i = 0;
+		while(i < 30){
+			imu.ReadSensors(data);
+			imu_data = imu.ConvertRawMeasurementToStruct(data);
+			imu_data.id = 1;
+			LogData();
+			i++;
+		}
+	}
 	default:
 		break;
 	}
