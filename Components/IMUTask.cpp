@@ -96,7 +96,7 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case IMUTask::IMU_SAMPLE_AND_LOG:{
 		int i = 0;
-		while(i < 30){
+		while(i < 100){
 			imu.ReadSensors(data);
 			imu_data = imu.ConvertRawMeasurementToStruct(data);
 			imu_data.id = 1;
