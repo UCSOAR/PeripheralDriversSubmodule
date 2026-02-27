@@ -25,7 +25,7 @@ extern UART_HandleTypeDef huart7;
  */
 GPSTask::GPSTask() : Task(TASK_GPS_QUEUE_DEPTH_OBJS)
 {
-    data = (GpsData*)malloc(sizeof(GpsData));
+    data = (GPSData*)malloc(sizeof(GPSData));
 }
 
 /**
@@ -157,8 +157,9 @@ void GPSTask::HandleCommand(Command& cm)
         break;
     }
     case DATA_COMMAND: {
-        if (cm.GetTaskCommand() == EVENT_GPS_RX_PARSE_READY)
-            ParseGpsData();
+
+        ParseGpsData();
+        HandleRequestCommand(cm.GetTaskCommand());
         break;
     }
     default:
@@ -222,7 +223,7 @@ void GPSTask::LogDataToFlash()
 {
 
 
-    	DataBroker::Publish<GpsData>(data);
+    	DataBroker::Publish<GPSData>(data);
     	osDelay(10);
     	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::GPS_DATA)); //change if separate publisher
     	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
