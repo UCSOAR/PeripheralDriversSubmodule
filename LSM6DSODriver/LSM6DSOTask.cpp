@@ -65,8 +65,8 @@ void LSM6DSOTask::Run(void * pvParams){
 		imu.readSensors(data);
 		imu_data = imu.bytesToStruct(data, true, true, true);
 		imu_data.id = 0;
-		DataBroker::Publish<IMUData>(&imu_data);
 
+		LogData();
         Command cm;
         bool res = qEvtQueue->Receive(cm, 333);
         if(res){
@@ -101,8 +101,6 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case LSM6DSOTask::IMU_SAMPLE_AND_LOG: {
 
-
-
 		LogData();
 
 	}
@@ -115,10 +113,9 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 
 void LSM6DSOTask::LogData(){
 
-	osDelay(10);
-	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
-	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+	DataBroker::Publish<IMUData>(&imu_data);
+//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
+//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
-	//SOAR_PRINT("Data Sent to LoggingTask\n");
 
 }

@@ -157,10 +157,11 @@ void GPSTask::HandleCommand(Command& cm)
         break;
     }
     case DATA_COMMAND: {
-
-        ParseGpsData();
-        HandleRequestCommand(cm.GetTaskCommand());
-        break;
+    	HandleGPSRxComplete();
+    	 if (cm.GetTaskCommand() == EVENT_GPS_RX_PARSE_READY){
+    	      ParseGpsData();
+    	 }
+    	 break;
     }
     default:
         SOAR_PRINT("GPSTask - Received Unsupported Command {%d}\n", cm.GetCommand());
@@ -205,7 +206,7 @@ void GPSTask::HandleRequestCommand(uint16_t taskCommand)
  */
 bool GPSTask::ReceiveData()
 {
-    HAL_UART_Receive_DMA(&huart7, (uint8_t*)&gpsTaskRxBuffer, GPS_TASK_RX_BUFFER_SIZE);
+    HAL_UART_Receive(&huart7, (uint8_t*)&gpsTaskRxBuffer, GPS_TASK_RX_BUFFER_SIZE, 1000);
     return true;
 }
 
