@@ -62,9 +62,13 @@ void LSM6DSOTask::Run(void * pvParams){
 	imu.Init(hspi_, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
 
     while (1) {
-        /* Process commands in blocking mode */
+		imu.readSensors(data);
+		imu_data = imu.bytesToStruct(data, true, true, true);
+		imu_data.id = 0;
+		DataBroker::Publish<IMUData>(&imu_data);
+
         Command cm;
-        bool res = qEvtQueue->ReceiveWait(cm);
+        bool res = qEvtQueue->Receive(cm, 333);
         if(res){
 
         	HandleCommand(cm);
@@ -98,9 +102,7 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 	case LSM6DSOTask::IMU_SAMPLE_AND_LOG: {
 
 
-		imu.readSensors(data);
-		imu_data = imu.bytesToStruct(data, true, true, true);
-		imu_data.id = 0;
+
 		LogData();
 
 	}
@@ -113,8 +115,6 @@ void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand){
 
 void LSM6DSOTask::LogData(){
 
-
-	DataBroker::Publish<IMUData>(&imu_data);
 	osDelay(10);
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
