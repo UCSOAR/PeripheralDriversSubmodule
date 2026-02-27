@@ -7,6 +7,7 @@
 
 #include "LSM6DO32Driver.h"
 
+#include <cstring>
 
 /* @brief Initialize the driver. Must be called before any other functions can be used.
  * @param hspi_ Pointer to the SPI handle
@@ -124,13 +125,13 @@ const IMUData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf,
 	}
 	out.temp = 25.0f + out.temp / 256.0f;
 
-	out.accel.x *= 0.732;
-	out.accel.y *= 0.732;
-	out.accel.z *= 0.732;
+	out.accel.x *= 0.488 / 1000.0f; //g/LSB
+	out.accel.y *= 0.488 / 1000.0f;
+	out.accel.z *= 0.488 / 1000.0f;
 
-	out.gyro.x *= 8.75;
-	out.gyro.y *= 8.75;
-	out.gyro.z *= 8.75;
+	out.gyro.x *= 8.75f;
+	out.gyro.y *= 8.75f;
+	out.gyro.z *= 8.75f;
 
 
 	return out;
