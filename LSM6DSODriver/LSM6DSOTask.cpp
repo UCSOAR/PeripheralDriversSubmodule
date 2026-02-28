@@ -119,6 +119,6 @@ void LSM6DSOTask::LogData(){
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
-	SOAR_PRINT("Data Sent to LoggingTask\n");
+	//SOAR_PRINT("Data Sent to LoggingTask\n");
 
 }

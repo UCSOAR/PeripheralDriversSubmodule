@@ -26,7 +26,7 @@ void LSM6DSO_Driver::Init(SPI_HandleTypeDef* hspi_, uint8_t cs_pin_, GPIO_TypeDe
 
 	uint8_t ID = getRegister(LSM6DSO_REG::WHO_AM_I);
 
-	SOAR_PRINT("WHO_AM_I %d", ID);
+	SOAR_PRINT("WHO_AM_I %d\n", ID);
 	if(ID != LSM6DSO_ID){
 		return;
 	}
