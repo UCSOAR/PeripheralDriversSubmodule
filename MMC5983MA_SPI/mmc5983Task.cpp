@@ -110,7 +110,7 @@ void MMC5983MATask::HandleCommand(Command & cm)
 		magnetometer.readData(magData);
 		LogData();
 
-		SOAR_PRINT("Data Sent to LoggingTask\n");
+		//SOAR_PRINT("Data Sent to LoggingTask\n");
         break;
 
     case MMC5983MA_Commands::MMC_CMD_DISABLE_LOG: // Disable Logging

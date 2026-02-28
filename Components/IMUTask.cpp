@@ -124,7 +124,7 @@ void IMUTask::LogData(){
 	osDelay(10);
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
-	SOAR_PRINT("Data Sent to LoggingTask\n");
+	//SOAR_PRINT("Data Sent to LoggingTask\n");
 
 
 }

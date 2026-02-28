@@ -117,7 +117,7 @@ void BaroTask11::LogData(){
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA)); //change if separate publisher
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
-	SOAR_PRINT("Data Sent to LoggingTask\n");
+	//SOAR_PRINT("Data Sent to LoggingTask\n");
 
 }
 

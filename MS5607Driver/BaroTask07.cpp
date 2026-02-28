@@ -124,7 +124,7 @@ DataBroker::Publish<BaroData>(&data);
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::BARO_DATA));
 	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
-	SOAR_PRINT("Data Sent to LoggingTask\n");
+	//SOAR_PRINT("Data Sent to LoggingTask\n");
 
 }
 
