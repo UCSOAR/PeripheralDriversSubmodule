@@ -63,10 +63,10 @@ void IMUTask::Run(void * pvParams){
 	imu.Init(hspi_, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
 
     while (1) {
-		imu.ReadSensors(data);
+    	imu.ReadSensors(data);
 		imu_data = imu.ConvertRawMeasurementToStruct(data);
 		imu_data.id = 1;
-		DataBroker::Publish<IMUData>(&imu_data);
+		LogData();
 
         Command cm;
         bool res = qEvtQueue->Receive(cm, 333);
@@ -99,14 +99,12 @@ void IMUTask::HandleCommand(Command& cm){
 void IMUTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
 	case IMUTask::IMU_SAMPLE_AND_LOG:{
-		int i = 0;
-		while(i < 100){
-			imu.ReadSensors(data);
-			imu_data = imu.ConvertRawMeasurementToStruct(data);
-			imu_data.id = 1;
-			LogData();
-			i++;
-		}
+		imu.ReadSensors(data);
+		imu_data = imu.ConvertRawMeasurementToStruct(data);
+		imu_data.id = 1;
+		LogData();
+
+
 	}
 	default:
 		break;
