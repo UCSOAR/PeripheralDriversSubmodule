@@ -92,6 +92,9 @@ CanAutoNodeDaughter::~CanAutoNodeDaughter() {
  */
 bool CanAutoNodeDaughter::CheckForAcknowledgement() {
 	if(GetCurrentState() != REQUESTED_WAITING_FOR_RESPONSE) {
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Wasn't in the right state to check for ACK: we are in state %d\n",GetCurrentState());
+#endif
 		return false;
 	}
 	uint8_t msg[64] = {123};
@@ -102,6 +105,10 @@ bool CanAutoNodeDaughter::CheckForAcknowledgement() {
 		acknowledgementStatus incomingStatus = static_cast<acknowledgementStatus>(msg[0]);
 		switch(incomingStatus) {
 		case ACK_GOOD:
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Good ACK!\n");
+#endif
+			controller->DiscardLog(KICK_REQUEST_ID); // So we don't immediately get kicked on rejoining after a daughter reset
 			ChangeState(WAITING_FOR_UPDATE);
 			return true;
 
@@ -122,6 +129,9 @@ bool CanAutoNodeDaughter::CheckForAcknowledgement() {
 		}
 
 	}
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Didn't receive any ACK\n");
+#endif
 	// not received
 	return false;
 }
@@ -161,7 +171,7 @@ bool CanAutoNodeDaughter::ProcessMessage() {
 	if(GetCurrentState() != READY) {
 		return false;
 	}
-	uint8_t msg[64] = {123};
+	uint8_t msg[64] = {};
 	bool gotOne = false;
 	while(controller->ReceiveLogIndexFromRXBuf(msg, KICK_REQUEST_ID)) {
 		gotOne = true;
@@ -284,7 +294,7 @@ bool CanAutoNodeDaughter::SendMessageToMotherboardByLogID(uint16_t logID, const 
 	if(GetCurrentState() != READY) {
 		return false;
 	}
-	printf("sending to motherboard log index %d\n",logID);
+	//printf("sending to motherboard log index %d\n",logID);
 	return controller->SendByLogIndex(msg, logID+MAX_RESERVED_CAN_ID+1);
 }
 

@@ -25,10 +25,14 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 #ifdef CANAUTONODEDEBUG
 		SOAR_PRINT("Tried to kick node, but doesn't exist! (Attempted to kick ");
 		PrintBoardID(uniqueBoardID);
-		SOAR_PRINT(")\n");
+		SOAR_PRINT(")\nNow just forcing send kick\n");
 #endif
-		return false;
-	}
+
+
+
+
+		//return true;
+	} else {
 
 	// to get rid of this node, first we will identify the MOTHERBOARD log indexes to remove ON THE MOTHERBOARD
 	uint8_t indicesToRemove[daughterNodes[foundIndex].numberOfLogs];
@@ -60,7 +64,7 @@ bool CanAutoNodeMotherboard::KickNode(UniqueBoardID uniqueBoardID) {
 	}
 
 	heartbeatGracePeriod[foundIndex] = heartbeatGracePeriod[nodesInNetwork];
-
+	}
 	if(!controller->SendByMsgID((uint8_t*)(&uniqueBoardID), sizeof(uniqueBoardID), KICK_REQUEST_ID)) {
 #ifdef CANAUTONODEDEBUG
 		SOAR_PRINT("Tried to kick node, but failed to send! (Attempted to kick ");
@@ -313,6 +317,8 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 		return false;
 	}
 
+
+
 	bool received[nodesInNetwork];
 	memset(received,0,sizeof(received));
 
@@ -325,6 +331,11 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 
 				UniqueBoardID responseID = MsgToData<UniqueBoardID>(out);
 				bool foundResponder = false;
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Got a heartbeat from ");
+		PrintBoardID(responseID);
+		SOAR_PRINT(", there are %d daughter nodes in the network\n",nodesInNetwork);
+#endif
 				for(int node = 0; node < nodesInNetwork; node++) {
 					if(daughterNodes[node].uniqueID == responseID) {
 						if(received[node]) {
@@ -336,6 +347,9 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 #endif
 							KickNode(responseID);
 						}
+#ifdef CANAUTONODEDEBUG
+		SOAR_PRINT("Found the source of this heartbeat at %d!\n",node);
+#endif
 						received[node] = true;
 						foundResponder = true;
 						break;
@@ -348,9 +362,7 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 						break;
 					}
 				}
-				if(gotAllOfThem) {
-					return true; // just leave early, we got all the responses
-				}
+
 				if(!foundResponder) {
 					// ??? a node that wasn't in the network just responded to the heartbeat?  get out
 #ifdef CANAUTONODEDEBUG
@@ -362,8 +374,16 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 				}
 
 
+				if(gotAllOfThem) {
+						return true; // just leave early, we got all the responses
+					}
 
 
+
+
+		}
+		if(i > 10 && nodesInNetwork == 0) {
+			return true; // don't bother waiting the whole timeout when there are no daughter nodes, we just want to see if there are any out-of-network responders
 		}
 	}
 
@@ -402,7 +422,7 @@ bool CanAutoNodeMotherboard::ReadMessageFromDaughterByLogIndex(
 		const Node& thisNode = daughterNodes[i];
 		if(thisNode.uniqueID == daughter) {
 #ifdef CANAUTONODEDEBUG
-		SOAR_PRINT("Trying to read message from daughter...\n");
+		//SOAR_PRINT("Trying to read message from daughter...\n");
 #endif
 		if(logIndex >= thisNode.numberOfLogs) {
 #ifdef CANAUTONODEDEBUG

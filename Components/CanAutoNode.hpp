@@ -98,6 +98,10 @@ public:
 	static void PrintBoardID(UniqueBoardID id);
 #endif
 
+#ifdef FDCAN_DEBUG
+	  void ReportIDsReceived();
+	  uint32_t GetTicksSinceLastIDReceivePrint();
+#endif
 protected:
 
 	struct IDRange {

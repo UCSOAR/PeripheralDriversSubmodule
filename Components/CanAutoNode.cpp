@@ -177,7 +177,7 @@ bool CanAutoNode::SendMessageToDaughterByLogIndex(UniqueBoardID boardID,
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisDaughter = daughterNodes[i];
 		if(thisDaughter.uniqueID == boardID) {
-			return controller->SendByMsgID(msg, thisDaughter.logSizesInBytes[logIndex], thisDaughter.logOffsetsInCANIDs[logIndex]);
+			return controller->SendByMsgID(msg, thisDaughter.logSizesInBytes[logIndex], thisDaughter.logOffsetsInCANIDs[logIndex]+thisDaughter.canIDRange.start);
 		}
 	}
 	return false;
@@ -243,7 +243,7 @@ bool CanAutoNode::ReadMessageFromRXBuf(uint8_t logIndex, uint16_t logSize, uint8
 	}
 
 #ifdef CANAUTONODEDEBUG
-	SOAR_PRINT("Buffer large enough, attempting read...\n");
+	//SOAR_PRINT("Buffer large enough, attempting read...\n");
 #endif
 	return (controller->ReceiveLogIndexFromRXBuf(out, logIndex));
 }
@@ -315,3 +315,14 @@ uint16_t CanAutoNode::GetSizeOfLogIndexInBoard(UniqueBoardID board, uint16_t log
 	}
 	return 0;
 }
+#ifdef FDCAN_DEBUG
+
+void CanAutoNode::ReportIDsReceived() {
+	controller->ReportIDsReceived();
+}
+
+uint32_t CanAutoNode::GetTicksSinceLastIDReceivePrint() {
+	return controller->GetTicksSinceLastIDReceivePrint();
+}
+
+#endif
