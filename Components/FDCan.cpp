@@ -79,7 +79,6 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
   txheader.MessageMarker = 0;
   txheader.DataLength = FDCAN_DLC_BYTES_64;
 
-  uint8_t data[64];
   size_t remaining = len;
   for (size_t frame = 0; frame < framesToSend; frame++) {
 	  size_t frameLen = remaining > 64 ? 64 : remaining;

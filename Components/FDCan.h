@@ -10,7 +10,8 @@
 
 #include "stm32g4xx.h"
 
-#define FDCAN_DEBUG
+// *********************** DEBUG:
+//#define FDCAN_DEBUG
 
 constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;
 constexpr size_t MAX_FDCAN_LOGS = 8;
