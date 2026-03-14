@@ -68,7 +68,7 @@ void LSM6DSOTask::Run(void * pvParams){
 
 		LogData();
         Command cm;
-        bool res = qEvtQueue->Receive(cm, 333);
+        bool res = qEvtQueue->Receive(cm, 20);
         if(res){
 
         	HandleCommand(cm);

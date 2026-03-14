@@ -77,8 +77,8 @@ MMC5983MA_Status MMC5983MA::setOffsets(float offsetX, float offsetY, float offse
 }
 
 MMC5983MA_Status MMC5983MA::calibrateOffset(){
-    MagData setReading;
-    MagData resetReading;
+    MagDriverData setReading;
+    MagDriverData resetReading;
 
     // --- 1. SET Sequence ---
     // 1. Perform SET
@@ -148,7 +148,7 @@ MMC5983MA_Status MMC5983MA::readTemperature(float& tempOut) {
     return MMC5983MA_Status::OK;
 }
 
-MMC5983MA_Status MMC5983MA::readData(MagData& data) {
+MMC5983MA_Status MMC5983MA::readData(MagDriverData& data) {
     // Read status register to check if data is ready
     uint8_t status = readRegister(MMC5983MA_STATUS);
     

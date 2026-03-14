@@ -73,7 +73,7 @@ private:
 
 
     MMC5983MA magnetometer;
-    MagData magData;
+    MagDriverData magData;
 
 
     // Chip Select Port

@@ -69,7 +69,7 @@ void IMUTask::Run(void * pvParams){
 		LogData();
 
         Command cm;
-        bool res = qEvtQueue->Receive(cm, 333);
+        bool res = qEvtQueue->Receive(cm, 20);
         if(res){
 
         	HandleCommand(cm);
@@ -118,9 +118,7 @@ void IMUTask::LogData(){
 
 
 	DataBroker::Publish<IMUData>(&imu_data);
-	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
-	osDelay(10);
-	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+
 
 	//SOAR_PRINT("Data Sent to LoggingTask\n");
 

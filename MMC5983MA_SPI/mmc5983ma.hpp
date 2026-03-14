@@ -48,7 +48,7 @@ public:
      * @brief Reads the latest magnetic field data from the sensor.
      * @return True if data is ready and read, false otherwise.
      */
-    MMC5983MA_Status readData(MagData& data);
+    MMC5983MA_Status readData(MagDriverData& data);
 
     /**
      * @brief Performs a SET operation.
