@@ -31,20 +31,18 @@ MMC5983MA_Status MMC5983MA::Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, 
 	_csPort = csPort;
 	_csPin  = csPin;
 
-    HAL_Delay(10);
     // Set the chip select pin HIGH (idle) by default.
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
 
     uint8_t productID = getProductID();
 
-   if (productID == MMC5983MA_PRODUCT_ID_VALUE) {
-	   return MMC5983MA_Status::OK;
-   }
-   else {
-	   return MMC5983MA_Status::ERR_INVALID_ARG;
-   }
-   //default 200Hz sampling rate
-   writeRegister(MMC5983MA_IT_CONTROL1, MMC5983MA_BW_200HZ);
+    if (productID != MMC5983MA_PRODUCT_ID_VALUE) {
+        return MMC5983MA_Status::ERR_INVALID_ARG;
+    }
+
+    // Default 200 Hz bandwidth after confirming the device responded correctly.
+    writeRegister(MMC5983MA_IT_CONTROL1, MMC5983MA_BW_200HZ);
+    return MMC5983MA_Status::OK;
 }
 
 
@@ -176,9 +174,9 @@ MMC5983MA_Status MMC5983MA::readData(MagData& data) {
                 ((uint32_t)(buffer[6] & 0x0C) >> 2);
 
         // Apply scaling factors
-        data.scaledX = ((float)data.rawX - _offsetX) / _countsPerGauss;
-        data.scaledY = ((float)data.rawY - _offsetY) / _countsPerGauss;
-        data.scaledZ = ((float)data.rawZ - _offsetZ) / _countsPerGauss;
+    data.scaledX = (int32_t)(((data.rawX - _offsetX) / _countsPerGauss) * 1000.0f);
+    data.scaledY = (int32_t)(((data.rawY - _offsetY) / _countsPerGauss) * 1000.0f);
+    data.scaledZ = (int32_t)(((data.rawZ - _offsetZ) / _countsPerGauss) * 1000.0f);
 
         return MMC5983MA_Status::OK;
 }

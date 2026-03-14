@@ -53,10 +53,10 @@ void MMC5983MATask::InitTask() // RTOS Task Init
 {
     // Make sure dependencies are set
 
-
-	magnetometer.Init(_hspi, MMC_CS_PORT, MMC_CS_PIN);
-
-
+    const MMC5983MA_Status initStatus = magnetometer.Init(_hspi, MMC_CS_PORT, MMC_CS_PIN);
+    SOAR_ASSERT(initStatus == MMC5983MA_Status::OK,
+                "MMC5983MA init failed, status=%d",
+                static_cast<int>(initStatus));
 
     // Assert Task not already created
     SOAR_ASSERT(rtTaskHandle == nullptr, "Cannot initialize MMC5983MA task twice");
@@ -74,17 +74,17 @@ void MMC5983MATask::InitTask() // RTOS Task Init
 
 void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
 {
-        // Handle incoming commands (optional)
-		magnetometer.triggerMeasurement();
-		vTaskDelay(pdMS_TO_TICKS(10));
-		magnetometer.readData(magData);
-		DataBroker::Publish<MagData>(&magData);
+    while (1) {
+    	magnetometer.triggerMeasurement();
+
+    	magnetometer.readData(magData);
+    	LogData();
 
         Command cm;
         if (qEvtQueue->Receive(cm, 333)) {
             HandleCommand(cm);
         }
-
+    }
 }
 
 void MMC5983MATask::HandleCommand(Command & cm)
@@ -107,8 +107,11 @@ void MMC5983MATask::HandleCommand(Command & cm)
 
 		magnetometer.triggerMeasurement();
 		vTaskDelay(pdMS_TO_TICKS(10));
-		magnetometer.readData(magData);
-		LogData();
+		if (magnetometer.readData(magData) == MMC5983MA_Status::OK) {
+		    LogData();
+		} else {
+		    SOAR_PRINT("MMC5983MATask: Measurement not ready or read failed.\n");
+		}
 
 		//SOAR_PRINT("Data Sent to LoggingTask\n");
         break;
@@ -132,9 +135,19 @@ void MMC5983MATask::LogData(){
 	SOAR_PRINT("Mag rawY: %d\n", magData.rawY);
 	SOAR_PRINT("Mag rawZ: %d\n", magData.rawZ);
 
-	SOAR_PRINT("Mag scaledX: %f\n", magData.scaledX);
-	SOAR_PRINT("Mag scaledY: %f\n", magData.scaledY);
-	SOAR_PRINT("Mag scaledZ: %f\n", magData.scaledZ);
+	SOAR_PRINT("Mag scaledX: %d\n", magData.scaledX);
+	SOAR_PRINT("Mag scaledY: %d\n", magData.scaledY);
+	SOAR_PRINT("Mag scaledZ: %d\n", magData.scaledZ);
+
+	int32_t magXSq = magData.scaledX * magData.scaledX;
+	int32_t magYSq = magData.scaledY * magData.scaledY;
+	int32_t magZSq = magData.scaledZ * magData.scaledZ;
+
+	int32_t magnitude = static_cast<int32_t>(
+		std::sqrt(static_cast<float>(magXSq + magYSq + magZSq))
+	);
+
+	SOAR_PRINT("Mag magnitude: %d\n", magnitude);
 
 	DataBroker::Publish<MagData>(&magData);
 	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::MAG_DATA));
