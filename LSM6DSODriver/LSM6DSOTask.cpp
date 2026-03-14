@@ -19,6 +19,29 @@
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
+namespace
+{
+	constexpr uint16_t LSM6DSO_GYRO_CALIBRATION_SAMPLES = 500;
+	constexpr uint32_t LSM6DSO_GYRO_CALIBRATION_DELAY_MS = 5;
+
+	int16_t ClampInt16(int32_t value)
+	{
+		if (value > 32767)
+		{
+			return 32767;
+		}
+		if (value < -32768)
+		{
+			return -32768;
+		}
+		return static_cast<int16_t>(value);
+	}
+
+	int32_t AbsInt32(int32_t value)
+	{
+		return (value < 0) ? -value : value;
+	}
+}
 
 /************************************
  * VARIABLES
@@ -59,6 +82,7 @@ void LSM6DSOTask::Run(void *pvParams)
 {
 
 	imu.Init(hspi_, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
+	CalibrateGyroBias();
 
 	while (1)
 	{
@@ -66,10 +90,25 @@ void LSM6DSOTask::Run(void *pvParams)
 		imu.readSensors(data);
 		imu_data = imu.bytesToStruct(data, true, true, true);
 		imu_data.id = 0;
+		ApplyGyroBias();
 
-		SOAR_PRINT("IMU Data Accel(mg)=[%d,%d,%d] Gyro(mdps)=[%d,%d,%d] Temp(C)=%d\n",
+		const int32_t gx_mdps = static_cast<int32_t>(imu_data.gyro.x);
+		const int32_t gy_mdps = static_cast<int32_t>(imu_data.gyro.y);
+		const int32_t gz_mdps = static_cast<int32_t>(imu_data.gyro.z);
+
+		const char *gx_sign = (gx_mdps < 0) ? "-" : "";
+		const char *gy_sign = (gy_mdps < 0) ? "-" : "";
+		const char *gz_sign = (gz_mdps < 0) ? "-" : "";
+
+		const int32_t gx_abs_mdps = AbsInt32(gx_mdps);
+		const int32_t gy_abs_mdps = AbsInt32(gy_mdps);
+		const int32_t gz_abs_mdps = AbsInt32(gz_mdps);
+
+		SOAR_PRINT("IMU Data Accel(mg)=[%d,%d,%d] Gyro(dps)=[%s%d.%03d,%s%d.%03d,%s%d.%03d] Temp(C)=%d\n",
 				   imu_data.accel.x, imu_data.accel.y, imu_data.accel.z,
-				   imu_data.gyro.x, imu_data.gyro.y, imu_data.gyro.z,
+				   gx_sign, static_cast<int>(gx_abs_mdps / 1000), static_cast<int>(gx_abs_mdps % 1000),
+				   gy_sign, static_cast<int>(gy_abs_mdps / 1000), static_cast<int>(gy_abs_mdps % 1000),
+				   gz_sign, static_cast<int>(gz_abs_mdps / 1000), static_cast<int>(gz_abs_mdps % 1000),
 				   imu_data.temp);
 
 		LogData();
@@ -81,6 +120,54 @@ void LSM6DSOTask::Run(void *pvParams)
 			HandleCommand(cm);
 		}
 	}
+}
+
+void LSM6DSOTask::CalibrateGyroBias()
+{
+	int32_t sumX = 0;
+	int32_t sumY = 0;
+	int32_t sumZ = 0;
+
+	SOAR_PRINT("Starting gyro zero-rate calibration, keep board still...\n");
+
+	for (uint16_t sample = 0; sample < LSM6DSO_GYRO_CALIBRATION_SAMPLES; sample++)
+	{
+		HAL_Delay(LSM6DSO_GYRO_CALIBRATION_DELAY_MS);
+		imu.readSensors(data);
+		IMUData sampleData = imu.bytesToStruct(data, false, true, true);
+
+		sumX += sampleData.gyro.x;
+		sumY += sampleData.gyro.y;
+		sumZ += sampleData.gyro.z;
+	}
+
+	gyro_bias.x = static_cast<int16_t>(sumX / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.y = static_cast<int16_t>(sumY / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.z = static_cast<int16_t>(sumZ / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+
+	const int32_t bx_mdps = static_cast<int32_t>(gyro_bias.x);
+	const int32_t by_mdps = static_cast<int32_t>(gyro_bias.y);
+	const int32_t bz_mdps = static_cast<int32_t>(gyro_bias.z);
+
+	const char *bx_sign = (bx_mdps < 0) ? "-" : "";
+	const char *by_sign = (by_mdps < 0) ? "-" : "";
+	const char *bz_sign = (bz_mdps < 0) ? "-" : "";
+
+	const int32_t bx_abs_mdps = AbsInt32(bx_mdps);
+	const int32_t by_abs_mdps = AbsInt32(by_mdps);
+	const int32_t bz_abs_mdps = AbsInt32(bz_mdps);
+
+	SOAR_PRINT("Gyro bias(dps)=[%s%d.%03d,%s%d.%03d,%s%d.%03d]\n",
+			   bx_sign, static_cast<int>(bx_abs_mdps / 1000), static_cast<int>(bx_abs_mdps % 1000),
+			   by_sign, static_cast<int>(by_abs_mdps / 1000), static_cast<int>(by_abs_mdps % 1000),
+			   bz_sign, static_cast<int>(bz_abs_mdps / 1000), static_cast<int>(bz_abs_mdps % 1000));
+}
+
+void LSM6DSOTask::ApplyGyroBias()
+{
+	imu_data.gyro.x = ClampInt16(static_cast<int32_t>(imu_data.gyro.x) - gyro_bias.x);
+	imu_data.gyro.y = ClampInt16(static_cast<int32_t>(imu_data.gyro.y) - gyro_bias.y);
+	imu_data.gyro.z = ClampInt16(static_cast<int32_t>(imu_data.gyro.z) - gyro_bias.z);
 }
 
 void LSM6DSOTask::HandleCommand(Command &cm)
