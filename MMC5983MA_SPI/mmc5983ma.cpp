@@ -31,7 +31,7 @@ MMC5983MA_Status MMC5983MA::Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, 
 	_csPort = csPort;
 	_csPin  = csPin;
 
-    HAL_Delay(10);
+    //HAL_Delay(10);
     // Set the chip select pin HIGH (idle) by default.
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
 
