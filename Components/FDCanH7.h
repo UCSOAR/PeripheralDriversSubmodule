@@ -5,10 +5,10 @@
  *      Author: goada
  */
 
-#ifndef FDCAN_H_
-#define FDCAN_H_
+#ifndef FDCANH7_H_
+#define FDCANH7_H_
 
-#include "stm32g4xx.h"
+#include "stm32h7xx.h"
 
 // *********************** DEBUG:
 //#define FDCAN_DEBUG
@@ -132,4 +132,4 @@ extern FDCanController *callbackcontroller;
 
 void CANError();
 
-#endif /* FDCAN_H_ */
+#endif /* FDCANH7_H_ */

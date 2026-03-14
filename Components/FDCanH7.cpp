@@ -5,8 +5,7 @@
  *      Author: goada
  */
 
-#include "FDCan.h"
-
+#include <FDCanH7.h>
 #include <cstdio>
 #include <cstring>
 
@@ -174,6 +173,16 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
 
   if (state == HAL_FDCAN_STATE_BUSY)
   {
+
+      /* Check that the Rx FIFO 0 has an allocated area into the RAM */
+      if ((fdcan->Instance->RXF0C & FDCAN_RXF0C_F0S) == 0U)
+      {
+        /* Update error code */
+    	  fdcan->ErrorCode |= HAL_FDCAN_ERROR_PARAM;
+
+        return HAL_ERROR;
+      }
+
       /* Check that the Rx FIFO 0 is not empty */
       if ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0FL) == 0U)
       {
@@ -184,12 +193,10 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
       }
       else
       {
-
         /* Check that the Rx FIFO 0 is full & overwrite mode is on */
         if (((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0F) >> FDCAN_RXF0S_F0F_Pos) == 1U)
         {
-
-          if (((fdcan->Instance->RXGFC & FDCAN_RXGFC_F0OM) >> FDCAN_RXGFC_F0OM_Pos) == FDCAN_RX_FIFO_OVERWRITE)
+          if (((fdcan->Instance->RXF0C & FDCAN_RXF0C_F0OM) >> FDCAN_RXF0C_F0OM_Pos) == FDCAN_RX_FIFO_OVERWRITE)
           {
             /* When overwrite status is on discard first message in FIFO */
             GetIndex = 1U;
@@ -200,11 +207,14 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
         GetIndex += ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos);
 
         /* Calculate Rx FIFO 0 element address */
-        RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * (18U * 4U)));
+        RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * fdcan->Init.RxFifo0ElmtSize * 4U));
       }
 
-    // assume standard ID
+
+
+
       pRxHeader->Identifier = ((*RxAddress & ((uint32_t)0x1FFC0000U)) >> 18U);
+
 
 
     /* Increment RxAddress pointer to second word of Rx FIFO element */
@@ -227,19 +237,11 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
       pRxData[ByteCounter] = pData[ByteCounter];
     }
 
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
-				printf("got can msg id %lu\n",pRxHeader->Identifier);
-				printf("putting in back rxbuf %p\n",((void*)rxbuf));
-#endif
 
       /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
-    fdcan->Instance->RXF0A = GetIndex;
+    	fdcan->Instance->RXF0A = GetIndex;
 
-#ifdef FDCAN_DEBUG
-    idReceiveTracker[pRxHeader->Identifier]++;
-#endif
 
-    RaiseFXFlag();
     /* Return function status */
     return HAL_OK;
   }
