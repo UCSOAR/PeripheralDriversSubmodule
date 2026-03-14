@@ -5,7 +5,7 @@
  *      Author: goada
  */
 
-#include <FDCanH7.h>
+#include <FDCan.h>
 #include <cstdio>
 #include <cstring>
 
@@ -166,8 +166,8 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
           FDCAN_RxHeaderTypeDef *pRxHeader)
 {
   uint32_t *RxAddress;
-  uint8_t  *pData;
-  uint32_t ByteCounter;
+//  uint8_t  *pData;
+//  uint32_t ByteCounter;
   uint32_t GetIndex = 0;
   HAL_FDCAN_StateTypeDef state = fdcan->State;
 
@@ -207,7 +207,9 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
         GetIndex += ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos);
 
         /* Calculate Rx FIFO 0 element address */
-        RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * fdcan->Init.RxFifo0ElmtSize * 4U));
+        //RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * fdcan->Init.RxFifo0ElmtSize * 4U));
+        // in words:
+        RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * 18U * 4U));
       }
 
 
@@ -227,16 +229,32 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
     RxAddress++;
 
     /* Retrieve Rx payload */
-    pData = (uint8_t *)RxAddress;
+    //pData = (uint8_t *)RxAddress;
     RXBuffer* buf = GetBackBufferFromCanID(pRxHeader->Identifier);
     uint8_t* pRxData = buf->data;
     buf->available = true;
     static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
-    for (ByteCounter = 0; ByteCounter < DLCtoBytes[pRxHeader->DataLength]; ByteCounter++)
-    {
-      pRxData[ByteCounter] = pData[ByteCounter];
-    }
 
+//    for (ByteCounter = 0; ByteCounter < DLCtoBytes[pRxHeader->DataLength]; ByteCounter++)
+//    {
+//      pRxData[ByteCounter] = pData[ByteCounter];
+//    }
+
+    uint32_t *pDataWord = (uint32_t *)RxAddress;
+    uint32_t payloadLength = DLCtoBytes[pRxHeader->DataLength];
+    uint32_t wordsToRead = (payloadLength + 3U) / 4U;
+
+    for (uint32_t i = 0; i < wordsToRead; i++)
+        {
+
+          uint32_t word = pDataWord[i];
+          uint8_t *wordBytes = (uint8_t *)&word;
+
+          for (uint32_t j = 0; j < 4U && ((i * 4U) + j) < payloadLength; j++)
+          {
+            pRxData[(i * 4U) + j] = wordBytes[j];
+          }
+        }
 
       /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
     	fdcan->Instance->RXF0A = GetIndex;

@@ -5,8 +5,8 @@
  *      Author: goada
  */
 
-#ifndef FDCANH7_H_
-#define FDCANH7_H_
+#ifndef FDCAN_H_
+#define FDCAN_H_
 
 #include "stm32h7xx.h"
 
@@ -132,4 +132,4 @@ extern FDCanController *callbackcontroller;
 
 void CANError();
 
-#endif /* FDCANH7_H_ */
+#endif /* FDCAN_H_ */
