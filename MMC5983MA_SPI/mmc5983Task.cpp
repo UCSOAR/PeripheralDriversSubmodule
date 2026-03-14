@@ -76,7 +76,7 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
 {
         // Handle incoming commands (optional)
 		magnetometer.triggerMeasurement();
-		vTaskDelay(pdMS_TO_TICKS(10));
+		//vTaskDelay(pdMS_TO_TICKS(10));
 		magnetometer.readData(magData);
 		DataBroker::Publish<MagData>(&magData);
 
@@ -106,7 +106,7 @@ void MMC5983MATask::HandleCommand(Command & cm)
     case MMC5983MA_Commands::MMC_CMD_ENABLE_LOG: // Enable Logging
 
 		magnetometer.triggerMeasurement();
-		vTaskDelay(pdMS_TO_TICKS(10));
+		//vTaskDelay(pdMS_TO_TICKS(10));
 		magnetometer.readData(magData);
 		LogData();
 
