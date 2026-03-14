@@ -395,7 +395,6 @@ bool CanAutoNodeMotherboard::Heartbeat() {
 		SOAR_PRINT(", kicking\n");
 #endif
 		if(heartbeatGracePeriod[i] > 0) {
-printf("node %d ignored once, given grace...\n",i);
 			heartbeatGracePeriod[i]--;
 		} else {
 			KickNode(daughterNodes[i].uniqueID);
