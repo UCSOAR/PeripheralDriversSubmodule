@@ -82,7 +82,6 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
   size_t remaining = len;
   for (size_t frame = 0; frame < framesToSend; frame++) {
 	  size_t frameLen = remaining > 64 ? 64 : remaining;
-	  //printf("sending can message with ID %d\n",ID+frame);
     txheader.Identifier = ID + frame;
 
     // Length will be 64 bytes, except for the final frame,
@@ -92,7 +91,6 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
 
 
     const uint8_t* thisFrameData = msg + 64 * frame;
-	//memcpy(data, msg + 64 * frame, frameLen);
 
     // If data won't fill the whole buffer, fill buf with zeros.
     if (frameLen < 64) {
@@ -112,7 +110,6 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
         HAL_FDCAN_AddMessageToTxFifoQ(fdcan, &txheader, thisFrameData);
 
     if (stat != HAL_OK) {
-    	printf("um\n");
       return false;
     }
   }
@@ -206,43 +203,15 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
         RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * (18U * 4U)));
       }
 
-
-
-    /* Retrieve IdType */
-    //pRxHeader->IdType = *RxAddress & ((uint32_t)0x40000000U);
-
-
     // assume standard ID
       pRxHeader->Identifier = ((*RxAddress & ((uint32_t)0x1FFC0000U)) >> 18U);
 
 
-
-    /* Retrieve RxFrameType */
-    //pRxHeader->RxFrameType = (*RxAddress & ((uint32_t)0x20000000U));
-
-    /* Retrieve ErrorStateIndicator */
-    //pRxHeader->ErrorStateIndicator = (*RxAddress & ((uint32_t)0x80000000U));
-
     /* Increment RxAddress pointer to second word of Rx FIFO element */
     RxAddress++;
 
-    /* Retrieve RxTimestamp */
-    //pRxHeader->RxTimestamp = (*RxAddress & ((uint32_t)0x0000FFFFU));
-
     /* Retrieve DataLength */
     pRxHeader->DataLength = ((*RxAddress & ((uint32_t)0x000F0000U)) >> 16U);
-
-    /* Retrieve BitRateSwitch */
-    //pRxHeader->BitRateSwitch = (*RxAddress & ((uint32_t)0x00100000U));
-
-    /* Retrieve FDFormat */
-    //pRxHeader->FDFormat = (*RxAddress & ((uint32_t)0x00200000U));
-
-    /* Retrieve FilterIndex */
-    //pRxHeader->FilterIndex = ((*RxAddress & ((uint32_t)0x7F000000U)) >> 24U);
-
-    /* Retrieve NonMatchingFrame */
-    //pRxHeader->IsFilterMatchingFrame = ((*RxAddress & ((uint32_t)0x80000000U)) >> 31U);
 
     /* Increment RxAddress pointer to payload of Rx FIFO element */
     RxAddress++;
@@ -260,7 +229,7 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
 
 #ifdef AIUDJAISDFJAEIOAOISDHLAFHA
 				printf("got can msg id %lu\n",pRxHeader->Identifier);
-				//printf("putting in back rxbuf %p\n",((void*)rxbuf));
+				printf("putting in back rxbuf %p\n",((void*)rxbuf));
 #endif
 
       /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
@@ -292,22 +261,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
 	{
 		FDCAN_RxHeaderTypeDef header;
-
-
-			while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
-
-
-
-
+		while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
 	}
 
-	if(RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) {
-		printf("rx fifo full!\n");
-	}
-
-	if(RxFifo0ITs & FDCAN_IT_RX_FIFO0_MESSAGE_LOST) {
-		printf("lost a message!\n");
-	}
 }
 
 /* @brief Constructor. Also initializes FDCAN filters and callback.
@@ -511,7 +467,7 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
     __enable_irq();
 #ifdef AIUDJAISDFJAEIOAOISDHLAFHA
 
-    //printf("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
+    printf("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
 
 #endif
     return 0;
@@ -563,10 +519,6 @@ HAL_StatusTypeDef FDCanController::RegisterLogs(LogInitStruct *logs, uint16_t nu
 		  }
 	  }
 
-	  for(uint16_t i = 0; i < numLogs; i++) {
-			//printf("log index %d have registered at msg ID %d, len %d\n",i,registeredLogs[i].startingMsgID,registeredLogs[i].byteLength );
-
-	  }
 	  return HAL_OK;
 }
 
@@ -599,11 +551,7 @@ bool FDCanController::AddLogType(LogInitStruct log) {
 	registeredLogs[numRegisteredLogs].startingMsgID = log.startingMsgID;
 	registeredLogs[numRegisteredLogs].byteLength = log.byteLength;
 
-	//printf("log now registered at msg ID %d, len %d\n",registeredLogs[numRegisteredLogs].startingMsgID,registeredLogs[numRegisteredLogs].byteLength );
-
 	numRegisteredLogs++;
-
-
 
 	return RebuildFilters();
 }
