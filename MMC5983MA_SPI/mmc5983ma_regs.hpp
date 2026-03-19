@@ -81,6 +81,6 @@
 
 
 // P_ID Register (0x2F)
-#define MMC5983MA_PRODUCT_ID_VALUE 0x28 // Default value of Product ID reg
+#define MMC5983MA_PRODUCT_ID_VALUE 0x30 // Default value of Product ID reg
 
 #endif // MMC5983MA_REGS_HPP

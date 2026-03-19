@@ -5,7 +5,9 @@
  *      Author: goada
  */
 
-#include <LSM6DO32Driver.h>
+#include "LSM6DO32Driver.h"
+
+#include <cstring>
 
 /* @brief Initialize the driver. Must be called before any other functions can be used.
  * @param hspi_ Pointer to the SPI handle
@@ -25,6 +27,12 @@ void LSM6DO32_Driver::Init(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uin
 		return;
 	}
 
+
+
+	SetRegister(LSM6DSO32_REG::CTRL3_C, 0b01000100);
+	SetRegister(LSM6DSO32_REG::CTRL1_XL,0b01011100);
+	SetRegister(LSM6DSO32_REG::CTRL2_G,0b01010000);
+	SetRegister(LSM6DSO32_REG::FIFO_CTRL4, 0b00000000);
 }
 
 /* @brief Sets a single 8-bit register.
@@ -70,7 +78,9 @@ void LSM6DO32_Driver::GetMultipleRegisters(LSM6DSO32_REGISTER_t startreg, int nu
 	transmit[0] = (uint8_t)(0b10000000 | startreg);
 
 	CSLow();
-	HAL_SPI_TransmitReceive(hspi, transmit, out, numBytes+1, 1000);
+	uint8_t temp[numBytes+1];
+	HAL_SPI_TransmitReceive(hspi, transmit, temp, numBytes+1, 1000);
+	memcpy(out, &temp[1], numBytes);
 	CSHigh();
 }
 
@@ -94,30 +104,35 @@ void LSM6DO32_Driver::SampleFIFOs(int numReads, uint8_t *out, size_t outBufferSi
  * @param temp Buffer includes temperature data
  * @return Struct containing extracted data
  */
-const LSM6DSO32_DATA_t LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel, bool gyro, bool temp) {
-	LSM6DSO32_DATA_t out;
+const IMUData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf, bool accel, bool gyro, bool temp) {
+	 IMUData out;
 	size_t i = 0;
-
-	// Accel gyro and temp are little-endian
-	if(temp) {
-		out.temp = (buf[i]) | (buf[i+1]<<8);
-		i += 2;
+	if(temp){
+		out.temp = (int16_t)((uint16_t)buf[i] | ((uint16_t)buf[i+1] << 8));
+		i+=2;
 	}
 
-	if(gyro) {
-
-		out.gyro.x = (buf[i  ]) | (buf[i+1] << 8);
-		out.gyro.y = (buf[i+2]) | (buf[i+3] << 8);
-		out.gyro.z = (buf[i+4]) | (buf[i+5] << 8);
-		i += 6;
+	if(gyro){
+		out.gyro.x = (int16_t)((uint16_t)buf[i] | ((uint16_t)buf[i+1] << 8));
+		out.gyro.y = (int16_t)((uint16_t)buf[i+2] | ((uint16_t)buf[i+3] << 8));
+		out.gyro.z = (int16_t)((uint16_t)buf[i+4] | ((uint16_t)buf[i+5] << 8));
+		i+=6;
 	}
-
-	if(accel) {
-		out.accel.x = (buf[i  ]) | ((buf[i+1]) << 8);
-		out.accel.y = (buf[i+2]) | ((buf[i+3]) << 8);
-		out.accel.z = (buf[i+4]) | ((buf[i+5]) << 8);
-		i += 6;
+	if(accel){
+		out.accel.x = (int16_t)((uint16_t)buf[i] | ((uint16_t)buf[i+1] << 8));
+		out.accel.y = (int16_t)((uint16_t)buf[i+2] | ((uint16_t)buf[i+3] << 8));
+		out.accel.z = (int16_t)((uint16_t)buf[i+4] | ((uint16_t)buf[i+5] << 8));
 	}
+	out.temp = 25.0f + out.temp / 256.0f;
+
+	out.accel.x *= 0.488 / 1000.0f; //g/LSB
+	out.accel.y *= 0.488 / 1000.0f;
+	out.accel.z *= 0.488 / 1000.0f;
+
+	out.gyro.x *= 8.75f;
+	out.gyro.y *= 8.75f;
+	out.gyro.z *= 8.75f;
+
 
 	return out;
 
