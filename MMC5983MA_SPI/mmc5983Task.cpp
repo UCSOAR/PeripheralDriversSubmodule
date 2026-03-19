@@ -76,6 +76,7 @@ void MMC5983MATask::Run(void * pvParams)  // Instance Run loop for task
 {
     while (1) {
     	magnetometer.triggerMeasurement();
+
     	magnetometer.readData(magData);
     	LogData();
 
@@ -128,7 +129,6 @@ void MMC5983MATask::LogData(){
 			magData.scaledY,
 			magData.scaledZ
 	};
-
 
 
 	DataBroker::Publish<MagData>(&data);

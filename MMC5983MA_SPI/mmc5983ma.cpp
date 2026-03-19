@@ -9,6 +9,8 @@
 #include "spi_wrapper.hpp" 
 #include "stm32h7xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
+#include "SPIBusLocks.hpp"
+#include "SystemDefines.hpp"
 #include "main.h"
 #include <cstdint>
 
@@ -17,6 +19,23 @@ using std::uint16_t;
 using std::uint32_t;
 
 extern SPI_HandleTypeDef hspi2;
+
+namespace {
+class SPI2BusGuard {
+public:
+    SPI2BusGuard() : locked_(BusLocks::spi2.Lock(100)) {}
+    ~SPI2BusGuard() {
+        if (locked_) {
+            BusLocks::spi2.Unlock();
+        }
+    }
+
+    bool Locked() const { return locked_; }
+
+private:
+    bool locked_;
+};
+}
 /**
  * @brief Constructor
  */
@@ -188,6 +207,9 @@ MMC5983MA_Status MMC5983MA::readData(MagDriverData& data) {
 /* ========================================================================*/
 
 void MMC5983MA::writeRegister(std::uint8_t reg, std::uint8_t value) {
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
+
     // Write : R/W bit (0) == 0
     uint8_t cmd_byte = (0x00|(reg & 0x7f));
     uint8_t txBuffer[2] = { cmd_byte, value };
@@ -203,6 +225,9 @@ void MMC5983MA::writeRegister(std::uint8_t reg, std::uint8_t value) {
 }
 
 uint8_t MMC5983MA::readRegister(uint8_t reg){
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
+
     // Read : R/W bit (0) == 1
     // Shift address left 2 bits, then OR with 0x01 to set the Read bit
     uint8_t cmd_byte[] = {(0x80 | (reg & 0x7f)), 0x00};
@@ -222,6 +247,9 @@ uint8_t MMC5983MA::readRegister(uint8_t reg){
  * @brief Reads multiple bytes from the sensor.
  */
 void MMC5983MA::readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len) {
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
+
     // 1. Create the command byte (same as readRegister)
 	uint8_t tx[len+1];
 	uint8_t rx[len+1];
