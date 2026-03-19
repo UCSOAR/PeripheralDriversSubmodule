@@ -12,7 +12,7 @@
 
 #include "main.h"
 
-//#define AIUDJAISDFJAEIOAOISDHLAFHA
+//#define VERBOSE_FDCAN_DEBUG
 
 FDCanController *callbackcontroller = nullptr;
 
@@ -92,16 +92,12 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
 
     const uint8_t* thisFrameData = msg + 64 * frame;
 
-    // If data won't fill the whole buffer, fill buf with zeros.
-    if (frameLen < 64) {
-      //memset(data + frameLen, 0x00, 64 - frameLen);
-    }
     remaining -= frameLen;
 
     uint32_t starting = HAL_GetTick();
     while (HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < 1) {
     	if(HAL_GetTick() - starting > timeout) {
-    		printf("timed out on waiting for TX FIFO free!\n");
+    		SOAR_PRINT("timed out on waiting for TX FIFO free!\n");
     		return false;
     	}
     }
@@ -227,9 +223,9 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
       pRxData[ByteCounter] = pData[ByteCounter];
     }
 
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
-				printf("got can msg id %lu\n",pRxHeader->Identifier);
-				printf("putting in back rxbuf %p\n",((void*)rxbuf));
+#ifdef VERBOSE_FDCAN_DEBUG
+				SOAR_PRINT("got can msg id %lu\n",pRxHeader->Identifier);
+				SOAR_PRINT("putting in back rxbuf %p\n",((void*)rxbuf));
 #endif
 
       /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
@@ -429,9 +425,9 @@ uint16_t FDCanController::ReceiveFirstLogFromRXBuf(uint8_t *out,
  */
 uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logIndex) {
   if (!RXFlag || logIndex >= numRegisteredLogs)  {
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
+#ifdef VERBOSE_FDCAN_DEBUG
 
-	  printf("didn't receive. rxflag: %d, logindex: %d\n",RXFlag,logIndex);
+	  SOAR_PRINT("didn't receive. rxflag: %d, logindex: %d\n",RXFlag,logIndex);
 
 #endif
 	  return 0;
@@ -439,8 +435,8 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 
   const LogRegister &thisRegisteredLog = registeredLogs[logIndex];
   if (thisRegisteredLog.byteLength == 0)  {
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
-	  printf("didn't receive. bytelength was zero\n");
+#ifdef VERBOSE_FDCAN_DEBUG
+	  SOAR_PRINT("didn't receive. bytelength was zero\n");
 #endif
 	  return 0;
   }
@@ -455,8 +451,8 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
   bool allReady = true;
   for(uint8_t b = thisRegisteredLog.startingRXBuf; b <= thisRegisteredLog.endingRXBuf; b++) {
     if(!backbuf[b].available) {
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
-    	printf("buffer %d of %d/%d wasnt ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
+#ifdef VERBOSE_FDCAN_DEBUG
+    	SOAR_PRINT("buffer %d of %d/%d wasnt ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
 #endif
       allReady = false;
       break;
@@ -465,9 +461,9 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 
   if(!allReady) {
     __enable_irq();
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
+#ifdef VERBOSE_FDCAN_DEBUG
 
-    printf("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
+    SOAR_PRINT("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
 
 #endif
     return 0;
@@ -501,7 +497,7 @@ bool FDCanController::SendByLogIndex(const uint8_t *msg, uint16_t logIndex) {
 	if(logIndex >= numRegisteredLogs) {
 		return false;
 	}
-	//printf("in controller, sending message length %d message ID %d\n",registeredLogs[logIndex].byteLength,registeredLogs[logIndex].startingMsgID);
+	//SOAR_PRINT("in controller, sending message length %d message ID %d\n",registeredLogs[logIndex].byteLength,registeredLogs[logIndex].startingMsgID);
   return SendByMsgID(msg, registeredLogs[logIndex].byteLength,
                      registeredLogs[logIndex].startingMsgID);
 }
@@ -642,13 +638,13 @@ void FDCanController::ReportIDsReceived() {
 	bool foundOne = false;
 	for(uint16_t i = 0; i < sizeof(idReceiveTracker)/sizeof(idReceiveTracker[0]); i++) {
 		if(idReceiveTracker[i] > 0) {
-			printf("Received %d of CANID %d since last call\n",idReceiveTracker[i],i);
+			SOAR_PRINT("Received %d of CANID %d since last call\n",idReceiveTracker[i],i);
 			idReceiveTracker[i] = 0;
 			foundOne = true;
 		}
 	}
 	if(!foundOne) {
-		printf("Didn't receive any IDs since last call.\n");
+		SOAR_PRINT("Didn't receive any IDs since last call.\n");
 	}
 	lastReceivePrintTick = HAL_GetTick();
 }
