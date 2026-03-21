@@ -420,9 +420,7 @@ bool CanAutoNodeMotherboard::ReadMessageFromDaughterByLogIndex(
 	for(uint16_t i = 0; i < nodesInNetwork; i++) {
 		const Node& thisNode = daughterNodes[i];
 		if(thisNode.uniqueID == daughter) {
-#ifdef CANAUTONODEDEBUG
-		//SOAR_PRINT("Trying to read message from daughter...\n");
-#endif
+
 		if(logIndex >= thisNode.numberOfLogs) {
 #ifdef CANAUTONODEDEBUG
 		SOAR_PRINT("Cannot read log index %d from daughter with max index %d",logIndex,thisNode.numberOfLogs);
