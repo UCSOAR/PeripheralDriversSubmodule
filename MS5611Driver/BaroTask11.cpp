@@ -72,7 +72,7 @@ void BaroTask11::Run(void * pvParams){
 		LogData();
 
         Command cm;
-        bool res = qEvtQueue->Receive(cm, 20);
+        bool res = qEvtQueue->Receive(cm, 333);
         if(res){
 
         	HandleCommand(cm);

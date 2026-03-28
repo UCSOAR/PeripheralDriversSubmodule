@@ -277,3 +277,4 @@ void MS5611_Driver::resetBarometer()
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
 }
 
+

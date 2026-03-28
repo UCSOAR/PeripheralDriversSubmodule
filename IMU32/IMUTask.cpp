@@ -1,28 +1,27 @@
 /*
- * LSM6DSOTask.cpp
+ * IMUTask.cpp
  *
- *  Created on: Jan 30, 2026
+ *  Created on: Jan 27, 2026
  *      Author: jaddina
  */
+
 /************************************
  * INCLUDES
  ************************************/
-#include "LSM6DSOTask.hpp"
+#include <IMU32/IMUTask.hpp>
 #include "SystemDefines.hpp"
 #include "Command.hpp"
 #include "LoggingService.hpp"
 #include "DataBroker.hpp"
-#include "LoggingTask.hpp"
-#include "lsm6dso.hpp"
 #include "Task.hpp"
-
+#include "LoggingTask.hpp"
 /************************************
  * PRIVATE MACROS AND DEFINES
  ************************************/
 namespace
 {
-	constexpr uint16_t LSM6DSO_GYRO_CALIBRATION_SAMPLES = 500;
-	constexpr uint32_t LSM6DSO_GYRO_CALIBRATION_DELAY_MS = 5;
+	constexpr uint16_t LSM6DSO32_GYRO_CALIBRATION_SAMPLES = 500;
+	constexpr uint32_t LSM6DSO32_GYRO_CALIBRATION_DELAY_MS = 5;
 
 	int16_t ClampInt16(int32_t value)
 	{
@@ -54,42 +53,41 @@ namespace
 /************************************
  * FUNCTION DEFINITIONS
  ************************************/
-LSM6DSOTask::LSM6DSOTask() : Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), imu()
+IMUTask::IMUTask() : Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), imu()
 {
 }
 
 /**
- * @brief Initialize the LSM6DSOTask
+ * @brief Initialize the IMUTask
  *        Do not modify this function aside from adding the task name
  */
-void LSM6DSOTask::InitTask()
+void IMUTask::InitTask()
 {
 	// Make sure the task is not already initialized
 	SOAR_ASSERT(rtTaskHandle == nullptr, "Cannot initialize watchdog task twice");
 
 	BaseType_t rtValue =
-		xTaskCreate((TaskFunction_t)LSM6DSOTask::RunTask,
-					(const char *)"LSM6DSOTask",
+		xTaskCreate((TaskFunction_t)IMUTask::RunTask,
+					(const char *)"IMUTask",
 					(uint16_t)TASK_LOGGING_QUEUE_DEPTH_WORDS,
 					(void *)this,
 					(UBaseType_t)TASK_LOGGING_PRIORITY,
 					(TaskHandle_t *)&rtTaskHandle);
 
-	SOAR_ASSERT(rtValue == pdPASS, "LSM6DSOTask::InitTask() - xTaskCreate() failed");
+	SOAR_ASSERT(rtValue == pdPASS, "IMUTask::InitTask() - xTaskCreate() failed");
 }
 
-void LSM6DSOTask::Run(void *pvParams)
+void IMUTask::Run(void *pvParams)
 {
 
-	imu.Init(hspi_, LSM6DSO_CS_PIN, LSM6DSO_CS_PORT);
+	imu.Init(hspi_, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
 	CalibrateGyroBias();
 
 	while (1)
 	{
-		HAL_Delay(500);
-		imu.readSensors(data);
-		imu_data = imu.bytesToStruct(data, true, true, true);
-		imu_data.id = 0;
+		imu.ReadSensors(data);
+		imu_data = imu.ConvertRawMeasurementToStruct(data);
+		imu_data.id = 1;
 		ApplyGyroBias();
 
 		const int32_t gx_mdps = static_cast<int32_t>(imu_data.gyro.x);
@@ -122,7 +120,8 @@ void LSM6DSOTask::Run(void *pvParams)
 				   gz_sign, static_cast<int>(gz_abs_mdps / 1000), static_cast<int>(gz_abs_mdps % 1000),
 				   imu_data.temp);
 
-		LogData();
+		// LogData();
+
 		Command cm;
 		bool res = qEvtQueue->Receive(cm, 333);
 		if (res)
@@ -130,31 +129,33 @@ void LSM6DSOTask::Run(void *pvParams)
 
 			HandleCommand(cm);
 		}
+
+		cm.Reset();
 	}
 }
 
-void LSM6DSOTask::CalibrateGyroBias()
+void IMUTask::CalibrateGyroBias()
 {
 	int32_t sumX = 0;
 	int32_t sumY = 0;
 	int32_t sumZ = 0;
 
-	SOAR_PRINT("Starting gyro zero-rate calibration, keep board still...\n");
+	SOAR_PRINT("Starting IMU32 gyro zero-rate calibration, keep board still...\n");
 
-	for (uint16_t sample = 0; sample < LSM6DSO_GYRO_CALIBRATION_SAMPLES; sample++)
+	for (uint16_t sample = 0; sample < LSM6DSO32_GYRO_CALIBRATION_SAMPLES; sample++)
 	{
-		HAL_Delay(LSM6DSO_GYRO_CALIBRATION_DELAY_MS);
-		imu.readSensors(data);
-		IMUData sampleData = imu.bytesToStruct(data, false, true, true);
+		HAL_Delay(LSM6DSO32_GYRO_CALIBRATION_DELAY_MS);
+		imu.ReadSensors(data);
+		IMUData sampleData = imu.ConvertRawMeasurementToStruct(data, false, true, true);
 
 		sumX += sampleData.gyro.x;
 		sumY += sampleData.gyro.y;
 		sumZ += sampleData.gyro.z;
 	}
 
-	gyro_bias.x = static_cast<int16_t>(sumX / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
-	gyro_bias.y = static_cast<int16_t>(sumY / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
-	gyro_bias.z = static_cast<int16_t>(sumZ / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.x = static_cast<int16_t>(sumX / LSM6DSO32_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.y = static_cast<int16_t>(sumY / LSM6DSO32_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.z = static_cast<int16_t>(sumZ / LSM6DSO32_GYRO_CALIBRATION_SAMPLES);
 
 	const int32_t bx_mdps = static_cast<int32_t>(gyro_bias.x);
 	const int32_t by_mdps = static_cast<int32_t>(gyro_bias.y);
@@ -168,59 +169,58 @@ void LSM6DSOTask::CalibrateGyroBias()
 	const int32_t by_abs_mdps = AbsInt32(by_mdps);
 	const int32_t bz_abs_mdps = AbsInt32(bz_mdps);
 
-	SOAR_PRINT("Gyro bias(dps)=[%s%d.%03d,%s%d.%03d,%s%d.%03d]\n",
+	SOAR_PRINT("IMU32 gyro bias(dps)=[%s%d.%03d,%s%d.%03d,%s%d.%03d]\n",
 			   bx_sign, static_cast<int>(bx_abs_mdps / 1000), static_cast<int>(bx_abs_mdps % 1000),
 			   by_sign, static_cast<int>(by_abs_mdps / 1000), static_cast<int>(by_abs_mdps % 1000),
 			   bz_sign, static_cast<int>(bz_abs_mdps / 1000), static_cast<int>(bz_abs_mdps % 1000));
 }
 
-void LSM6DSOTask::ApplyGyroBias()
+void IMUTask::ApplyGyroBias()
 {
 	imu_data.gyro.x = ClampInt16(static_cast<int32_t>(imu_data.gyro.x) - gyro_bias.x);
 	imu_data.gyro.y = ClampInt16(static_cast<int32_t>(imu_data.gyro.y) - gyro_bias.y);
 	imu_data.gyro.z = ClampInt16(static_cast<int32_t>(imu_data.gyro.z) - gyro_bias.z);
 }
 
-void LSM6DSOTask::HandleCommand(Command &cm)
+void IMUTask::HandleCommand(Command &cm)
 {
 	switch (cm.GetCommand())
 	{
 	case DATA_COMMAND:
 		HandleRequestCommand(cm.GetTaskCommand());
 		break;
-	case DATA_BROKER_COMMAND:
-		SOAR_PRINT("Not data command");
-		break;
 
 	case TASK_SPECIFIC_COMMAND:
 		break;
 
-	case COMMAND_NONE:
-		SOAR_PRINT("No command");
-		break;
+	default:
+		SOAR_PRINT("No valid global command given");
 	}
-	cm.Reset();
 }
-void LSM6DSOTask::HandleRequestCommand(uint16_t taskCommand)
+void IMUTask::HandleRequestCommand(uint16_t taskCommand)
 {
 	switch (taskCommand)
 	{
-	case LSM6DSOTask::IMU_SAMPLE_AND_LOG:
+	case IMUTask::IMU_SAMPLE_AND_LOG:
 	{
-
-		LogData();
+//		imu.ReadSensors(data);
+//		imu_data = imu.ConvertRawMeasurementToStruct(data);
+//		imu_data.id = 1;
+//		ApplyGyroBias();
+//		LogData();
 	}
 	default:
 		break;
 	}
 }
 
-void LSM6DSOTask::LogData()
+void IMUTask::LogData()
 {
 
 	DataBroker::Publish<IMUData>(&imu_data);
-	//	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); //change if separate publisher
-	//	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
+	Command logCommand(DATA_BROKER_COMMAND, static_cast<uint16_t>(DataBrokerMessageTypes::IMU_DATA)); // change if separate publisher
+	osDelay(10);
+	LoggingTask::Inst().GetEventQueue()->Send(logCommand);
 
 	// SOAR_PRINT("Data Sent to LoggingTask\n");
 }

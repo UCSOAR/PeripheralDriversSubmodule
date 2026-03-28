@@ -9,8 +9,6 @@
 #include "spi_wrapper.hpp" 
 #include "stm32h7xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
-#include "SPIBusLocks.hpp"
-#include "SystemDefines.hpp"
 #include "main.h"
 #include <cstdint>
 
@@ -19,23 +17,6 @@ using std::uint16_t;
 using std::uint32_t;
 
 extern SPI_HandleTypeDef hspi2;
-
-namespace {
-class SPI2BusGuard {
-public:
-    SPI2BusGuard() : locked_(BusLocks::spi2.Lock(100)) {}
-    ~SPI2BusGuard() {
-        if (locked_) {
-            BusLocks::spi2.Unlock();
-        }
-    }
-
-    bool Locked() const { return locked_; }
-
-private:
-    bool locked_;
-};
-}
 /**
  * @brief Constructor
  */
@@ -50,18 +31,20 @@ MMC5983MA_Status MMC5983MA::Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, 
 	_csPort = csPort;
 	_csPin  = csPin;
 
+    //HAL_Delay(10);
     // Set the chip select pin HIGH (idle) by default.
     HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
 
     uint8_t productID = getProductID();
 
-    if (productID != MMC5983MA_PRODUCT_ID_VALUE) {
-        return MMC5983MA_Status::ERR_INVALID_ARG;
-    }
-
-    // Default 200 Hz bandwidth after confirming the device responded correctly.
-    writeRegister(MMC5983MA_IT_CONTROL1, MMC5983MA_BW_200HZ);
-    return MMC5983MA_Status::OK;
+   if (productID == MMC5983MA_PRODUCT_ID_VALUE) {
+	   return MMC5983MA_Status::OK;
+   }
+   else {
+	   return MMC5983MA_Status::ERR_INVALID_ARG;
+   }
+   //default 200Hz sampling rate
+   writeRegister(MMC5983MA_IT_CONTROL1, MMC5983MA_BW_200HZ);
 }
 
 
@@ -193,9 +176,9 @@ MMC5983MA_Status MMC5983MA::readData(MagDriverData& data) {
                 ((uint32_t)(buffer[6] & 0x0C) >> 2);
 
         // Apply scaling factors
-    data.scaledX = (int32_t)(((data.rawX - _offsetX) / _countsPerGauss) * 1000.0f);
-    data.scaledY = (int32_t)(((data.rawY - _offsetY) / _countsPerGauss) * 1000.0f);
-    data.scaledZ = (int32_t)(((data.rawZ - _offsetZ) / _countsPerGauss) * 1000.0f);
+        data.scaledX = ((float)data.rawX - _offsetX) / _countsPerGauss;
+        data.scaledY = ((float)data.rawY - _offsetY) / _countsPerGauss;
+        data.scaledZ = ((float)data.rawZ - _offsetZ) / _countsPerGauss;
 
         return MMC5983MA_Status::OK;
 }
@@ -207,9 +190,6 @@ MMC5983MA_Status MMC5983MA::readData(MagDriverData& data) {
 /* ========================================================================*/
 
 void MMC5983MA::writeRegister(std::uint8_t reg, std::uint8_t value) {
-    SPI2BusGuard guard;
-    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
-
     // Write : R/W bit (0) == 0
     uint8_t cmd_byte = (0x00|(reg & 0x7f));
     uint8_t txBuffer[2] = { cmd_byte, value };
@@ -225,9 +205,6 @@ void MMC5983MA::writeRegister(std::uint8_t reg, std::uint8_t value) {
 }
 
 uint8_t MMC5983MA::readRegister(uint8_t reg){
-    SPI2BusGuard guard;
-    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
-
     // Read : R/W bit (0) == 1
     // Shift address left 2 bits, then OR with 0x01 to set the Read bit
     uint8_t cmd_byte[] = {(0x80 | (reg & 0x7f)), 0x00};
@@ -247,9 +224,6 @@ uint8_t MMC5983MA::readRegister(uint8_t reg){
  * @brief Reads multiple bytes from the sensor.
  */
 void MMC5983MA::readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len) {
-    SPI2BusGuard guard;
-    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
-
     // 1. Create the command byte (same as readRegister)
 	uint8_t tx[len+1];
 	uint8_t rx[len+1];
