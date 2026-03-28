@@ -44,6 +44,8 @@ public:
 	{
 		IMU_NONE,
 		IMU_SAMPLE_AND_LOG,
+		IMU_START_CONTINUOUS_PRINT,
+		IMU_STOP_CONTINUOUS_PRINT,
 	};
 
 protected:
@@ -56,6 +58,7 @@ protected:
 	LSM6DO32_Driver imu;
 	IMUData imu_data;
 	GYRO_t gyro_bias = {0, 0, 0};
+	bool continuous_print_enabled = false;
 	uint8_t data[14];
 	GPIO_TypeDef *LSM6DSO32_CS_PORT = IMU32_CS_GPIO_Port;
 	const uint16_t LSM6DSO32_CS_PIN = IMU32_CS_Pin; // adjust when needed
@@ -66,6 +69,7 @@ private:
 	IMUTask();							 // Private constructor
 	IMUTask(const IMUTask &);			 // Prevent copy-construction
 	IMUTask &operator=(const IMUTask &); // Prevent assignment
+	void SampleAndPrint();
 	void LogData();
 };
 
