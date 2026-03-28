@@ -79,8 +79,8 @@ MMC5983MA_Status MMC5983MA::setOffsets(float offsetX, float offsetY, float offse
 }
 
 MMC5983MA_Status MMC5983MA::calibrateOffset(){
-    MagData setReading;
-    MagData resetReading;
+    MagDriverData setReading;
+    MagDriverData resetReading;
 
     // --- 1. SET Sequence ---
     // 1. Perform SET
@@ -150,7 +150,7 @@ MMC5983MA_Status MMC5983MA::readTemperature(float& tempOut) {
     return MMC5983MA_Status::OK;
 }
 
-MMC5983MA_Status MMC5983MA::readData(MagData& data) {
+MMC5983MA_Status MMC5983MA::readData(MagDriverData& data) {
     // Read status register to check if data is ready
     uint8_t status = readRegister(MMC5983MA_STATUS);
     
@@ -176,9 +176,9 @@ MMC5983MA_Status MMC5983MA::readData(MagData& data) {
                 ((uint32_t)(buffer[6] & 0x0C) >> 2);
 
         // Apply scaling factors
-        data.scaledX = ((float)data.rawX - _offsetX) / _countsPerGauss;
-        data.scaledY = ((float)data.rawY - _offsetY) / _countsPerGauss;
-        data.scaledZ = ((float)data.rawZ - _offsetZ) / _countsPerGauss;
+    data.scaledX = (int32_t)(((data.rawX - _offsetX) / _countsPerGauss) * 1000.0f);
+    data.scaledY = (int32_t)(((data.rawY - _offsetY) / _countsPerGauss) * 1000.0f);
+    data.scaledZ = (int32_t)(((data.rawZ - _offsetZ) / _countsPerGauss) * 1000.0f);
 
         return MMC5983MA_Status::OK;
 }
@@ -190,6 +190,9 @@ MMC5983MA_Status MMC5983MA::readData(MagData& data) {
 /* ========================================================================*/
 
 void MMC5983MA::writeRegister(std::uint8_t reg, std::uint8_t value) {
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
+
     // Write : R/W bit (0) == 0
     uint8_t cmd_byte = (0x00|(reg & 0x7f));
     uint8_t txBuffer[2] = { cmd_byte, value };
@@ -205,6 +208,9 @@ void MMC5983MA::writeRegister(std::uint8_t reg, std::uint8_t value) {
 }
 
 uint8_t MMC5983MA::readRegister(uint8_t reg){
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
+
     // Read : R/W bit (0) == 1
     // Shift address left 2 bits, then OR with 0x01 to set the Read bit
     uint8_t cmd_byte[] = {(0x80 | (reg & 0x7f)), 0x00};
@@ -224,6 +230,9 @@ uint8_t MMC5983MA::readRegister(uint8_t reg){
  * @brief Reads multiple bytes from the sensor.
  */
 void MMC5983MA::readRegisters(std::uint8_t reg, std::uint8_t* buffer, std::uint8_t len) {
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MMC5983MA failed to lock SPI2 bus");
+
     // 1. Create the command byte (same as readRegister)
 	uint8_t tx[len+1];
 	uint8_t rx[len+1];

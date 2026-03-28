@@ -6,6 +6,8 @@
  ******************************************************************************** */
 /************************************ * INCLUDES ************************************/
 #include "MS5611Driver.hpp"
+#include "SPIBusLocks.hpp"
+#include "SystemDefines.hpp"
 #include "stm32h7xx_hal_gpio.h"
 /************************************ * PRIVATE MACROS AND DEFINES ************************************/
 /************************************ * VARIABLES ************************************/
@@ -23,6 +25,23 @@ static uint8_t READ_BYTE_CMD = 0x00;
 static uint8_t RESET_CMD = 0x1E;
 /************************************ * FUNCTION DECLARATIONS ************************************/
 /************************************ * FUNCTION DEFINITIONS ************************************/
+
+namespace {
+class SPI2BusGuard {
+public:
+	SPI2BusGuard() : locked_(BusLocks::spi2.Lock(100)) {}
+	~SPI2BusGuard() {
+		if (locked_) {
+			BusLocks::spi2.Unlock();
+		}
+	}
+
+	bool Locked() const { return locked_; }
+
+private:
+	bool locked_;
+};
+}
 
 MS5611_Driver::MS5611_Driver(SPI_HandleTypeDef* hspi_, GPIO_TypeDef* cs_gpio_, uint16_t cs_pin_){
 	hspi = hspi_;
@@ -139,6 +158,8 @@ BaroData MS5611_Driver::getSample(){
  */
 uint16_t MS5611_Driver::readCalibrationCoefficients(uint8_t PROM_READ_CMD)
 {
+    SPI2BusGuard guard;
+    SOAR_ASSERT(guard.Locked(), "MS5611 failed to lock SPI2 bus");
 
     uint8_t dataInBuffer;
 
@@ -165,6 +186,9 @@ uint16_t MS5611_Driver::readCalibrationCoefficients(uint8_t PROM_READ_CMD)
  */
 uint32_t MS5611_Driver::getTemperatureReading()
 {
+	SPI2BusGuard guard;
+	SOAR_ASSERT(guard.Locked(), "MS5611 failed to lock SPI2 bus");
+
 	// Variables
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
 	uint8_t dataInBuffer;
@@ -203,6 +227,9 @@ uint32_t MS5611_Driver::getTemperatureReading()
  */
 uint32_t MS5611_Driver::getPressureReading()
 {
+	SPI2BusGuard guard;
+	SOAR_ASSERT(guard.Locked(), "MS5611 failed to lock SPI2 bus");
+
 	// Variables
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint8_t dataInBuffer;
@@ -241,6 +268,9 @@ uint32_t MS5611_Driver::getPressureReading()
  */
 void MS5611_Driver::resetBarometer()
 {
+	SPI2BusGuard guard;
+	SOAR_ASSERT(guard.Locked(), "MS5611 failed to lock SPI2 bus");
+
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(hspi, &RESET_CMD, CMD_SIZE, CMD_TIMEOUT);
 	osDelay(4); // 2.8ms reload after Reset command
