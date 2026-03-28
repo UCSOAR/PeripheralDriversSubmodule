@@ -203,11 +203,11 @@ void IMUTask::HandleRequestCommand(uint16_t taskCommand)
 	{
 	case IMUTask::IMU_SAMPLE_AND_LOG:
 	{
-		imu.ReadSensors(data);
-		imu_data = imu.ConvertRawMeasurementToStruct(data);
-		imu_data.id = 1;
-		ApplyGyroBias();
-		LogData();
+//		imu.ReadSensors(data);
+//		imu_data = imu.ConvertRawMeasurementToStruct(data);
+//		imu_data.id = 1;
+//		ApplyGyroBias();
+//		LogData();
 	}
 	default:
 		break;
