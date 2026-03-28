@@ -10,9 +10,9 @@
 
 
 
+#include <IMU32/LSM6DO32Driver.h>
 #include "SensorDataTypes.hpp"
 #include "Task.hpp"
-#include "LSM6DO32Driver.h"
 #include "main.h"
 
 extern SPI_HandleTypeDef hspi1;
