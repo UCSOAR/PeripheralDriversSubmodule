@@ -10,12 +10,12 @@ bool NEOM9N00B::Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, uint16_t csP
 	_csPort = csPort;
 	_csPin = csPin;
 	csHigh();
-	if (!valSetLType(static_cast<uint32_t>(CFG_SPI_ENABLE), 1))) return false; // CFG-SPI-ENABLED = true
-	if (!valSetLType(static_cast<uint32_t>(CFG_SPIINPROT_UBX), 1))) return false; // CFG-SPIINPROT-UBX = true set this just for config
-	if (!valSetLType(static_cast<uint32_t>(CFG_SPIOUTPROT_UBX), 1))) return false; // CFG-SPIOUTPROT-UBX = true set this just for config
-	if (!valSetLType(static_cast<uint32_t>(CFG_SPIOUTPROT_NMEA), 1))) return false; // CFG-SPIOUTPROT-NMEA = true
-	if (!valSetLType(static_cast<uint32_t>(CFG_SPIINPROT_NMEA), 0))) return false; // CFG-SPIINPROT-NMEA = false, unless you need NMEA input
-	if(!valSetU1Type(static_cast<uint32_t>(CFG_MSGOUT_NMEA_ID_GGA_SPI, 1))) return false //CFG_MSGOUT_NMEA_ID_GGA_SPI = 1 sets output rate to 1(testing for now)
+	if (!valSetLType(static_cast<uint32_t>(CFG_SPI_ENABLE), 1)) return false; // CFG-SPI-ENABLED = true
+	if (!valSetLType(static_cast<uint32_t>(CFG_SPIINPROT_UBX), 1)) return false; // CFG-SPIINPROT-UBX = true set this just for config
+	if (!valSetLType(static_cast<uint32_t>(CFG_SPIOUTPROT_UBX), 1)) return false; // CFG-SPIOUTPROT-UBX = true set this just for config
+	if (!valSetLType(static_cast<uint32_t>(CFG_SPIOUTPROT_NMEA), 1)) return false; // CFG-SPIOUTPROT-NMEA = true
+	if (!valSetLType(static_cast<uint32_t>(CFG_SPIINPROT_NMEA), 0)) return false; // CFG-SPIINPROT-NMEA = false, unless you need NMEA input
+	if(!valSetU1Type(static_cast<uint32_t>(CFG_MSGOUT_NMEA_ID_GGA_SPI, 1)) return false; //CFG_MSGOUT_NMEA_ID_GGA_SPI = 1 sets output rate to 1(testing for now)
 	return true;
 
 
@@ -197,6 +197,7 @@ bool NEOM9N00B::collectNMEALine(char* lineBuf){
 			// Therefore if collection is false we are looking for a new NMEA message to start
 			// so we check if the char we are receiving is the start indicator or not
 			if(c == '$'){
+				idx = 0;
 				collecting = true;
 				lineBuf[idx++] = c;
 			}
@@ -230,13 +231,13 @@ bool NEOM9N00B::collectNMEALine(char* lineBuf){
 bool NEOM9N00B::getGGALine(char* lineBuf){
 	//collects the NMEALine until notified of terminator
 	while (true) {
-	        if (collectNMEALine(lineBuf, maxLen)) {
-	            if (strncmp(lineBuf, "$GPGGA", 6) == 0 ||
-	                strncmp(lineBuf, "$GNGGA", 6) == 0) {
-	                return true;
-	            }
-	        }
-	    }
+		if (collectNMEALine(lineBuf) {
+			if (strncmp(lineBuf, "$GPGGA", 6) == 0 ||
+				strncmp(lineBuf, "$GNGGA", 6) == 0) {
+				return true;
+			}
+		}
+	}
 }
 
 void NEOM9N00B::ParseGpsData(GpsData* data)
@@ -342,7 +343,6 @@ void NEOM9N00B::ParseGpsData(GpsData* data)
     data->totalAltitude_.unit_ = data->antennaAltitude_.unit_;
 
 }
-
 
 void NEOM9N00B::csHigh(){
 	HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET);
