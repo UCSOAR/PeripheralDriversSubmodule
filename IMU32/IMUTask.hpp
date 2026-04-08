@@ -8,7 +8,7 @@
 #ifndef PERIPHERALDRIVERSSUBMODULE_COMPONENTS_IMUTASK_HPP_
 #define PERIPHERALDRIVERSSUBMODULE_COMPONENTS_IMUTASK_HPP_
 
-#include <IMU32/LSM6DO32Driver.h>
+#include <LSM6DO32Driver.h>
 #include "SensorDataTypes.hpp"
 #include "Task.hpp"
 #include "main.h"
