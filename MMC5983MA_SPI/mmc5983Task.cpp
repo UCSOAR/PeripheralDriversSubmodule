@@ -90,7 +90,18 @@ void MMC5983MATask::HandleCommand(Command &cm)
 
     case MMC5983MA_Commands::MMC_CMD_START_READ: // Start Readings
 
-        SOAR_PRINT("MMC5983MATask: Enabled Readings.\n");
+
+        magnetometer.triggerMeasurement();
+        magnetometer.readData(magData);
+
+        SOAR_PRINT("Mag rawX: %lu\n", (unsigned long)magData.rawX);
+		SOAR_PRINT("Mag rawY: %lu\n", (unsigned long)magData.rawY);
+		SOAR_PRINT("Mag rawZ: %lu\n", (unsigned long)magData.rawZ);
+
+		SOAR_PRINT("Mag scaledX: %ld\n", (long)magData.scaledX);
+		SOAR_PRINT("Mag scaledY: %ld\n", (long)magData.scaledY);
+		SOAR_PRINT("Mag scaledZ: %ld\n", (long)magData.scaledZ);
+
         break;
 
     case MMC5983MA_Commands::MMC_CMD_STOP_READ: // Stop Readings
