@@ -65,20 +65,25 @@ void MMC5983MATask::InitTask() // RTOS Task Init
 
 void MMC5983MATask::Run(void *pvParams) // Instance Run loop for task
 {
-    // Handle incoming commands (optional)
-    magnetometer.triggerMeasurement();
-    // vTaskDelay(pdMS_TO_TICKS(10));
-    magnetometer.readData(magData);
-    MagData publishedMagData;
-    publishedMagData.magX = magData.scaledX;
-    publishedMagData.magY = magData.scaledY;
-    publishedMagData.magZ = magData.scaledZ;
-    DataBroker::Publish<MagData>(&publishedMagData);
+    (void)pvParams;
 
-    Command cm;
-    if (qEvtQueue->Receive(cm, 333))
+    while (1)
     {
-        HandleCommand(cm);
+        // Periodically sample and publish magnetometer data.
+        magnetometer.triggerMeasurement();
+        magnetometer.readData(magData);
+
+        MagData publishedMagData;
+        publishedMagData.magX = magData.scaledX;
+        publishedMagData.magY = magData.scaledY;
+        publishedMagData.magZ = magData.scaledZ;
+        DataBroker::Publish<MagData>(&publishedMagData);
+
+        Command cm;
+        if (qEvtQueue->Receive(cm, 333))
+        {
+            HandleCommand(cm);
+        }
     }
 }
 
