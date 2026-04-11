@@ -9,6 +9,8 @@
 #define FDCAN_H_
 
 #include "stm32g4xx.h"
+// NOTE: FDCAN is NOT available on STM32G4 - this driver requires STM32H7
+// #include "stm32g4xx_hal_fdcan.h"
 
 // *********************** DEBUG:
 //#define FDCAN_DEBUG

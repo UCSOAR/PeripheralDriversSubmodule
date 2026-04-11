@@ -8,7 +8,7 @@
 #ifndef LIS3MDLTRDRIVER_H_
 #define LIS3MDLTRDRIVER_H_
 
-#include "stm32h7xx_hal_gpio.h"
+#include "stm32g4xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
 
 constexpr uint8_t SPI_DUMMY_BYTE = 0x00;
