@@ -40,6 +40,11 @@ NauStatus NAU7802::begin(uint8_t initialGain) {
         HAL_Delay(1);
         attempts--;
     }
+
+    if (!powerReady) {
+        return NauStatus::ERR_NOT_READY;
+    }
+
     return setGain(initialGain);
 }
 
@@ -52,6 +57,10 @@ bool NAU7802::isReady() {
 }
 
 NauStatus NAU7802::readSensor(NAU7802_OUT *dest) {
+    if (dest == nullptr) {
+        return NauStatus::ERR_INVALID_ARG;
+    }
+
     uint8_t buffer[3];
 
     if (readRegisters(NAU7802_REG_ADC_B2, buffer, 3 ) != NauStatus::OK) {
@@ -75,7 +84,9 @@ NauStatus NAU7802::readSensor(NAU7802_OUT *dest) {
 
 NauStatus NAU7802::reset() {
     // RR bit
-    modifyRegisterBit(NAU7802_REG_PU_CTRL, NAU7802_PU_CTRL_RR, true);
+    if (modifyRegisterBit(NAU7802_REG_PU_CTRL, NAU7802_PU_CTRL_RR, true) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
 
     HAL_Delay(1); // Small delay to ensure reset is processed
 
