@@ -16,6 +16,7 @@ constexpr uint32_t kBoostPollMs = 20;
 constexpr uint32_t kCoastPollMs = 100;
 constexpr uint32_t kDescentPollMs = 100;
 constexpr uint32_t kRecoveryPollMs = 250;
+constexpr uint32_t kGpsBootSettleMs = 300;
 }
 
 PollingTask::PollingTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), pollTimerHandle(nullptr), flightState(FlightState::Grounded), imu16(), imu32(), magnetometer()
@@ -45,7 +46,7 @@ void PollingTask::InitTask()
     //Init drivers
 	imu16.Init(hspi6_, LSM6DSO_CS_PIN,  LSM6DSO_CS_PORT );
 	imu32.Init(hspi2_, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
-	magnetometer.Init(hspi4_, MMC_CS_PORT, MAG_CS_Pin);
+	magnetometer.Init(hspi4_, MMC_CS_PORT, MMC_CS_PIN);
 
 	pollTimerHandle = xTimerCreate("PollingTimer",
 			pdMS_TO_TICKS(kLaunchPollMs),
@@ -103,6 +104,10 @@ void PollingTask::ApplyFlightState()
 }
 
 void PollingTask::Run(void * pvParams){
+	// Allow peripherals to settle after scheduler starts, then initialize GPS.
+	vTaskDelay(pdMS_TO_TICKS(kGpsBootSettleMs));
+	gpsInitialized = gps.Init(hspi6_, GPS_CS_PORT, GPS_CS_PIN);
+
     while (1) {
         Command cm;
         bool res = qEvtQueue->ReceiveWait(cm);
@@ -133,6 +138,30 @@ void PollingTask::HandleRequestCommand(uint16_t taskCommand){
 		PollSensors();
 		LogData();
 		break;
+	case GPS_TEST:
+		if (gpsInitialized)
+		{
+
+			while(1){
+				if (gps.getGGALine(gpsData.buffer_))
+				{
+					SOAR_PRINT("GPS RAW | %s\n", gpsData.buffer_);
+					gps.ParseGpsData(&gpsData);
+					SOAR_PRINT("GPS GGA | time=%d lat_deg=%d lat_min=%d lon_deg=%d lon_min=%d antAlt=%d antUnit=%d geoidAlt=%d geoidUnit=%d totalAlt=%d totalUnit=%d\n",
+							   (int32_t)gpsData.time_,
+							   (int32_t)gpsData.latitude_.degrees_,
+							   (int32_t)gpsData.latitude_.minutes_,
+							   (int32_t)gpsData.longitude_.degrees_,
+							   (int32_t)gpsData.longitude_.minutes_,
+							   (int32_t)gpsData.antennaAltitude_.altitude_,
+							   (int32_t)gpsData.antennaAltitude_.unit_,
+							   (int32_t)gpsData.geoidAltitude_.altitude_,
+							   (int32_t)gpsData.geoidAltitude_.unit_,
+							   (int32_t)gpsData.totalAltitude_.altitude_,
+							   (int32_t)gpsData.totalAltitude_.unit_);
+				}
+			}
+		}
 
 	default:
 		break;

@@ -11,6 +11,7 @@
 #include "lsm6dso.hpp"
 #include <LSM6DO32Driver.h>
 #include "mmc5983ma.hpp"
+#include "NEO-M9N-00BDriver.hpp"
 
 #include "SensorDataTypes.hpp"
 #include "main.h"
@@ -41,6 +42,7 @@ class PollingTask: public Task
 
 		enum PollingTaskCommands : uint16_t {
 			POLL_SENSORS_AND_LOG = 1,
+			GPS_TEST,
 		};
 
 		static PollingTask& Inst() {
@@ -79,6 +81,7 @@ class PollingTask: public Task
 		TickType_t pollingStartTick = 0;
 		TickType_t previousLogTick = 0;
 		bool pollingTimerStarted = false;
+		bool gpsInitialized = false;
 
 		FlightState flightState;
 		//sensor data structs
@@ -88,6 +91,7 @@ class PollingTask: public Task
 		IMUData imu16Data;
 		MagData magData;
 		MagDriverData driverData;
+		GPSData gpsData;
 
 		//All sensor gpios and spi
 		//Baro 07 config
@@ -115,12 +119,18 @@ class PollingTask: public Task
 	    GPIO_TypeDef *MMC_CS_PORT = MAG_CS_GPIO_Port;
 	    const uint16_t MMC_CS_PIN = MAG_CS_Pin;
 
+	    //GPS config
+	    GPIO_TypeDef *GPS_CS_PORT = GPS_CS_GPIO_Port;
+	   	const uint16_t GPS_CS_PIN = GPS_CS_Pin;
+
+
 	    //Drivers
 	    LSM6DSO_Driver imu16;
 	    LSM6DO32_Driver imu32;
 	    MS5607_Driver barometer07{hspi3_, MS5607_CS_PORT, MS5607_CS_PIN};
 	    MS5611_Driver barometer11{hspi1_, MS5611_CS_PORT, MS5611_CS_PIN};
 	    MMC5983MA magnetometer;
+	    NEOM9N00B gps;
 
 };
 
