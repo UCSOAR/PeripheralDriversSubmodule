@@ -21,6 +21,9 @@
 
 constexpr uint8_t LSM6DSO_ID = 0x6C;
 typedef uint8_t LSM6DSO_REGISTER_t;
+constexpr uint16_t LSM6DSO_GYRO_CALIBRATION_SAMPLES = 500;
+constexpr uint32_t LSM6DSO_GYRO_CALIBRATION_DELAY_MS = 5;
+constexpr uint32_t IMU16_CONTINUOUS_PRINT_PERIOD_MS = 500;
 
 
 class LSM6DSO_Driver{
@@ -65,10 +68,17 @@ class LSM6DSO_Driver{
 		SPI_HandleTypeDef* hspi = nullptr;
 		GPIO_TypeDef* cs_gpio;
 		uint16_t cs_pin;
+		void CalibrateGyroBias();
+		void ApplyGyroBias(IMUData *imu_data);
 
 		void CSHigh();
 		void CSLow();
 
+		GYRO_t gyro_bias = {0, 0, 0};
+		uint8_t data[14];
+
+		int16_t ClampInt16(int32_t value);
+		int32_t AbsInt32(int32_t value);
 };
 
 namespace LSM6DSO_REG{
@@ -110,4 +120,5 @@ namespace LSM6DSO_REG{
 	constexpr LSM6DSO_REGISTER_t OUTZ_L_A = 0x2C;
 	constexpr LSM6DSO_REGISTER_t OUTZ_H_A  = 0x2D;
 }
+
 #endif

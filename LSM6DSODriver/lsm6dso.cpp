@@ -40,6 +40,8 @@ void LSM6DSO_Driver::Init(SPI_HandleTypeDef *hspi_, uint8_t cs_pin_, GPIO_TypeDe
 	setRegister(LSM6DSO_REG::CTRL2_G, 0b01010000);
 	// bypass FIFO mode
 	setRegister(LSM6DSO_REG::FIFO_CTRL_4, 0b00000000);
+
+	CalibrateGyroBias();
 }
 
 void LSM6DSO_Driver::setRegister(LSM6DSO_REGISTER_t reg, uint8_t val)
@@ -171,7 +173,51 @@ IMUData LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bool
 		out.temp = static_cast<int16_t>(25 + ((rawTemp >= 0) ? ((rawTemp + 128) / 256) : ((rawTemp - 128) / 256)));
 	}
 
+	ApplyGyroBias(&out);
+
 	return out;
+}
+
+void LSM6DSO_Driver::CalibrateGyroBias()
+{
+	int32_t sumX = 0;
+	int32_t sumY = 0;
+	int32_t sumZ = 0;
+
+
+	for (uint16_t sample = 0; sample < LSM6DSO_GYRO_CALIBRATION_SAMPLES; sample++)
+	{
+
+		readSensors(data);
+		IMUData sampleData = bytesToStruct(data, false, true, true);
+
+		sumX += sampleData.gyro.x;
+		sumY += sampleData.gyro.y;
+		sumZ += sampleData.gyro.z;
+	}
+
+	gyro_bias.x = static_cast<int16_t>(sumX / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.y = static_cast<int16_t>(sumY / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.z = static_cast<int16_t>(sumZ / LSM6DSO_GYRO_CALIBRATION_SAMPLES);
+
+	const int32_t bx_mdps = static_cast<int32_t>(gyro_bias.x);
+	const int32_t by_mdps = static_cast<int32_t>(gyro_bias.y);
+	const int32_t bz_mdps = static_cast<int32_t>(gyro_bias.z);
+
+	const char *bx_sign = (bx_mdps < 0) ? "-" : "";
+	const char *by_sign = (by_mdps < 0) ? "-" : "";
+	const char *bz_sign = (bz_mdps < 0) ? "-" : "";
+
+	const int32_t bx_abs_mdps = AbsInt32(bx_mdps);
+	const int32_t by_abs_mdps = AbsInt32(by_mdps);
+	const int32_t bz_abs_mdps = AbsInt32(bz_mdps);
+}
+
+void LSM6DSO_Driver::ApplyGyroBias(IMUData* imu_data)
+{
+	imu_data->gyro.x = ClampInt16(static_cast<int32_t>(imu_data->gyro.x) - gyro_bias.x);
+	imu_data->gyro.y = ClampInt16(static_cast<int32_t>(imu_data->gyro.y) - gyro_bias.y);
+	imu_data->gyro.z = ClampInt16(static_cast<int32_t>(imu_data->gyro.z) - gyro_bias.z);
 }
 
 void LSM6DSO_Driver::readSensors(uint8_t *out)
@@ -189,4 +235,22 @@ void LSM6DSO_Driver::CSLow()
 {
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
+}
+
+int16_t LSM6DSO_Driver::ClampInt16(int32_t value)
+{
+	if (value > 32767)
+	{
+		return 32767;
+	}
+	if (value < -32768)
+	{
+		return -32768;
+	}
+	return static_cast<int16_t>(value);
+}
+
+int32_t LSM6DSO_Driver::AbsInt32(int32_t value)
+{
+	return (value < 0) ? -value : value;
 }

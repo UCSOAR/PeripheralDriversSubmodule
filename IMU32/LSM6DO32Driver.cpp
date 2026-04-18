@@ -32,6 +32,8 @@ void LSM6DO32_Driver::Init(SPI_HandleTypeDef *hspi_, GPIO_TypeDef *cs_gpio_, uin
 	SetRegister(LSM6DSO32_REG::CTRL1_XL, 0b01011100);
 	SetRegister(LSM6DSO32_REG::CTRL2_G, 0b01010000);
 	SetRegister(LSM6DSO32_REG::FIFO_CTRL4, 0b00000000);
+
+	CalibrateGyroBias();
 }
 
 /* @brief Sets a single 8-bit register.
@@ -158,7 +160,7 @@ const IMUData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf,
 
 	if (accel)
 	{
-		// Store acceleration as integer mg.
+
 		out.accel.x = scaleToInt16(rawAx, 488, 1000);
 		out.accel.y = scaleToInt16(rawAy, 488, 1000);
 		out.accel.z = scaleToInt16(rawAz, 488, 1000);
@@ -178,7 +180,51 @@ const IMUData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf,
 		out.temp = static_cast<int16_t>(25 + ((rawTemp >= 0) ? ((rawTemp + 128) / 256) : ((rawTemp - 128) / 256)));
 	}
 
+	ApplyGyroBias(&out);
+
 	return out;
+}
+
+void LSM6DO32_Driver::CalibrateGyroBias()
+{
+	int32_t sumX = 0;
+	int32_t sumY = 0;
+	int32_t sumZ = 0;
+
+
+	for (uint16_t sample = 0; sample <LSM6DSO32_GYRO_CALIBRATION_SAMPLES; sample++)
+	{
+
+		ReadSensors(data);
+		IMUData sampleData = ConvertRawMeasurementToStruct(data, false, true, true);
+
+		sumX += sampleData.gyro.x;
+		sumY += sampleData.gyro.y;
+		sumZ += sampleData.gyro.z;
+	}
+
+	gyro_bias.x = static_cast<int16_t>(sumX / LSM6DSO32_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.y = static_cast<int16_t>(sumY / LSM6DSO32_GYRO_CALIBRATION_SAMPLES);
+	gyro_bias.z = static_cast<int16_t>(sumZ / LSM6DSO32_GYRO_CALIBRATION_SAMPLES);
+
+	const int32_t bx_mdps = static_cast<int32_t>(gyro_bias.x);
+	const int32_t by_mdps = static_cast<int32_t>(gyro_bias.y);
+	const int32_t bz_mdps = static_cast<int32_t>(gyro_bias.z);
+
+	const char *bx_sign = (bx_mdps < 0) ? "-" : "";
+	const char *by_sign = (by_mdps < 0) ? "-" : "";
+	const char *bz_sign = (bz_mdps < 0) ? "-" : "";
+
+	const int32_t bx_abs_mdps = AbsInt32(bx_mdps);
+	const int32_t by_abs_mdps = AbsInt32(by_mdps);
+	const int32_t bz_abs_mdps = AbsInt32(bz_mdps);
+}
+
+void LSM6DO32_Driver::ApplyGyroBias(IMUData* imu_data)
+{
+	imu_data->gyro.x = ClampInt16(static_cast<int32_t>(imu_data->gyro.x) - gyro_bias.x);
+	imu_data->gyro.y = ClampInt16(static_cast<int32_t>(imu_data->gyro.y) - gyro_bias.y);
+	imu_data->gyro.z = ClampInt16(static_cast<int32_t>(imu_data->gyro.z) - gyro_bias.z);
 }
 
 /* @brief Reads all 14 sensor registers in order. (temp, gyro, accel)
@@ -249,4 +295,22 @@ void LSM6DO32_Driver::SetGyroFullScaleRange(LSM6D032_GYRO_SCALE_SELECT scale)
 {
 	assert(initialized);
 	SetRegister(LSM6DSO32_REG::CTRL2_G, (GetRegister(LSM6DSO32_REG::CTRL2_G) & 0b11110011) | (scale << 2));
+}
+
+int16_t LSM6DO32_Driver::ClampInt16(int32_t value)
+{
+	if (value > 32767)
+	{
+		return 32767;
+	}
+	if (value < -32768)
+	{
+		return -32768;
+	}
+	return static_cast<int16_t>(value);
+}
+
+int32_t LSM6DO32_Driver::AbsInt32(int32_t value)
+{
+	return (value < 0) ? -value : value;
 }
