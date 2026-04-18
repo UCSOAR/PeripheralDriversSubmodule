@@ -141,26 +141,26 @@ void PollingTask::HandleRequestCommand(uint16_t taskCommand){
 	case GPS_TEST:
 		if (gpsInitialized)
 		{
-
-			while(1){
-				if (gps.getGGALine(gpsData.buffer_))
-				{
-					SOAR_PRINT("GPS RAW | %s\n", gpsData.buffer_);
-					gps.ParseGpsData(&gpsData);
-					SOAR_PRINT("GPS GGA | time=%d lat_deg=%d lat_min=%d lon_deg=%d lon_min=%d antAlt=%d antUnit=%d geoidAlt=%d geoidUnit=%d totalAlt=%d totalUnit=%d\n",
-							   (int32_t)gpsData.time_,
-							   (int32_t)gpsData.latitude_.degrees_,
-							   (int32_t)gpsData.latitude_.minutes_,
-							   (int32_t)gpsData.longitude_.degrees_,
-							   (int32_t)gpsData.longitude_.minutes_,
-							   (int32_t)gpsData.antennaAltitude_.altitude_,
-							   (int32_t)gpsData.antennaAltitude_.unit_,
-							   (int32_t)gpsData.geoidAltitude_.altitude_,
-							   (int32_t)gpsData.geoidAltitude_.unit_,
-							   (int32_t)gpsData.totalAltitude_.altitude_,
-							   (int32_t)gpsData.totalAltitude_.unit_);
-				}
+			if (gps.getGGALine(gpsData.buffer_))
+			{
+				SOAR_PRINT("GPS RAW | %s\n", gpsData.buffer_);
+				GPSData rawGps = gpsData;
+				DataBroker::Publish<GPSData>(&rawGps);
+				gps.ParseGpsData(&gpsData);
+				SOAR_PRINT("GPS GGA | time=%d lat_deg=%d lat_min=%d lon_deg=%d lon_min=%d antAlt=%d antUnit=%d geoidAlt=%d geoidUnit=%d totalAlt=%d totalUnit=%d\n",
+						   (int32_t)gpsData.time_,
+						   (int32_t)gpsData.latitude_.degrees_,
+						   (int32_t)gpsData.latitude_.minutes_,
+						   (int32_t)gpsData.longitude_.degrees_,
+						   (int32_t)gpsData.longitude_.minutes_,
+						   (int32_t)gpsData.antennaAltitude_.altitude_,
+						   (int32_t)gpsData.antennaAltitude_.unit_,
+						   (int32_t)gpsData.geoidAltitude_.altitude_,
+						   (int32_t)gpsData.geoidAltitude_.unit_,
+						   (int32_t)gpsData.totalAltitude_.altitude_,
+						   (int32_t)gpsData.totalAltitude_.unit_);
 			}
+
 		}
 
 	default:
@@ -205,6 +205,14 @@ void PollingTask::PollSensors()
 	magData.magX = driverData.scaledX;
 	magData.magY = driverData.scaledY;
 	magData.magZ = driverData.scaledZ;
+
+	static const char kMockGga[83] ="$GNGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*59\r\n";
+	memset(gpsData.buffer_, 0, sizeof(gpsData.buffer_));
+	strncpy(gpsData.buffer_, kMockGga, sizeof(gpsData.buffer_) - 1);
+	GPSData parsedGps = gpsData;
+	gps.ParseGpsData(&parsedGps);
+
+
 }
 
 
@@ -274,6 +282,7 @@ void PollingTask::LogData(){
 	DataBroker::Publish<BaroData>(&baro07Data);
 	DataBroker::Publish<BaroData>(&baro11Data);
 	DataBroker::Publish<MagData>(&magData);
+	DataBroker::Publish<GPSData>(&gpsData);
 
 
 
