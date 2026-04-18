@@ -1,5 +1,7 @@
 
 #include "NEO-M9N-00BDriver.hpp"
+#include <cstring>
+#include <cstdlib>
 
 NEOM9N00B::NEOM9N00B(){
 
@@ -15,7 +17,8 @@ bool NEOM9N00B::Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, uint16_t csP
 	if (!valSetLType(static_cast<uint32_t>(CFG_SPIOUTPROT_UBX), 1)) return false; // CFG-SPIOUTPROT-UBX = true set this just for config
 	if (!valSetLType(static_cast<uint32_t>(CFG_SPIOUTPROT_NMEA), 1)) return false; // CFG-SPIOUTPROT-NMEA = true
 	if (!valSetLType(static_cast<uint32_t>(CFG_SPIINPROT_NMEA), 0)) return false; // CFG-SPIINPROT-NMEA = false, unless you need NMEA input
-	if(!valSetU1Type(static_cast<uint32_t>(CFG_MSGOUT_NMEA_ID_GGA_SPI, 1)) return false; //CFG_MSGOUT_NMEA_ID_GGA_SPI = 1 sets output rate to 1(testing for now)
+	if (!valSetU1Type(static_cast<uint32_t>(CFG_MSGOUT_NMEA_ID_GGA_SPI), 1)) return false; //CFG_MSGOUT_NMEA_ID_GGA_SPI = 1 sets output rate to 1(testing for now)
+
 	return true;
 
 
@@ -53,12 +56,13 @@ bool NEOM9N00B::valSetLType(uint32_t keyId, uint8_t value){
 	HAL_SPI_Transmit(_hspi, msg, sizeof(msg), HAL_MAX_DELAY);
 	csHigh();
 
-	return waitForAck(0x06, 0x8A, 1000);
+	return true;
+	//return waitForAck(0x06, 0x8A, 1000);
 
 
 }
 
-bool NEOM9N00B::valSetU1Type(uint32 keyId, uint8_t value){
+bool NEOM9N00B::valSetU1Type(uint32_t keyId, uint8_t value){
 	uint8_t msg[] ={
 			    0xB5, 0x62,       // sync
 			    0x06, 0x8A,       // UBX-CFG-VALSET
@@ -89,7 +93,8 @@ bool NEOM9N00B::valSetU1Type(uint32 keyId, uint8_t value){
 		HAL_SPI_Transmit(_hspi, msg, sizeof(msg), HAL_MAX_DELAY);
 		csHigh();
 
-		return waitForAck(0x06, 0x8A, 1000);
+		return true;
+		//return waitForAck(0x06, 0x8A, 1000);
 
 }
 
@@ -104,7 +109,7 @@ void NEOM9N00B::computeUBXChecksum(const uint8_t* data, uint16_t len, uint8_t& c
     }
 }
 
-bool NEOM9N00B::waitForAck(uint8_t expectedClass, uint8_t expectedId, uint32_t timeoutMs=1000){
+bool NEOM9N00B::waitForAck(uint8_t expectedClass, uint8_t expectedId, uint32_t timeoutMs){
 	uint32_t start = HAL_GetTick();
 	uint8_t txDummy[32];
 	uint8_t rxBuf[32];
@@ -178,8 +183,8 @@ bool NEOM9N00B::collectNMEALine(char* lineBuf){
 	 * when the end of the message has been reached.
 	 */
 
-	static uint16_t idx = 0
-	static bool collecting = false
+	static uint16_t idx = 0;
+	static bool collecting = false;
 
 	//read the bytes from spi, return false if HAL status flag has error
 	if(!readBytes(rx, sizeof(rx))){
@@ -216,22 +221,22 @@ bool NEOM9N00B::collectNMEALine(char* lineBuf){
 			}
 		//Add null terminator if we hit an end indicator, indicates end of NMEA message; return true.
 			if(c == '\n'){
-				lineBuf[idx] = '\0'
+				lineBuf[idx] = '\0';
 				collecting = false;
 				idx = 0;
-				return true
+				return true;
 			}
 		}
 	}
 	//return false if we do not have a full NMEA message yet
-	return false
+	return false;
 
 }
 
 bool NEOM9N00B::getGGALine(char* lineBuf){
 	//collects the NMEALine until notified of terminator
 	while (true) {
-		if (collectNMEALine(lineBuf) {
+		if (collectNMEALine(lineBuf)) {
 			if (strncmp(lineBuf, "$GPGGA", 6) == 0 ||
 				strncmp(lineBuf, "$GNGGA", 6) == 0) {
 				return true;
@@ -240,7 +245,7 @@ bool NEOM9N00B::getGGALine(char* lineBuf){
 	}
 }
 
-void NEOM9N00B::ParseGpsData(GpsData* data)
+void NEOM9N00B::ParseGpsData(GPSData* data)
 {
 
     char* gps_item = &data->buffer_[0];
