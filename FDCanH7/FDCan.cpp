@@ -103,6 +103,10 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
     		printf("timed out on waiting for TX FIFO free!\n");
     		return false;
     	}
+    	if(HAL_FDCAN_GetError(fdcan) != HAL_FDCAN_ERROR_NONE) {
+    		printf("fdcan tx error!\n");
+    		return false;
+    	}
     }
 
     HAL_StatusTypeDef stat =
@@ -137,7 +141,9 @@ FDCanController::RXBuffer* FDCanController::GetRXBuf(uint16_t index, FDCanContro
  * @return Pointer to the RX buffer that a registered log maps the ID to. nullptr if none found.
  */
 FDCanController::RXBuffer* FDCanController::GetFrontBufferFromCanID(uint16_t canid) {
-
+	if(canid > 2047 || buffersByCanID[canid].logOwnerSelection == nullptr) {
+		return nullptr;
+	}
 	if(*buffersByCanID[canid].logOwnerSelection == Buf_A) {
 		return buffersByCanID[canid].A;
 	}
@@ -150,6 +156,9 @@ FDCanController::RXBuffer* FDCanController::GetFrontBufferFromCanID(uint16_t can
  */
 FDCanController::RXBuffer* FDCanController::GetBackBufferFromCanID(uint16_t canid) {
 
+	if(canid > 2047 || buffersByCanID[canid].logOwnerSelection == nullptr) {
+		return nullptr;
+	}
 	if(*buffersByCanID[canid].logOwnerSelection == Buf_A) {
 		return buffersByCanID[canid].B;
 	}
@@ -244,17 +253,7 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
     uint32_t payloadLength = DLCtoBytes[pRxHeader->DataLength];
     uint32_t wordsToRead = (payloadLength + 3U) / 4U;
 
-    for (uint32_t i = 0; i < wordsToRead; i++)
-        {
-
-          uint32_t word = pDataWord[i];
-          uint8_t *wordBytes = (uint8_t *)&word;
-
-          for (uint32_t j = 0; j < 4U && ((i * 4U) + j) < payloadLength; j++)
-          {
-            pRxData[(i * 4U) + j] = wordBytes[j];
-          }
-        }
+    memcpy(pRxData,pDataWord,payloadLength);
 
       /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
     	fdcan->Instance->RXF0A = GetIndex;
@@ -281,7 +280,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
 	{
 		FDCAN_RxHeaderTypeDef header;
-		while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
+		if(callbackcontroller) {
+			while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
+			callbackcontroller->RaiseFXFlag();
+		}
 	}
 
 }
