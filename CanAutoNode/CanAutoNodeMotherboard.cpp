@@ -130,8 +130,9 @@ bool CanAutoNodeMotherboard::CheckForJoinRequest() {
 
 	uint8_t msg[64] = {123};
 	uint32_t id = 0;
-	while(controller->ReceiveLogIndexFromRXBuf(msg, JOIN_REQUEST_ID)) {
 
+
+	while(controller->ReceiveLogIndexFromRXBuf(msg, JOIN_REQUEST_ID)) {
 
 		return ReceiveJoinRequest(msg);
 
