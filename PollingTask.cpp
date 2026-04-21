@@ -9,10 +9,11 @@
 #include "FreeRTOS.h"
 #include "timers.h"
 #include "DataBroker.hpp"
+#include "LoggingService.hpp"
 
 namespace {
-constexpr uint32_t kLaunchPollMs = 20;
-constexpr uint32_t kBoostPollMs = 20;
+constexpr uint32_t kLaunchPollMs = 35;
+constexpr uint32_t kBoostPollMs = 50;
 constexpr uint32_t kCoastPollMs = 100;
 constexpr uint32_t kDescentPollMs = 100;
 constexpr uint32_t kRecoveryPollMs = 250;
@@ -70,16 +71,22 @@ uint32_t PollingTask::GetPollingPeriodMs(FlightState state)
 	{
 	case FlightState::Grounded:
 	case FlightState::Landed:
+		LoggingService::StopLogging();
 		return 0;
 	case FlightState::Launch:
+		LoggingService::StartLogging();
 		return kLaunchPollMs;
 	case FlightState::Boost:
+		LoggingService::StartLogging();
 		return kBoostPollMs;
 	case FlightState::Coast:
+		LoggingService::StartLogging();
 		return kCoastPollMs;
 	case FlightState::Descent:
+		LoggingService::StartLogging();
 		return kDescentPollMs;
 	case FlightState::Recovery:
+		LoggingService::StartLogging();
 		return kRecoveryPollMs;
 	default:
 		return 0;
