@@ -11,7 +11,6 @@
 
 #include "main.h"
 
-//#define AIUDJAISDFJAEIOAOISDHLAFHA
 
 FDCanController *callbackcontroller = nullptr;
 
@@ -100,11 +99,11 @@ bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, u
     uint32_t starting = HAL_GetTick();
     while (HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < 1) {
     	if(HAL_GetTick() - starting > timeout) {
-    		printf("timed out on waiting for TX FIFO free!\n");
+    		SOAR_PRINT("timed out on waiting for TX FIFO free!\n");
     		return false;
     	}
     	if(HAL_FDCAN_GetError(fdcan) != HAL_FDCAN_ERROR_NONE) {
-    		printf("fdcan tx error!\n");
+    		SOAR_PRINT("fdcan tx error!\n");
     		return false;
     	}
     }
@@ -215,6 +214,9 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
         /* Calculate Rx FIFO 0 element index */
         GetIndex += ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos);
 
+        if (fdcan->Init.RxFifo0ElmtsNbr > 0U) {
+            GetIndex = GetIndex % fdcan->Init.RxFifo0ElmtsNbr;
+        }
         /* Calculate Rx FIFO 0 element address */
         //RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * fdcan->Init.RxFifo0ElmtSize * 4U));
         // in words:
@@ -240,6 +242,10 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
     /* Retrieve Rx payload */
     //pData = (uint8_t *)RxAddress;
     RXBuffer* buf = GetBackBufferFromCanID(pRxHeader->Identifier);
+    if(buf == nullptr) {
+    	fdcan->Instance->RXF0A = GetIndex;
+    	return HAL_OK;
+    }
     uint8_t* pRxData = buf->data;
     buf->available = true;
     static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
@@ -250,10 +256,15 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
 //    }
 
     uint32_t *pDataWord = (uint32_t *)RxAddress;
+
     uint32_t payloadLength = DLCtoBytes[pRxHeader->DataLength];
     uint32_t wordsToRead = (payloadLength + 3U) / 4U;
 
-    memcpy(pRxData,pDataWord,payloadLength);
+    // Force 32-bit word accesses from SRAMCAN to avoid bus faults
+    uint32_t *pDstWord = (uint32_t *)pRxData;
+    for (uint32_t i = 0; i < wordsToRead; i++) {
+        pDstWord[i] = pDataWord[i];
+    }
 
       /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
     	fdcan->Instance->RXF0A = GetIndex;
@@ -371,7 +382,17 @@ uint16_t FDCanController::FDRoundDataSize(uint16_t unroundedLen) {
 uint32_t FDCanController::FDGetModDLC(uint16_t unroundedLen) {
   uint8_t mod = (unroundedLen - 1) % 64 + 1;
 
-  if (mod <= 8) return mod;
+  switch(mod) {
+        case 1: return FDCAN_DLC_BYTES_1;
+        case 2: return FDCAN_DLC_BYTES_2;
+        case 3: return FDCAN_DLC_BYTES_3;
+        case 4: return FDCAN_DLC_BYTES_4;
+        case 5: return FDCAN_DLC_BYTES_5;
+        case 6: return FDCAN_DLC_BYTES_6;
+        case 7: return FDCAN_DLC_BYTES_7;
+        case 8: return FDCAN_DLC_BYTES_8;
+    }
+
   if (mod <= 12) return FDCAN_DLC_BYTES_12;
   if (mod <= 16) return FDCAN_DLC_BYTES_16;
   if (mod <= 20) return FDCAN_DLC_BYTES_20;
@@ -451,9 +472,9 @@ uint16_t FDCanController::ReceiveFirstLogFromRXBuf(uint8_t *out,
  */
 uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logIndex) {
   if (!RXFlag || logIndex >= numRegisteredLogs)  {
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
+#ifdef FDCAN_DEBUG_VERBOSE
 
-	  printf("didn't receive. rxflag: %d, logindex: %d\n",RXFlag,logIndex);
+	  SOAR_PRINT("didn't receive. rxflag: %d, logindex: %d\n",RXFlag,logIndex);
 
 #endif
 	  return 0;
@@ -461,8 +482,8 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 
   const LogRegister &thisRegisteredLog = registeredLogs[logIndex];
   if (thisRegisteredLog.byteLength == 0)  {
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
-	  printf("didn't receive. bytelength was zero\n");
+#ifdef FDCAN_DEBUG_VERBOSE
+	  SOAR_PRINT("didn't receive. bytelength was zero\n");
 #endif
 	  return 0;
   }
@@ -477,8 +498,8 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
   bool allReady = true;
   for(uint8_t b = thisRegisteredLog.startingRXBuf; b <= thisRegisteredLog.endingRXBuf; b++) {
     if(!backbuf[b].available) {
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
-    	printf("buffer %d of %d/%d wasnt ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
+#ifdef FDCAN_DEBUG_VERBOSE
+    	SOAR_PRINT("buffer %d of %d/%d wasnt ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
 #endif
       allReady = false;
       break;
@@ -487,9 +508,9 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 
   if(!allReady) {
     __enable_irq();
-#ifdef AIUDJAISDFJAEIOAOISDHLAFHA
+#ifdef FDCAN_DEBUG_VERBOSE
 
-    printf("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
+    SOAR_PRINT("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
 
 #endif
     return 0;
@@ -664,13 +685,13 @@ void FDCanController::ReportIDsReceived() {
 	bool foundOne = false;
 	for(uint16_t i = 0; i < sizeof(idReceiveTracker)/sizeof(idReceiveTracker[0]); i++) {
 		if(idReceiveTracker[i] > 0) {
-			printf("Received %d of CANID %d since last call\n",idReceiveTracker[i],i);
+			SOAR_PRINT("Received %d of CANID %d since last call\n",idReceiveTracker[i],i);
 			idReceiveTracker[i] = 0;
 			foundOne = true;
 		}
 	}
 	if(!foundOne) {
-		printf("Didn't receive any IDs since last call.\n");
+		SOAR_PRINT("Didn't receive any IDs since last call.\n");
 	}
 	lastReceivePrintTick = HAL_GetTick();
 }
