@@ -10,6 +10,9 @@
 #include "timers.h"
 #include "DataBroker.hpp"
 #include "LoggingService.hpp"
+#include "CanAutoNodeDaughter.hpp"
+
+extern FDCAN_HandleTypeDef hfdcan1;
 
 namespace {
 constexpr uint32_t kLaunchPollMs = 20;
@@ -17,10 +20,17 @@ constexpr uint32_t kBoostPollMs = 50;
 constexpr uint32_t kCoastPollMs = 100;
 constexpr uint32_t kDescentPollMs = 100;
 constexpr uint32_t kRecoveryPollMs = 250;
-constexpr uint32_t kGpsBootSettleMs = 300;
+constexpr uint32_t kGroundPollMs = 300;
+constexpr uint32_t kCanServicePeriodMs = 20;
+
+
+constexpr uint8_t kDaqBoardType = 1;
+constexpr uint8_t kDaqSlotNumber = 1;
+constexpr uint8_t kRocketStateRxLogIndex = 0;
+constexpr uint16_t kRocketStateRxLogSizeBytes = sizeof(uint8_t);
 }
 
-PollingTask::PollingTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), pollTimerHandle(nullptr), flightState(FlightState::Grounded), imu16(), imu32(), magnetometer()
+PollingTask::PollingTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), pollTimerHandle(nullptr), rocketState(RocketState::RS_PRELAUNCH), imu16(), imu32(), magnetometer()
 {
 
 }
@@ -56,51 +66,69 @@ void PollingTask::InitTask()
 			PollingTask::PollTimerCallback);
 	SOAR_ASSERT(pollTimerHandle != nullptr, "PollingTask::InitTask() - xTimerCreate() failed");
 
-	ApplyFlightState();
+	CanAutoNodeDaughter::LogInit daughterLogs[] = {
+		{kRocketStateRxLogSizeBytes},
+	};
+	canNode = new CanAutoNodeDaughter(&hfdcan1,
+			daughterLogs,
+			sizeof(daughterLogs) / sizeof(daughterLogs[0]),
+			kDaqBoardType,
+			kDaqSlotNumber,
+			"DAQBoard");
+	SOAR_ASSERT(canNode != nullptr, "PollingTask::InitTask() - CAN node alloc failed");
+
+	ApplyRocketState();
 }
 
-void PollingTask::SetFlightState(FlightState newState)
+void PollingTask::SetRocketState(RocketState newState)
 {
-	flightState = newState;
-	ApplyFlightState();
+	rocketState = newState;
+	ApplyRocketState();
 }
 
-uint32_t PollingTask::GetPollingPeriodMs(FlightState state)
+uint32_t PollingTask::GetPollingPeriodMs(RocketState state)
 {
 	switch (state)
 	{
-	case FlightState::Grounded:
-	case FlightState::Landed:
+
+	case RocketState::RS_NONE:
+	case RocketState::RS_ABORT:
 		LoggingService::StopLogging();
 		return 0;
-	case FlightState::Launch:
+	case RocketState::RS_FILL:
+	case RocketState::RS_PRELAUNCH:
+	case RocketState::RS_ARM:
+		LoggingService::StartLogging();
+		return kGroundPollMs;
+	case RocketState::RS_TEST:
+	case RocketState::RS_IGNITION:
+	case RocketState::RS_LAUNCH:
+	case RocketState::RS_BURN:
 		LoggingService::StartLogging();
 		return kLaunchPollMs;
-	case FlightState::Boost:
-		LoggingService::StartLogging();
-		return kBoostPollMs;
-	case FlightState::Coast:
+	case RocketState::RS_COAST:
 		LoggingService::StartLogging();
 		return kCoastPollMs;
-	case FlightState::Descent:
+	case RocketState::RS_DESCENT:
 		LoggingService::StartLogging();
 		return kDescentPollMs;
-	case FlightState::Recovery:
+	case RocketState::RS_RECOVERY:
 		LoggingService::StartLogging();
 		return kRecoveryPollMs;
+
 	default:
 		return 0;
 	}
 }
 
-void PollingTask::ApplyFlightState()
+void PollingTask::ApplyRocketState()
 {
 	if (pollTimerHandle == nullptr)
 	{
 		return;
 	}
 
-	const uint32_t pollPeriodMs = GetPollingPeriodMs(flightState);
+	const uint32_t pollPeriodMs = GetPollingPeriodMs(rocketState);
 	if (pollPeriodMs == 0)
 	{
 		(void)xTimerStop(pollTimerHandle, 0);
@@ -112,17 +140,91 @@ void PollingTask::ApplyFlightState()
 
 void PollingTask::Run(void * pvParams){
 	// Allow peripherals to settle after scheduler starts, then initialize GPS.
-	vTaskDelay(pdMS_TO_TICKS(kGpsBootSettleMs));
+	vTaskDelay(pdMS_TO_TICKS(kGroundPollMs));
 	gpsInitialized = gps.Init(hspi6_, GPS_CS_PORT, GPS_CS_PIN);
 
     while (1) {
         Command cm;
-        bool res = qEvtQueue->ReceiveWait(cm);
+        bool res = qEvtQueue->Receive(cm, kCanServicePeriodMs);
         if(res){
 
         	HandleCommand(cm);
         }
+
+		ServiceCanNetwork();
     }
+}
+
+bool PollingTask::DecodeRocketStateFromCan(uint8_t rawState, RocketState& outState)
+{
+	switch (rawState)
+	{
+	case static_cast<uint8_t>(RocketState::RS_PRELAUNCH):
+		outState = RocketState::RS_PRELAUNCH;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_FILL):
+		outState = RocketState::RS_FILL;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_ARM):
+		outState = RocketState::RS_ARM;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_IGNITION):
+		outState = RocketState::RS_IGNITION;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_LAUNCH):
+		outState = RocketState::RS_LAUNCH;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_BURN):
+		outState = RocketState::RS_BURN;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_COAST):
+		outState = RocketState::RS_COAST;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_DESCENT):
+		outState = RocketState::RS_DESCENT;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_RECOVERY):
+		outState = RocketState::RS_RECOVERY;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_ABORT):
+		outState = RocketState::RS_ABORT;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_TEST):
+		outState = RocketState::RS_TEST;
+		return true;
+	case static_cast<uint8_t>(RocketState::RS_NONE):
+		outState = RocketState::RS_NONE;
+		return true;
+	default:
+		return false;
+	}
+}
+
+void PollingTask::ServiceCanNetwork()
+{
+	if (canNode == nullptr)
+	{
+		return;
+	}
+
+	(void)canNode->CheckCANCommands();
+
+	uint8_t rawRocketState = 0;
+	while (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
+	{
+		RocketState decodedState = RocketState::RS_PRELAUNCH;
+		if (!DecodeRocketStateFromCan(rawRocketState, decodedState))
+		{
+			SOAR_PRINT("PollingTask CAN | Unknown rocket state byte: %u\n", (unsigned int)rawRocketState);
+			continue;
+		}
+
+		if (decodedState != rocketState)
+		{
+			SetRocketState(decodedState);
+			SOAR_PRINT("PollingTask CAN | Rocket state updated to %u\n", (unsigned int)rawRocketState);
+		}
+	}
 }
 
 void PollingTask::HandleCommand(Command& cm){
@@ -184,7 +286,7 @@ void PollingTask::PollTimerCallback(TimerHandle_t xTimer)
 
 	Command cmd(DATA_COMMAND, PollingTask::POLL_SENSORS_AND_LOG);
 	task->GetEventQueue()->Send(cmd, false);
-	task->ApplyFlightState();
+	task->ApplyRocketState();
 }
 
 
