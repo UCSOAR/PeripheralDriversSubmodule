@@ -12,7 +12,7 @@
 #include "LoggingService.hpp"
 
 namespace {
-constexpr uint32_t kLaunchPollMs = 35;
+constexpr uint32_t kLaunchPollMs = 20;
 constexpr uint32_t kBoostPollMs = 50;
 constexpr uint32_t kCoastPollMs = 100;
 constexpr uint32_t kDescentPollMs = 100;
