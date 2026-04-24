@@ -206,8 +206,15 @@ void PollingTask::ServiceCanNetwork()
 	{
 		return;
 	}
+	if(canNode->GetCurrentState() == CanAutoNodeDaughter::ERROR){
+		return;
+	}
 
 	(void)canNode->CheckCANCommands();
+
+	if(canNode->GetCurrentState() == CanAutoNodeDaughter::UNINITIALIZED) {
+			canNode->TryRequestingJoiningNetwork();
+	}
 
 	uint8_t rawRocketState = 0;
 	while (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
