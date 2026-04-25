@@ -154,14 +154,15 @@ void PollingTask::Run(void * pvParams){
 	gpsInitialized = gps.Init(hspi6_, GPS_CS_PORT, GPS_CS_PIN);
 
     while (1) {
+
         Command cm;
 		bool res = qEvtQueue->Receive(cm, kCanServicePeriodMs);
 		if(res){
 
         	HandleCommand(cm);
         }
-
 		ServiceCanNetwork();
+
     }
 }
 
@@ -231,13 +232,13 @@ void PollingTask::ServiceCanNetwork()
 	if(canNode->GetCurrentState() == CanAutoNodeDaughter::READY) {
 
 		uint8_t rawRocketState = 0;
-		while (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
+		if (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
 		{
 			RocketState decodedState = RocketState::RS_PRELAUNCH;
 			if (!DecodeRocketStateFromCan(rawRocketState, decodedState))
 			{
 				SOAR_PRINT("PollingTask CAN | Unknown rocket state byte: %u\n", (unsigned int)rawRocketState);
-				continue;
+				return;
 			}
 
 			if (decodedState != rocketState)
