@@ -275,6 +275,20 @@ uint16_t CanAutoNode::GetNamesOfAllBoards(char(* outputArr)[MAX_NAME_STR_LEN], u
 
 }
 
+uint16_t CanAutoNode::GetIDsOfAllBoards(CanAutoNode::UniqueBoardID* outputArr, uint16_t outputArrayLen) {
+	uint16_t num = 0;
+	outputArr[num++] = thisNode.uniqueID;
+	for(uint16_t i = 0; i < nodesInNetwork; i++) {
+		outputArr[num++] = daughterNodes[i].uniqueID;
+		if(num >= outputArrayLen) {
+			break;
+		}
+	}
+
+	return num;
+
+}
+
 CanAutoNode::UniqueBoardID CanAutoNode::GetIDOfBoardWithName(const char* name) {
 
 	if(strcmp(thisNode.nodeName,name) == 0) {
