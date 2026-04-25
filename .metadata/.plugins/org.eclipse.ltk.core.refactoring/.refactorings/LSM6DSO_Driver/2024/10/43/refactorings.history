@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;LSM6DSO_Driver/Src/LSM6DSO_Driver&apos; to &apos;LSM6DSO_Driver.h&apos;" description="Rename resource &apos;LSM6DSO_Driver&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Src/LSM6DSO_Driver" name="LSM6DSO_Driver.h" stamp="1729573852760" updateReferences="true"/>
+</session>
