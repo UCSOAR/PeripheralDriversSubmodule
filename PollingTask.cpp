@@ -74,7 +74,7 @@ void PollingTask::InitTask()
 			sizeof(daughterLogs) / sizeof(daughterLogs[0]),
 			kDaqBoardType,
 			kDaqSlotNumber,
-			"DAQBoard");
+			"DAQ");
 	SOAR_ASSERT(canNode != nullptr, "PollingTask::InitTask() - CAN node alloc failed");
 
 	ApplyRocketState();
@@ -96,13 +96,23 @@ uint32_t PollingTask::GetPollingPeriodMs(RocketState state)
 		LoggingService::StopLogging();
 		return 0;
 	case RocketState::RS_FILL:
+		LoggingService::StartLogging();
+		return kGroundPollMs;
 	case RocketState::RS_PRELAUNCH:
+		LoggingService::StartLogging();
+		return kGroundPollMs;
 	case RocketState::RS_ARM:
 		LoggingService::StartLogging();
 		return kGroundPollMs;
 	case RocketState::RS_TEST:
+		LoggingService::StartLogging();
+		return kLaunchPollMs;
 	case RocketState::RS_IGNITION:
+		LoggingService::StartLogging();
+		return kLaunchPollMs;
 	case RocketState::RS_LAUNCH:
+		LoggingService::StartLogging();
+		return kLaunchPollMs;
 	case RocketState::RS_BURN:
 		LoggingService::StartLogging();
 		return kLaunchPollMs;
@@ -145,8 +155,8 @@ void PollingTask::Run(void * pvParams){
 
     while (1) {
         Command cm;
-        bool res = qEvtQueue->Receive(cm, kCanServicePeriodMs);
-        if(res){
+		bool res = qEvtQueue->Receive(cm, kCanServicePeriodMs);
+		if(res){
 
         	HandleCommand(cm);
         }
@@ -204,9 +214,11 @@ void PollingTask::ServiceCanNetwork()
 {
 	if (canNode == nullptr)
 	{
+		SOAR_PRINT("null cannode\n");
 		return;
 	}
 	if(canNode->GetCurrentState() == CanAutoNodeDaughter::ERROR){
+		//SOAR_PRINT("error can\n");
 		return;
 	}
 
@@ -216,20 +228,23 @@ void PollingTask::ServiceCanNetwork()
 			canNode->TryRequestingJoiningNetwork();
 	}
 
-	uint8_t rawRocketState = 0;
-	while (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
-	{
-		RocketState decodedState = RocketState::RS_PRELAUNCH;
-		if (!DecodeRocketStateFromCan(rawRocketState, decodedState))
-		{
-			SOAR_PRINT("PollingTask CAN | Unknown rocket state byte: %u\n", (unsigned int)rawRocketState);
-			continue;
-		}
+	if(canNode->GetCurrentState() == CanAutoNodeDaughter::READY) {
 
-		if (decodedState != rocketState)
+		uint8_t rawRocketState = 0;
+		while (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
 		{
-			SetRocketState(decodedState);
-			SOAR_PRINT("PollingTask CAN | Rocket state updated to %u\n", (unsigned int)rawRocketState);
+			RocketState decodedState = RocketState::RS_PRELAUNCH;
+			if (!DecodeRocketStateFromCan(rawRocketState, decodedState))
+			{
+				SOAR_PRINT("PollingTask CAN | Unknown rocket state byte: %u\n", (unsigned int)rawRocketState);
+				continue;
+			}
+
+			if (decodedState != rocketState)
+			{
+				SetRocketState(decodedState);
+				SOAR_PRINT("PollingTask CAN | Rocket state updated to %u\n", (unsigned int)rawRocketState);
+			}
 		}
 	}
 }
@@ -292,7 +307,7 @@ void PollingTask::PollTimerCallback(TimerHandle_t xTimer)
 	}
 
 	Command cmd(DATA_COMMAND, PollingTask::POLL_SENSORS_AND_LOG);
-	task->GetEventQueue()->Send(cmd, false);
+	task->GetEventQueue()->Send(cmd, true);
 	task->ApplyRocketState();
 }
 
@@ -399,7 +414,4 @@ void PollingTask::LogData(){
 	DataBroker::Publish<BaroData>(&baro11Data);
 	DataBroker::Publish<MagData>(&magData);
 	DataBroker::Publish<GPSData>(&gpsData);
-
-
-
 }

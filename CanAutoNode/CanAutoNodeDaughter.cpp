@@ -374,7 +374,7 @@ bool CanAutoNodeDaughter::ReadMessageByLogIndex(uint8_t logIndex,
 		return false;
 	}
 	uint16_t logSize = determinedLogs[logIndex].byteLength;
-	return ReadMessageFromRXBuf(logIndex, logSize, out, outLen);
+	return ReadMessageFromRXBuf(logIndex+5, logSize, out, outLen);
 
 }
 
