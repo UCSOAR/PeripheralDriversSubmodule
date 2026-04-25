@@ -17,9 +17,6 @@
 #include <cstring>
 #include <random>
 
-#define SOAR_PRINT(fmt, ...) printf((fmt), ##__VA_ARGS__)
-
-
 constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
 constexpr uint8_t MAX_LOG_TYPES_PER_NODE = 5;
 constexpr uint8_t MAX_NAME_STR_LEN = 20;
@@ -93,6 +90,7 @@ public:
 	bool BoardExistsWithName(const char* name);
 
 	uint16_t GetNamesOfAllBoards(char(*outputArr)[MAX_NAME_STR_LEN], uint16_t outputBufferLen);
+	uint16_t GetIDsOfAllBoards(UniqueBoardID* outputArr, uint16_t outputBufferLen);
 
 #ifdef CANAUTONODEDEBUG
 	static void PrintBoardID(UniqueBoardID id);
