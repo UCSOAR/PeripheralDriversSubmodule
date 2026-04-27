@@ -29,6 +29,7 @@ extern SPI_HandleTypeDef hspi6;
 
 enum RocketState
 {
+
     //-- GROUND --
     // Manual venting allowed at all times
     RS_PRELAUNCH = 0,   // Idle state, waiting for command to proceeding sequences

@@ -30,7 +30,7 @@ constexpr uint8_t kRocketStateRxLogIndex = 0;
 constexpr uint16_t kRocketStateRxLogSizeBytes = sizeof(uint8_t);
 }
 
-PollingTask::PollingTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), pollTimerHandle(nullptr), rocketState(RocketState::RS_PRELAUNCH), imu16(), imu32(), magnetometer()
+PollingTask::PollingTask():Task(TASK_LOGGING_QUEUE_DEPTH_OBJS), pollTimerHandle(nullptr), rocketState(RocketState::RS_TEST), imu16(), imu32(), magnetometer()
 {
 
 }
@@ -64,6 +64,7 @@ void PollingTask::InitTask()
 			pdFALSE,
 			(void*)this,
 			PollingTask::PollTimerCallback);
+
 	SOAR_ASSERT(pollTimerHandle != nullptr, "PollingTask::InitTask() - xTimerCreate() failed");
 
 	CanAutoNodeDaughter::LogInit daughterLogs[] = {
@@ -105,8 +106,8 @@ uint32_t PollingTask::GetPollingPeriodMs(RocketState state)
 		LoggingService::StartLogging();
 		return kGroundPollMs;
 	case RocketState::RS_TEST:
-		LoggingService::StartLogging();
-		return kLaunchPollMs;
+		LoggingService::StopLogging();
+		return 0;
 	case RocketState::RS_IGNITION:
 		LoggingService::StartLogging();
 		return kLaunchPollMs;
