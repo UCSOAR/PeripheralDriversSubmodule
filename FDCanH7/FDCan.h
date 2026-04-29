@@ -11,7 +11,7 @@
 #include "stm32h7xx.h"
 
 // *********************** DEBUG:
-//#define FDCAN_DEBUG
+#define FDCAN_DEBUG
 //#define FDCAN_DEBUG_VERBOSE
 
 constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;

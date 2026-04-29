@@ -13,6 +13,10 @@
 
 constexpr uint8_t SPI_DUMMY_BYTE = 0x00;
 constexpr uint8_t LSM6DSO32_ID = 0x6C;
+constexpr uint16_t LSM6DSO32_GYRO_CALIBRATION_SAMPLES = 500;
+constexpr uint32_t LSM6DSO32_GYRO_CALIBRATION_DELAY_MS = 5;
+
+
 
 typedef uint8_t LSM6DSO32_REGISTER_t;
 
@@ -86,8 +90,17 @@ private:
 
 	bool SwitchBank(uint8_t bank);
 
-	void CSLow();
+	void CalibrateGyroBias();
+	void ApplyGyroBias(IMUData *imu_data);
+
 	void CSHigh();
+	void CSLow();
+
+	GYRO_t gyro_bias = {0, 0, 0};
+	uint8_t data[14];
+
+	int16_t ClampInt16(int32_t value);
+	int32_t AbsInt32(int32_t value);
 
 };
 
@@ -141,6 +154,9 @@ namespace LSM6DSO32_REG {
 
 
 }
+
+
+
 
 
 

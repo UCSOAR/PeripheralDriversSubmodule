@@ -53,8 +53,6 @@ protected:
 	void Run(void *pvParams);											   // Main run code
 	void HandleCommand(Command &cm);
 	void HandleRequestCommand(uint16_t taskCommand);
-	void CalibrateGyroBias();
-	void ApplyGyroBias();
 	LSM6DO32_Driver imu;
 	IMUData imu_data;
 	GYRO_t gyro_bias = {0, 0, 0};
@@ -69,7 +67,6 @@ private:
 	IMUTask();							 // Private constructor
 	IMUTask(const IMUTask &);			 // Prevent copy-construction
 	IMUTask &operator=(const IMUTask &); // Prevent assignment
-	void SampleAndPrint();
 	void LogData();
 };
 

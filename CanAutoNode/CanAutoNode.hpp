@@ -11,11 +11,16 @@
 /*
  * Define this to enable debug prints across the driver. Uses SOAR_PRINT.
  */
-//#define CANAUTONODEDEBUG
+#define CANAUTONODEDEBUG
 
 #include "FDCan.h"
 #include <cstring>
 #include <random>
+
+#ifndef SOAR_PRINT
+#define SOAR_PRINT(fmt, ...) printf((fmt), ##__VA_ARGS__)
+#endif
+
 
 constexpr uint32_t MAX_NODES_IN_NETWORK = 100;
 constexpr uint8_t MAX_LOG_TYPES_PER_NODE = 5;

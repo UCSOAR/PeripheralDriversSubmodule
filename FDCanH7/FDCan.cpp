@@ -5,6 +5,7 @@
  *      Author: goada
  */
 
+#include "CubeDefines.hpp"
 #include <FDCan.h>
 #include <cstdio>
 #include <cstring>
