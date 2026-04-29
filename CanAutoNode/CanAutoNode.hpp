@@ -95,6 +95,7 @@ public:
 	bool BoardExistsWithName(const char* name);
 
 	uint16_t GetNamesOfAllBoards(char(*outputArr)[MAX_NAME_STR_LEN], uint16_t outputBufferLen);
+	uint16_t GetIDsOfAllBoards(UniqueBoardID* outputArr, uint16_t outputBufferLen);
 
 #ifdef CANAUTONODEDEBUG
 	static void PrintBoardID(UniqueBoardID id);
