@@ -15,7 +15,7 @@ constexpr uint8_t SPI_DUMMY_BYTE = 0x00;
 constexpr uint8_t LSM6DSO32_ID = 0x6C;
 constexpr uint16_t LSM6DSO32_GYRO_CALIBRATION_SAMPLES = 500;
 constexpr uint32_t LSM6DSO32_GYRO_CALIBRATION_DELAY_MS = 5;
-constexpr uint32_t IMU32_CONTINUOUS_PRINT_PERIOD_MS = 500;
+
 
 
 typedef uint8_t LSM6DSO32_REGISTER_t;
