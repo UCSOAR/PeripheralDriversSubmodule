@@ -158,8 +158,8 @@ class PollingTask: public Task
 	    const uint16_t MMC_CS_PIN = MAG_CS_Pin;
 
 	    //GPS config
-	    GPIO_TypeDef *GPS_CS_PORT = GPS_CS_GPIO_Port;
-	   	const uint16_t GPS_CS_PIN = GPS_CS_Pin;
+	    // GPIO_TypeDef *GPS_CS_PORT = GPS_CS_GPIO_Port;
+	   	// const uint16_t GPS_CS_PIN = GPS_CS_Pin;
 
 
 	    //Drivers
