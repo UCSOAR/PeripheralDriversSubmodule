@@ -45,58 +45,6 @@ void FlashTask::Run(void *pvParams) {
 
     InitializeFlash();
 
-
-    
-
-
-
-
-SOAR_PRINT("LOG TEST START\n");
-
-FlashTask::Inst().InitializeFlash();
-
-uint8_t testBuf[20] = {0};
-
-for (int batch = 0; batch < 5; batch++) {
-    int16_t accel[3] = { (int16_t)(batch * 100), (int16_t)(batch * 200), (int16_t)(batch * 300) };
-    int16_t gyro[3]  = { (int16_t)(batch * 10),  (int16_t)(batch * 20),  (int16_t)(batch * 30)  };
-    uint32_t ts      = batch * 1000;
-
-    testBuf[0] = static_cast<uint8_t>(LoggingData::IMU16G);
-    memcpy(testBuf + 1,  &ts,    sizeof(ts));
-    memcpy(testBuf + 5,  accel,  sizeof(accel));
-    memcpy(testBuf + 11, gyro,   sizeof(gyro));
-    testBuf[19] = batch;
-
-    for (int i = 0; i < 26; i++) {
-        LoggingService log(LoggingDest::FLASH_EXTERN, LoggingData::IMU16G,
-                           testBuf, 20, LoggingPriority::SECOND);
-        LoggingStatus err = log.LogData();
-        if (err == LoggingStatus::LOGGING_ERR) {
-            SOAR_PRINT("FAILED batch=%d rec=%d\n", batch, i);
-            return;
-        }
-    }
-    SOAR_PRINT("batch %d done\n", batch);
-    osDelay(100);
-}
-
-SOAR_PRINT("Write OK, dumping...\n");
-osDelay(100);
-LoggingService::ProcessFlashDump();
-SOAR_PRINT("LOG TEST END\n");
-
-
-
-
-
-
-
-
-
-
-
-
     while (1)
     {
         Command cm;
