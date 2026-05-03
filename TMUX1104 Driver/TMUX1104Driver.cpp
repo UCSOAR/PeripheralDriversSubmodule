@@ -56,7 +56,7 @@ void TMUX1104Driver::Select(Camera cam){
 		current_cam = Camera::CAMERA4;
 		break;
 	default:
-		SOAR_PRINT("No camera has been selected");
+//		SOAR_PRINT("No camera has been selected");
 		current_cam = Camera::NONE;
 	}
 }
