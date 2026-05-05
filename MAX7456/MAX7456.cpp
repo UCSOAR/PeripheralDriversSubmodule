@@ -117,7 +117,7 @@ void MAX7456::OSD_Reset() {
 }
 
 void MAX7456::OSD_SetVideoEnabled(uint8_t enabled) {
-	_OSD_WriteField(OSD_REG_VM0, OSD_REG_VM0_VIDEO_ENABLE,enabled>0);
+	_OSD_WriteField(OSD_REG_VM0, OSD_REG_VM0_VIDEO_ENABLE,enabled==0);
 }
 
 void MAX7456::OSD_SetBackgroundMode(enum OSD_BACKGROUND_MODE mode) {
@@ -152,7 +152,7 @@ void MAX7456::OSD_SetInverted(uint8_t inverted) {
 	_OSD_WriteField(OSD_REG_DMM, OSD_REG_DMM_INV,inverted > 0);
 }
 
-void MAX7456::OSD_ClearDispMem(struct _OSDInfo osd) {
+void MAX7456::OSD_ClearDispMem() {
 	_OSD_WriteField(OSD_REG_DMM, OSD_REG_DMM_CLEAR,1);
 }
 
@@ -213,8 +213,8 @@ void MAX7456::OSD_WriteString(const char* str, uint8_t x, uint8_t y) {
 void MAX7456::OSD_WriteCustomCharacter(uint8_t char_index, const uint8_t* pixel_data) {
 
 	// stays disabled if started disabled
-	uint8_t was_enabled = _OSD_ReadField(OSD_REG_VM0, OSD_REG_VM0_OSDDISP);
-	if (was_enabled) {
+	uint8_t wasEnabled = _OSD_ReadField(OSD_REG_VM0, OSD_REG_VM0_OSDDISP);
+	if (wasEnabled) {
 		OSD_SetOSDEnabled(0);
 	}
 
@@ -238,30 +238,34 @@ void MAX7456::OSD_WriteCustomCharacter(uint8_t char_index, const uint8_t* pixel_
 		}
 	}
 
-	if (was_enabled) {
+	if (wasEnabled) {
 		OSD_SetOSDEnabled(1);
 	}
 }
 
-void MAX7456::OSD_DrawLogo5x1(uint8_t start_char_index, uint8_t x, uint8_t y) {
-	if(y > 15 || x > 25) return;
+void MAX7456::OSD_DrawLogo(uint8_t startCharIndex, uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
+	if(y > (16-h) || x > (30-w) || w > 30 || h > 16) {
+		return;
+	}
 
 	OSD_SetAutoIncrementMode(0);
 	OSD_SetBitMode(OSD_BITMODE_8);
 	OSD_SetDMByteMode(OSD_DM_BYTE_ADDRESS);
 
-	uint8_t current_char = start_char_index;
+	uint8_t current_char = startCharIndex;
 
-	for (uint8_t col = 0; col < 5; col++) {
-		uint16_t addr = y * 30 + (x + col);
+	for (uint8_t row = 0; row < h; row++) {
+		for (uint8_t col = 0; col < w; col++) {
+			uint16_t addr = (y+row) * 30 + (x + col);
 
-		OSD_SetDMAddress(addr);
-		OSD_LoadDMData(current_char);
+			OSD_SetDMAddress(addr);
+			OSD_LoadDMData(current_char);
 
-		current_char++;
+			current_char++;
+		}
 	}
-
 }
+
 
 MAX7456::MAX7456(GPIO_TypeDef* csgpio, uint16_t cspin) : csport(csgpio),cspin(cspin) {
 

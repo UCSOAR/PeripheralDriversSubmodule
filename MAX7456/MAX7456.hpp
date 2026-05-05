@@ -11,10 +11,7 @@
 #include "gpio.h"
 #include "spi.h"
 
-struct _OSDInfo {
-	GPIO_TypeDef* csgpio;
-	uint16_t cspin;
-};
+
 
 //static struct _OSDInfo osdInfo;
 
@@ -116,7 +113,7 @@ public:
 
 	void OSD_SetInverted(uint8_t inverted);
 
-	void OSD_ClearDispMem(struct _OSDInfo osd);
+	void OSD_ClearDispMem();
 
 	void OSD_SetAutoIncrementMode(uint8_t autoinc);
 
@@ -143,7 +140,7 @@ public:
 
 
 	void OSD_WriteCustomCharacter(uint8_t char_index, const uint8_t* pixel_data);
-	void OSD_DrawLogo5x1(uint8_t start_char_index, uint8_t x, uint8_t y);
+	void OSD_DrawLogo(uint8_t startCharIndex, uint8_t x, uint8_t y, uint8_t w, uint8_t h);
 
 
 private:
