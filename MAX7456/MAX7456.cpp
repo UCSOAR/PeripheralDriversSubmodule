@@ -51,7 +51,7 @@ void MAX7456::_OSD_WriteReg(uint8_t addr, uint8_t val) {
 	HAL_GPIO_WritePin(csport, cspin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(csport, cspin, GPIO_PIN_RESET);
 	const uint8_t data[2] = {(uint8_t)(addr & 0b01111111),val};
-	HAL_SPI_Transmit(&hspi2, data, 2, 1000);
+	HAL_SPI_Transmit(hspi, data, 2, 1000);
 	HAL_GPIO_WritePin(csport, cspin, GPIO_PIN_SET);
 }
 
@@ -65,7 +65,7 @@ uint8_t MAX7456::_OSD_ReadReg(uint8_t addr) {
 	HAL_Delay(1);
 	const uint8_t data[2] = {(uint8_t)(addr | 0b10000000),0x00};
 	uint8_t rxdata[2] = {0x00,0x00};
-	if(HAL_SPI_TransmitReceive(&hspi2, data, rxdata, 2, 1000) != HAL_OK) {
+	if(HAL_SPI_TransmitReceive(hspi, data, rxdata, 2, 1000) != HAL_OK) {
 		HAL_GPIO_WritePin(csport, cspin, GPIO_PIN_SET);
 		return 0x00;
 	}
@@ -267,6 +267,6 @@ void MAX7456::OSD_DrawLogo(uint8_t startCharIndex, uint8_t x, uint8_t y, uint8_t
 }
 
 
-MAX7456::MAX7456(GPIO_TypeDef* csgpio, uint16_t cspin) : csport(csgpio),cspin(cspin) {
+MAX7456::MAX7456(GPIO_TypeDef* csgpio, uint16_t cspin, SPI_HandleTypeDef* hspi) : csport(csgpio),cspin(cspin),hspi(hspi) {
 
 }

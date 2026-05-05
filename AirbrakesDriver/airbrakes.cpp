@@ -25,12 +25,13 @@ void AirbrakesDriver::Enable() {
 	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_RESET);
 	// Immediately stop if current starts running away
 	for(uint16_t i = 0; i < 250; i++) {
-		if(!CheckComparatorGood()) {
+		if(!CurrentGood()) {
 			Disable();
 			return;
 		}
 		HAL_Delay(1);
 	}
+	enabled = true;
 }
 
 /* @brief Disables the driver. Stops ADC sampling and PWM output and disables current.
@@ -40,9 +41,10 @@ void AirbrakesDriver::Disable() {
 	HAL_TIM_PWM_Stop(servoPWMTimer, TIM_CHANNEL_1);
 	HAL_ADC_Stop(servoADCHandle);
 	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_RESET);
+	enabled = false;
 }
 
-/* @brief Set the airbrake PWM level from fully off to fully on.
+/* @brief Set the airbrake level from fully off to fully on.
  * @param level The airbrake level from 0 to (AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1) inclusive. For example, if there are 10 levels, accepts 0-9.
  * @return true if successful.
  */
@@ -50,20 +52,20 @@ bool AirbrakesDriver::SetTargetLevel(uint8_t level) {
 	if(level >= AIRBRAKES_NUM_DEPLOYMENT_LEVELS) {
 		return false;
 	}
-	return SetTargetCurrent(((float)AIRBRAKES_MAX_CURRENT_AMPS)*level/(AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1));
+
+	return SetTargetDutyCycle(static_cast<float>(level)/(AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1));
 }
 
-/* @brief Set the airbrake target current directly.
- * @param current The current in amps to request.
+/* @brief Set the airbrake target duty cycle directly.
+ * @param dutyFrac Duty cycle between 0.0 and 1.0.
  * @return true if successful.
  */
-bool AirbrakesDriver::SetTargetCurrent(float current) {
+bool AirbrakesDriver::SetTargetDutyCycle(float dutyFrac) {
 
-	float targetvoltcalc = CurrentToADCVolts(current);
-	if(targetvoltcalc > 3.3 || targetvoltcalc < 0) {
+	if(dutyFrac > 1.0f || dutyFrac < 0.0f) {
 		return false;
 	}
-	targetVoltage = targetvoltcalc;
+	targetDutyCycle = dutyFrac;
 	return true;
 }
 
@@ -82,31 +84,22 @@ float AirbrakesDriver::ReadVoltsADC() {
 }
 
 /* @brief Run the active current ramping loop. Will smooth PWM changes and check latch status.
- * @return true if successful. false if PWM either hits the rails or the current comparator trips.
+ * @return true if successful. false if the current exceeds limits or the driver is disabled.
  */
 bool AirbrakesDriver::Adjust() {
 
-	if(HAL_GPIO_ReadPin(comparatorPort, comparatorPin) == GPIO_PIN_SET) {
+	if(!CurrentGood() || !IsEnabled()) {
 		Disable();
 		return false;
 	}
-	float currentV = ReadVoltsADC();
-	float diff = (targetVoltage-currentV);
 
-	// if we're trying to force the pwm beyond 100% or 0% even though it's already there return false
-	if((currentDutyCycle >= 1.0 && diff > 0) || (currentDutyCycle <= 0.0 && diff < 0)) {
-		return false;
-	}
 
-	currentDutyCycle += diff * 0.1;
-	if(currentDutyCycle > 1.0) {
-		currentDutyCycle = 1.0;
-	}
-	else if(currentDutyCycle < 0.0) {
-		currentDutyCycle = 0.0;
-	}
 
-	servoPWMTimer->Instance->CCR1 = servoPWMTimer->Instance->ARR * currentDutyCycle;
+	float diff = targetDutyCycle - currentDutyCycle;
+
+	currentDutyCycle += diff*0.1;
+
+	servoPWMTimer->Instance->CCR1 = round(servoPWMTimer->Instance->ARR * currentDutyCycle);
 
 	return true;
 
@@ -129,6 +122,14 @@ float AirbrakesDriver::ADCVoltsToCurrent(float v) const {
 float AirbrakesDriver::CurrentToADCVolts(float c) const {
 	return c*0.132+1.6;
 }
+
+/* @brief Checks that the hardware failsafe has not triggered and the measured current is within limits.
+ * @return true is current is safely within range.
+ */
+bool AirbrakesDriver::CurrentGood() {
+	return CheckComparatorGood() && (ADCVoltsToCurrent(ReadVoltsADC()) <= AIRBRAKES_MAX_CURRENT_AMPS);
+}
+
 
 /* @brief Checks the state of the hardware failsafe latch.
  * @return true if the latch is good, i.e. current limit has not been triggered
