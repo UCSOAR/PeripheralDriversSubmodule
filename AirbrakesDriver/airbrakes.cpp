@@ -1,13 +1,14 @@
 #include "airbrakes.hpp"
+#include <math.h>
 
 // The PWM timer is a handle to whatever timer controls the PWM output pin (e.g. "&htim3")
 // The ADC timer is a handle to whatever ADC controls the servo ADC input pin (e.g. "&hadc2");
 AirbrakesDriver::AirbrakesDriver(TIM_HandleTypeDef* servoPWMTimerHandle,
 		ADC_HandleTypeDef* servoADCHandle, GPIO_TypeDef* servoENPort, uint16_t servoENPin,
 		GPIO_TypeDef* servoLatchResetPort, uint16_t servoLatchResetPin,
-		GPIO_TypeDef* comparatorPort, uint16_t comparatorPin) : servoPWMTimer(servoPWMTimerHandle), servoADCHandle(servoADCHandle),
+		GPIO_TypeDef* comparatorPort, uint16_t comparatorPin, float timerHz) : servoPWMTimer(servoPWMTimerHandle), servoADCHandle(servoADCHandle),
 		servoENPort(servoENPort),servoENPin(servoENPin),servoLatchResetPort(servoLatchResetPort),servoLatchResetPin(servoLatchResetPin),
-		comparatorPort(comparatorPort),comparatorPin(comparatorPin){
+		comparatorPort(comparatorPort),comparatorPin(comparatorPin),hz(timerHz){
 
 	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_RESET); // put SR latch in known position
 	Disable();
@@ -19,10 +20,19 @@ AirbrakesDriver::AirbrakesDriver(TIM_HandleTypeDef* servoPWMTimerHandle,
 void AirbrakesDriver::Enable() {
 	HAL_TIM_PWM_Start(servoPWMTimer, TIM_CHANNEL_1);
 	HAL_ADC_Start(servoADCHandle);
-	HAL_GPIO_WritePin(servoENPort, servoENPin, GPIO_PIN_SET);
+
 	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_SET);
 	HAL_Delay(10);
 	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_RESET);
+
+	HAL_GPIO_WritePin(servoENPort, servoENPin, GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_RESET);
+
+	HAL_Delay(10);
+
 	// Immediately stop if current starts running away
 	for(uint16_t i = 0; i < 250; i++) {
 		if(!CurrentGood()) {
@@ -53,7 +63,7 @@ bool AirbrakesDriver::SetTargetLevel(uint8_t level) {
 		return false;
 	}
 
-	return SetTargetDutyCycle(static_cast<float>(level)/(AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1));
+	return SetTargetDutyCycle(static_cast<float>(level)/(AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1)*(0.0025*hz-0.0005*hz)+0.0005*hz);
 }
 
 /* @brief Set the airbrake target duty cycle directly.
@@ -94,10 +104,35 @@ bool AirbrakesDriver::Adjust() {
 	}
 
 
+    const static float MAX_VELOCITY = 0.04;
+    const static float MAX_ACCEL = 0.0007;
 
-	float diff = targetDutyCycle - currentDutyCycle;
+    float distance = targetDutyCycle - currentDutyCycle;
+    float ideal_vel = sqrtf(2.0 * MAX_ACCEL * fabsf(distance))-MAX_ACCEL;
 
-	currentDutyCycle += diff*0.1;
+    if (distance < 0) {
+        ideal_vel = -ideal_vel;
+    }
+
+    if (ideal_vel > MAX_VELOCITY) {
+        ideal_vel = MAX_VELOCITY;
+    }
+    else if (ideal_vel < -MAX_VELOCITY) {
+        ideal_vel = -MAX_VELOCITY;
+    }
+
+    float vel_error = ideal_vel - vel;
+    if (vel_error > MAX_ACCEL) {
+        vel += MAX_ACCEL;
+    }
+    else if (vel_error < -MAX_ACCEL) {
+        vel -= MAX_ACCEL;
+    }
+    else  {
+        vel = ideal_vel;
+    }
+
+    currentDutyCycle += vel;
 
 	servoPWMTimer->Instance->CCR1 = round(servoPWMTimer->Instance->ARR * currentDutyCycle);
 
@@ -127,6 +162,7 @@ float AirbrakesDriver::CurrentToADCVolts(float c) const {
  * @return true is current is safely within range.
  */
 bool AirbrakesDriver::CurrentGood() {
+	//return CheckComparatorGood();
 	return CheckComparatorGood() && (ADCVoltsToCurrent(ReadVoltsADC()) <= AIRBRAKES_MAX_CURRENT_AMPS);
 }
 
@@ -136,5 +172,7 @@ bool AirbrakesDriver::CurrentGood() {
  */
 bool AirbrakesDriver::CheckComparatorGood() const {
 
-	return HAL_GPIO_ReadPin(comparatorPort, comparatorPin) == GPIO_PIN_RESET;
+	return HAL_GPIO_ReadPin(comparatorPort, comparatorPin) == GPIO_PIN_SET;
 }
+
+

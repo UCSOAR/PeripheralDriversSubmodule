@@ -10,7 +10,7 @@ public:
 	AirbrakesDriver(TIM_HandleTypeDef* servoPWMTimer, ADC_HandleTypeDef* servoADCHandle,
 			GPIO_TypeDef* servoENPort, uint16_t servoENPin,
 					GPIO_TypeDef* servoLatchResetPort, uint16_t servoLatchResetPin,
-					GPIO_TypeDef* comparatorPort, uint16_t comparatorPin);
+					GPIO_TypeDef* comparatorPort, uint16_t comparatorPin, float timerHz);
 
 	void Enable();
 	void Disable();
@@ -44,6 +44,7 @@ private:
 	bool CheckComparatorGood() const;
 
 	float currentDutyCycle = 0;
+	float vel = 0.0;
 
 	static inline uint32_t round(float v) {
 		if(v > 0)
@@ -53,6 +54,9 @@ private:
 	}
 
 	bool enabled = false;
+
+	const float hz;
+
 
 };
 
