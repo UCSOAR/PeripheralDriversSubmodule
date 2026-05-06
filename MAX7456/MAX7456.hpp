@@ -8,8 +8,7 @@
 #ifndef INC_WET_OIL_H_
 #define INC_WET_OIL_H_
 
-#include "gpio.h"
-#include "spi.h"
+#include "stm32g4xx.h"
 
 
 
@@ -74,7 +73,7 @@ class MAX7456 {
 
 public:
 
-	MAX7456(GPIO_TypeDef* csgpio, uint16_t cspin);
+	MAX7456(GPIO_TypeDef* csgpio, uint16_t cspin, SPI_HandleTypeDef* hspi);
 	enum OSD_STANDARD {
 		OSD_STANDARD_NTSC,
 		OSD_STANDARD_PAL
@@ -178,6 +177,7 @@ private:
 
 	GPIO_TypeDef* csport;
 	const uint16_t cspin;
+	SPI_HandleTypeDef* hspi;
 
 };
 
