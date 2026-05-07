@@ -96,7 +96,7 @@ float AirbrakesDriver::ReadVoltsADC() {
 /* @brief Run the active current ramping loop. Will smooth PWM changes and check latch status.
  * @return true if successful. false if the current exceeds limits or the driver is disabled.
  */
-bool AirbrakesDriver::Adjust() {
+bool AirbrakesDriver::TickControlLoop() {
 
 	if(!CurrentGood() || !IsEnabled()) {
 		Disable();
