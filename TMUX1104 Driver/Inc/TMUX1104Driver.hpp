@@ -1,7 +1,7 @@
 #ifndef TMUX1104_HPP
 #define TMUX1104_HPP
 
-#include "stm32h7xx.h"
+#include "stm32g4xx_hal.h"
 #include "CubeDefines.hpp"
 
 enum class Camera : uint8_t{

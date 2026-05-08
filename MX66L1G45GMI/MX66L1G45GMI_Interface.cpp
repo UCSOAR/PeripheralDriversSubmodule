@@ -10,8 +10,8 @@
 /************************************
  * INCLUDES
  ************************************/
+#include <DMATransfer.hpp.txt>
 #include "MX66L1G45GMI.hpp"
-#include "DMATransfer.hpp"
 #include "stm32g4xx_hal.h"
 
 #include "main.h"

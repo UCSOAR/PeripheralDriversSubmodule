@@ -11,8 +11,21 @@
 #include "main.h"
 #include <cstdint>
 
+#include "Task.hpp"
+#include "CubeDefines.hpp"
+
 NAU7802::NAU7802(I2C_Wrapper* i2c_pointer, std::uint8_t address)
   : _i2c(i2c_pointer), _deviceAddress(address) {}
+
+bool NAU7802::isReady() {
+        uint8_t pu_ctrl = 0;
+
+        if (readRegister(NAU7802_REG_PU_CTRL, &pu_ctrl) != NauStatus::OK) {
+                return false;
+        }
+
+        return (pu_ctrl & NAU7802_PU_CTRL_CR) != 0;
+}
 
 // Begin NAU7802 Startup Sequence
 NauStatus NAU7802::begin(uint8_t initialGain) {
@@ -25,7 +38,9 @@ NauStatus NAU7802::begin(uint8_t initialGain) {
 
     // 2. Power up the analog and digital sections
     uint8_t pu_ctrl = NAU7802_PU_CTRL_PUA | NAU7802_PU_CTRL_PUD;
-    writeRegister(NAU7802_REG_PU_CTRL, pu_ctrl);
+    if (writeRegister(NAU7802_REG_PU_CTRL, pu_ctrl) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
 
     // 3. Wait for the Power Up Ready bit
     uint8_t attempts = 100;
@@ -45,15 +60,46 @@ NauStatus NAU7802::begin(uint8_t initialGain) {
         return NauStatus::ERR_NOT_READY;
     }
 
-    return setGain(initialGain);
-}
+    pu_ctrl |= NAU7802_PU_CTRL_AVDDS; // Turn on internal LDO to power the load cell
+    pu_ctrl |= NAU7802_PU_CTRL_CS;    // Set Cycle Start bit
 
-bool NAU7802::isReady() {
-    uint8_t status;
-    if (readRegister(NAU7802_REG_PU_CTRL, &status) == NauStatus::OK) {
-        return (status & NAU7802_PU_CTRL_CR) != 0;
+    if (writeRegister(NAU7802_REG_PU_CTRL, pu_ctrl) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
     }
-    return false;
+
+    // 4. Set LDO voltage (3.0V is Adafruit's choice)
+    uint8_t ctrl1;
+    if (readRegister(NAU7802_REG_CTRL1, &ctrl1) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
+    ctrl1 &= ~NAU7802_LDO_VOLTAGE_MASK;  // Clear LDO bits
+    ctrl1 |= NAU7802_LDO_3V0;             // Set to 3.0V
+    if (writeRegister(NAU7802_REG_CTRL1, ctrl1) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
+
+    // 5. Set Gain to 128x (Adafruit default, better sensitivity)
+    NauStatus status = setGain(NAU7802_GAIN_128X);
+    if (status != NauStatus::OK) {
+        return status;
+    }
+
+    // 6. Set conversion rate to 10 SPS (default Adafruit rate)
+    uint8_t ctrl2;
+    if (readRegister(NAU7802_REG_CTRL2, &ctrl2) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
+    ctrl2 &= ~NAU7802_CTRL2_CRS_MASK;    // Clear conversion rate bits
+    ctrl2 |= (NAU7802_RATE_10SPS << 4);  // Set to 10 SPS
+    if (writeRegister(NAU7802_REG_CTRL2, ctrl2) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
+
+    // Datasheet guidance: allow six conversion cycles after startup before trusting data.
+    // At default 10SPS this corresponds to about 600ms.
+    HAL_Delay(600);
+
+    return NauStatus::OK;
 }
 
 NauStatus NAU7802::readSensor(NAU7802_OUT *dest) {
@@ -68,15 +114,23 @@ NauStatus NAU7802::readSensor(NAU7802_OUT *dest) {
         return NauStatus::ERR_I2C; // Read failed
     }
 
+    // --- DEBUG PRINTS START ---
+    // SOAR_PRINT("NAU Driver - Bytes Read: B2: 0x%02X, B1: 0x%02X, B0: 0x%02X\n", buffer[0], buffer[1], buffer[2]);
+
     // Combine the three bytes
     int32_t value = ((int32_t)buffer[0] << 16) | \
                     ((int32_t)buffer[1] << 8)  | \
                     (buffer[2]);
 
+    // SOAR_PRINT("NAU Driver - Combined (Pre-Sign Extend): 0x%08lX (%ld)\n", (unsigned long)value, (long)value);
+
     // Sign-extend the 24-bit value to a 32-bit integer
     if (value & 0x00800000) {
         value |= 0xFF000000;
     }
+
+    // SOAR_PRINT("NAU Driver - Final Sign-Extended: 0x%08lX (%ld)\n", (unsigned long)value, (long)value);
+    // --- DEBUG PRINTS END ---
 
     dest->raw_reading = value;
     return NauStatus::OK;
@@ -172,7 +226,29 @@ NauStatus NAU7802::modifyRegisterBit(std::uint8_t reg, std::uint8_t bitMask, boo
 }
 
 NauStatus NAU7802::calibrate() {
-    // TODO: Implement calibration logic based on datasheet
-    // Usually involves setting CALS bit in REG0x02
-    return modifyRegisterBit(NAU7802_REG_CTRL2, NAU7802_CTRL2_CALS, true); 
+    if (modifyRegisterBit(NAU7802_REG_CTRL2, NAU7802_CTRL2_CALS, true) != NauStatus::OK) {
+        return NauStatus::ERR_I2C;
+    }
+
+    constexpr unsigned int calibrationTimeoutMs = 1000;
+    unsigned int elapsedMs = 0;
+
+    while (elapsedMs < calibrationTimeoutMs) {
+        uint8_t ctrl2 = 0;
+        if (readRegister(NAU7802_REG_CTRL2, &ctrl2) != NauStatus::OK) {
+            return NauStatus::ERR_I2C;
+        }
+
+        if ((ctrl2 & NAU7802_CTRL2_CALS) == 0) {
+            if ((ctrl2 & NAU7802_CTRL2_CAL_ERR) != 0) {
+                return NauStatus::ERR_NOT_READY;
+            }
+            return NauStatus::OK;
+        }
+
+        HAL_Delay(1);
+        ++elapsedMs;
+    }
+
+    return NauStatus::ERR_TIMEOUT;
 }

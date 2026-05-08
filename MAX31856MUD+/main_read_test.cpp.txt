@@ -1,0 +1,43 @@
+#include <MAX31856MUD+/MAX31856MUD+Driver.hpp.bak>
+#include "stm32g4xx_hal.h"
+
+// Note: Ensure your hardware specific hspi is externally defined or passed properly.
+// This typically comes from your auto-generated main.c (CubeMX).
+extern SPI_HandleTypeDef hspi1; 
+
+// Driver object instance
+MAX31856Driver thermo;
+
+#if 0
+int main(void) {
+    // HAL initialization (Usually done by generated main.c code)
+    HAL_Init();
+    
+    // ... SystemClock_Config(), MX_GPIO_Init(), MX_SPI1_Init() would go here ...
+    // Make sure the GPIO Clock for your CS pin port is enabled beforehand!
+
+    // Initialize the driver with the SPI handle, CS Port, and CS Pin
+    // Example uses Port A, Pin 4 as Chip Select
+    thermo.Init(&hspi1, GPIOA, GPIO_PIN_4);
+
+    // Optional Configuration: Configure CR0 and CR1 
+    // e.g. thermo.SetCR0(0x80); // Set to automatic conversion mode
+    // e.g. thermo.SetCR1(0x03); // Set to K-type thermocouple (default is K-type)
+
+    float current_temperature = 0.0f;
+    uint8_t faults = 0;
+
+    // Main loop
+    while (1) {
+        // Fetch the temperature from the thermocouple registers
+        current_temperature = thermo.ReadThermocoupleTempC();
+        
+        // Check for any fault conditions (open circuit, over/under voltage, etc.)
+        faults = thermo.GetFaultStatus();
+
+        // Delay 1 second between reads to keep it simple
+        HAL_Delay(1000);
+    }
+}
+#endif
+

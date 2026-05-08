@@ -1,0 +1,291 @@
+/*
+ * MAX31856driver-new-NONSPI.cpp
+ *
+ * Driver for TC using MAX31856MUD+
+ */
+
+
+
+#include <MAX31856MUD+/newdriver.h.txt>
+
+
+// Define which pins are connected to the MAX31856.  The DRDY and FAULT output.
+MAX31856::MAX31856(GPIO_TypeDef* sdi_port, uint16_t sdi_pin,
+                   GPIO_TypeDef* sdo_port, uint16_t sdo_pin,
+                   GPIO_TypeDef* cs_port, uint16_t cs_pin,
+                   GPIO_TypeDef* clk_port, uint16_t clk_pin)
+{
+    _sdi_port = sdi_port;
+    _sdi_pin = sdi_pin;
+    _sdo_port = sdo_port;
+    _sdo_pin = sdo_pin;
+    _cs_port = cs_port;
+    _cs_pin = cs_pin;
+    _clk_port = clk_port;
+    _clk_pin = clk_pin;
+
+    // Reconfigure pins as GPIO so bit-banged accessrequiring GPIO mode, if not set then dont work that easy.
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Configure SDI (MOSI) as output
+    GPIO_InitStruct.Pin = _sdi_pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(_sdi_port, &GPIO_InitStruct);
+
+    // Configure SDO (MISO) as input with pull-up
+    GPIO_InitStruct.Pin = _sdo_pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(_sdo_port, &GPIO_InitStruct);
+
+    // Configure CS as output
+    GPIO_InitStruct.Pin = _cs_pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(_cs_port, &GPIO_InitStruct);
+
+    // Configure CLK (SCK) as output
+    GPIO_InitStruct.Pin = _clk_pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(_clk_port, &GPIO_InitStruct);
+
+    // Default output pins state
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(_clk_port, _clk_pin, GPIO_PIN_SET);
+
+    // Set up the shadow registers with the default values
+    uint8_t reg[NUM_REGISTERS] = {0x00,0x03,0xff,0x7f,0xc0,0x7f,0xff,0x80,0,0,0,0};
+    for (int i=0; i<NUM_REGISTERS; i++)
+        _registers[i] = reg[i];
+}
+
+
+// Write the given data to the MAX31856 register
+void MAX31856::writeRegister(uint8_t registerNum, uint8_t data)
+{
+    // Sanity check on the register number
+    if (registerNum >= NUM_REGISTERS)
+        return;
+
+    // Select the MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_RESET);
+
+    // Write the register number, with the MSB set to indicate a write
+    writeByte(WRITE_OPERATION(registerNum));
+
+    // Write the register value
+    writeByte(data);
+
+    // Deselect MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_SET);
+
+    // Save the register value, in case the registers need to be restored
+    _registers[registerNum] = data;
+}
+
+
+// Read the thermocouple temperature either in Degree Celsius or Fahrenheit. Internally,
+// the conversion takes place in the background within 155 ms, or longer depending on the
+// number of samples in each reading (see CR1).
+// Returns the temperature, or an error (FAULT_OPEN, FAULT_VOLTAGE or NO_MAX31856)
+double	MAX31856::readThermocouple(uint8_t unit)
+{
+    double temperature;
+    int32_t data;
+
+    // Select the MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_RESET);
+
+    // Read data starting with register 0x0c
+    writeByte(READ_OPERATION(0x0c));
+
+    // Read 4 registers
+    data = readData();
+
+    // Deselect MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_SET);
+
+    // If there is no communication from the IC then data will be#FFFFF like it happened to me :()
+    if (data == 0xFFFFFFFF)
+        return NO_MAX31856;
+
+    // If the value is zero then the temperature could be exactl 0 (do not trust this) or that/ the IC's registers are uninitialized.
+    if (data == 0 && verifyMAX31856() == NO_MAX31856)
+        return NO_MAX31856;
+
+    // Was there an error?
+    if (data & SR_FAULT_OPEN)
+        temperature = FAULT_OPEN;
+    else if (data & SR_FAULT_UNDER_OVER_VOLTAGE)
+        temperature = FAULT_VOLTAGE;
+    else {
+        // Strip the unused bits and the Fault Status Register
+        data = data >> 13;
+
+        // Negative temperatures have beenatomaticallyy handled by the shift aboe)
+
+        // to Celsius
+        temperature = (double) data * 0.0078125;
+
+        //  to Fahrenheid
+        if (unit == FAHRENHEIT)
+            temperature = (temperature * 9.0/5.0)+ 32;
+    }
+
+    // Return the temperature
+    return (temperature);
+}
+
+
+// Read the junction (IC) temperature either in Degree Celsius or Fahrenheit.// no max == NO_MAX.
+double	MAX31856::readJunction(uint8_t unit)
+{
+    double temperature;
+    int32_t data, temperatureOffset;
+
+    // Select the MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_RESET);
+
+    // Read data starting with register 8
+    writeByte(READ_OPERATION(8));
+
+    // Read 4 registers
+    data = readData();
+
+    // Deselect MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_SET);
+
+    // If there is no communication from the IC then data will be all 1's because
+    // of the internal pullup on the data line (INPUT_PULLUP)
+    if (data == 0xFFFFFFFF)
+        return NO_MAX31856;
+
+    // If the value is zero then the temperature could be exactly 0.000 (rare), or
+    // the IC's registers are uninitialized.
+    if (data == 0 && verifyMAX31856() == NO_MAX31856)
+        return NO_MAX31856;
+
+    //regr 9 is the temperature offset
+    temperatureOffset = (data & 0x00FF0000) >> 16;
+
+    // Is this a negative number?
+    if (temperatureOffset & 0x80)
+        temperatureOffset |= 0xFFFFFF00;
+
+    // Strip registers 8 and 9, taking care of negative numbers
+    if (data & 0x8000)
+        data |= 0xFFFF0000;
+    else
+        data &= 0x0000FFFF;
+
+    // Remove the 2 LSB's - they aren't used
+    data = data >> 2;
+
+    // Add the temperature offset to the temperature
+    temperature = data + temperatureOffset;
+
+    // Convert to Celsius
+    temperature *= 0.015625;
+
+    // Convert to Fahrenheid
+    if (unit == FAHRENHEIT)
+        temperature = (temperature * 9.0/5.0)+ 32;
+
+    // Return the temperature
+    return (temperature);
+}
+double MAX31856::verifyMAX31856()
+{
+    int32_t data, reg;
+
+    // Select the MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_RESET);
+
+    // Read data starting with register 0
+    writeByte(READ_OPERATION(0));
+
+    // Read 4 registers
+    data = readData();
+
+    // Deselect MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_SET);
+
+    // If there is no communication from the IC then data will be all 1's because
+    // of the internal pullup on the data line (INPUT_PULLUP)
+    if (data == 0xFFFFFFFF)
+        return NO_MAX31856;
+
+    // Are the registers set to their correct values?
+    reg = ((int32_t)_registers[0]<<24) + ((int32_t)_registers[1]<<16) + ((int32_t)_registers[2]<<8) + _registers[3];
+    if (reg == data)
+        return 0;
+
+    // Communication to the IC is working, but the register values are not correct
+    // Select the MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_RESET);
+
+    // Start writing from register 0
+    writeByte(WRITE_OPERATION(0));
+
+    // Write the register values
+    for (int i=0; i< NUM_REGISTERS; i++)
+        writeByte(_registers[i]);
+
+    // Deselect MAX31856 chip
+    HAL_GPIO_WritePin(_cs_port, _cs_pin, GPIO_PIN_SET);
+
+    // For now, return an error but soon valid temperatures will be returned
+    return NO_MAX31856;
+}
+
+
+// Read in 32 bits of data from MAX31856 chips
+int32_t MAX31856::readData()
+{
+    int32_t data = 0;
+    uint32_t bitMask = 0x80000000;
+
+    // Shift in 32 bits of data
+    while (bitMask)
+    {
+        HAL_GPIO_WritePin(_clk_port, _clk_pin, GPIO_PIN_RESET);
+        HAL_Delay(1);  //delay ~1ms SLOW AF)
+
+        // Store the data bit
+        if (HAL_GPIO_ReadPin(_sdo_port, _sdo_pin))
+            data += bitMask;
+
+        HAL_GPIO_WritePin(_clk_port, _clk_pin, GPIO_PIN_SET);
+        HAL_Delay(1);  // delay ~1m SLOW AF)
+
+        bitMask >>= 1;
+    }
+
+    return(data);
+}
+
+
+// Write out 8 bits of data to the MAX31856 chi.s
+void MAX31856::writeByte(uint8_t data)
+{
+    uint8_t bitMask = 0x80;
+
+    // Shift out 8 bits of data
+    while (bitMask)
+    {
+        // Write out the data bit.  Has to be held for 35ns
+        HAL_GPIO_WritePin(_sdi_port, _sdi_pin, (data & bitMask) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+        HAL_GPIO_WritePin(_clk_port, _clk_pin, GPIO_PIN_RESET);
+        HAL_Delay(1);  //delay ~1ms SLOW AF)
+        HAL_GPIO_WritePin(_clk_port, _clk_pin, GPIO_PIN_SET);
+        HAL_Delay(1);  //delay ~1ms SLOW AF)
+
+        bitMask >>= 1;
+    }
+}

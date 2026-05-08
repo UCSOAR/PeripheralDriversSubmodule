@@ -43,6 +43,7 @@
 #define NAU7802_PU_CTRL_PUD      (1 << 1) // Power Up Digital
 #define NAU7802_PU_CTRL_PUA      (1 << 2) // Power Up Analog
 #define NAU7802_PU_CTRL_PUR      (1 << 3) // Power Up Ready (Read Only)
+#define NAU7802_PU_CTRL_CS       (1 << 4) // Cycle Start
 #define NAU7802_PU_CTRL_CR       (1 << 5) // Cycle Ready (Read Only)
 #define NAU7802_PU_CTRL_OSCS     (1 << 6) // Select clock source
 #define NAU7802_PU_CTRL_AVDDS    (1 << 7) // Select internal LDO
@@ -52,6 +53,29 @@
 #define NAU7802_CTRL2_CRS_MASK   (0b111 << 4) // Conversion Rate Select Mask
 #define NAU7802_CTRL2_CAL_ERR    (1 << 3) // Calibration Error (Read Only)
 #define NAU7802_CTRL2_CALS       (1 << 2) // Start Calibration
+
+// Calibration Modes (CALMOD bits 1:0)
+#define NAU7802_CALMOD_OFFSET_INT (0b00) // Internal Offset Calibration (Default)
+#define NAU7802_CALMOD_OFFSET_SYS (0b10) // System Offset Calibration
+#define NAU7802_CALMOD_GAIN_SYS   (0b11) // System Gain Calibration
+
+// Conversion Rate Select Values (bits 4-6 of CTRL2)
+#define NAU7802_RATE_10SPS       0b000    // 10 samples per second (DEFAULT)
+#define NAU7802_RATE_20SPS       0b001    // 20 samples per second
+#define NAU7802_RATE_40SPS       0b010    // 40 samples per second
+#define NAU7802_RATE_80SPS       0b011    // 80 samples per second
+#define NAU7802_RATE_320SPS      0b100    // 320 samples per second
+
+// LDO Voltage Select (bits 3-5 of CTRL1)
+#define NAU7802_LDO_VOLTAGE_MASK (0b111 << 3)
+#define NAU7802_LDO_4V5          (0b000 << 3) // 4.5V
+#define NAU7802_LDO_4V2          (0b001 << 3) // 4.2V
+#define NAU7802_LDO_3V9          (0b010 << 3) // 3.9V
+#define NAU7802_LDO_3V6          (0b011 << 3) // 3.6V
+#define NAU7802_LDO_3V3          (0b100 << 3) // 3.3V
+#define NAU7802_LDO_3V0          (0b101 << 3) // 3.0V (ADAFRUIT DEFAULT)
+#define NAU7802_LDO_2V7          (0b110 << 3) // 2.7V
+#define NAU7802_LDO_2V4          (0b111 << 3) // 2.4V
 
 // Calibration Modes (CALMOD bits 1:0)
 #define NAU7802_CALMOD_OFFSET_INT (0b00) // Internal Offset Calibration (Default)

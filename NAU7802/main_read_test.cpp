@@ -23,6 +23,8 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void); 
 extern void Error_Handler(void); 
 
+
+#if 0
 /**
   * @brief  The application entry point.
   */
@@ -73,3 +75,5 @@ int main(void)
     HAL_Delay(100); // Wait 100ms before checking again
   }
 }
+
+#endif
