@@ -9,7 +9,7 @@
 
 #include <cstdio>
 #include <cstring>
-
+#include <algorithm>
 #include "main.h"
 
 //#define VERBOSE_FDCAN_DEBUG
@@ -259,7 +259,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
 	{
 		FDCAN_RxHeaderTypeDef header;
-		while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
+		if(callbackcontroller) {
+			while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
+		}
 	}
 
 }
@@ -510,14 +512,14 @@ bool FDCanController::SendByLogIndex(const uint8_t *msg, uint16_t logIndex) {
  * @return HAL_OK if successful
  */
 HAL_StatusTypeDef FDCanController::RegisterLogs(LogInitStruct *logs, uint16_t numLogs) {
-
+	if(numRegisteredLogs + numLogs > MAX_FDCAN_LOGS) return HAL_ERROR;
 	  for(uint16_t i = 0; i < numLogs; i++) {
-		  if(!AddLogType(logs[i])) {
-			  return HAL_ERROR;
-		  }
+		  registeredLogs[numRegisteredLogs].startingMsgID = logs[i].startingMsgID;
+		  registeredLogs[numRegisteredLogs].byteLength = logs[i].byteLength;
+		  numRegisteredLogs++;
 	  }
 
-	  return HAL_OK;
+	  return RebuildFilters() ? HAL_OK : HAL_ERROR;
 }
 
 
@@ -551,7 +553,7 @@ bool FDCanController::AddLogType(LogInitStruct log) {
 
 	numRegisteredLogs++;
 
-	return RebuildFilters();
+	return true;
 }
 
 bool FDCanController::RemoveLogIndices(const uint8_t* indices, uint8_t count) {
@@ -572,13 +574,18 @@ bool FDCanController::RemoveLogIndices(const uint8_t* indices, uint8_t count) {
 
 	numRegisteredLogs = c;
 
+	memcpy(registeredLogs, registeredLogsMutable, c * sizeof(LogRegister));
+
 	return RebuildFilters();
 }
 
+#ifndef USE_MERGED_FILTERS
 /* @brief Rebuilds the FDCAN peripheral filters and restarts it.
  * @return true on success.
  */
 bool FDCanController::RebuildFilters() {
+	while(HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < fdcan->Init.TxFifoQueueElmtsNbr);
+
 	numFDFilters = numRegisteredLogs;
 	memset(buffersByCanID,0x00,sizeof(buffersByCanID));
 
@@ -621,12 +628,92 @@ bool FDCanController::RebuildFilters() {
 
 	}
 	 HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
-	 HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
-	 HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_TX_COMPLETE, 0);
+	 HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE |FDCAN_IT_TX_COMPLETE, 0);
 
 	 return HAL_FDCAN_Start(fdcan) == HAL_OK;
 
 }
+#else
+/* @brief Rebuilds the FDCAN peripheral filters and restarts it.
+ * @return true on success.
+ */
+bool FDCanController::RebuildFilters() {
+	uint32_t start = HAL_GetTick();
+	while(HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < 3 && HAL_GetTick()-start < 500);
+
+	numFDFilters = numRegisteredLogs;
+	memset(buffersByCanID,0x00,sizeof(buffersByCanID));
+
+	fdcan->Init.StdFiltersNbr = numFDFilters;
+
+	if(HAL_FDCAN_DeInit(fdcan) != HAL_OK) {
+		CANError();
+	}
+	if(HAL_FDCAN_Init(fdcan) != HAL_OK) {
+		CANError();
+	}
+	nextUnregisteredFilterID = 0;
+	uint8_t nextRXBuf = 0;
+
+	for(uint8_t i = 0; i < numRegisteredLogs; i++) {
+		uint16_t msgID = registeredLogs[i].startingMsgID;
+		uint16_t len = registeredLogs[i].byteLength;
+
+		uint8_t frames = (len-1)/64+1;
+
+		registeredLogs[i].startingRXBuf = nextRXBuf;
+		registeredLogs[i].endingRXBuf = nextRXBuf+frames-1;
+
+		for(uint16_t canid = msgID; canid <= msgID+frames-1; canid++) {
+			buffersByCanID[canid].A = &buffersA[registeredLogs[i].startingRXBuf + canid - msgID];
+			buffersByCanID[canid].B = &buffersB[registeredLogs[i].startingRXBuf + canid - msgID];
+			buffersByCanID[canid].logOwnerSelection = &selectedBufsForLog[i];
+		}
+
+		nextRXBuf += frames;
+		if(nextRXBuf > MAX_FDCAN_RX_BUFFERS) {
+			return false;
+		}
+
+	}
+
+	struct RangeForSorting {
+		uint16_t startmsgid;
+		uint16_t lastmsgid;
+	};
+	RangeForSorting logsforsorting[numRegisteredLogs];
+	for(uint16_t i = 0; i < numRegisteredLogs; i++) {
+		logsforsorting[i] = {registeredLogs[i].startingMsgID,registeredLogs[i].startingMsgID+registeredLogs[i].endingRXBuf-registeredLogs[i].startingRXBuf};
+	}
+	std::sort(logsforsorting, logsforsorting + numRegisteredLogs, [](const RangeForSorting a, const RangeForSorting b) {return a.lastmsgid < b.startmsgid;});
+
+	RangeForSorting mergedranges[numRegisteredLogs];
+	mergedranges[0] = logsforsorting[0];
+	uint16_t nummerged = 0;
+	for(uint16_t i = 1; i < numRegisteredLogs; i++) {
+		const RangeForSorting b = logsforsorting[i];
+		if(mergedranges[nummerged].lastmsgid == b.startmsgid - 1) {
+			mergedranges[nummerged].lastmsgid = b.lastmsgid;
+		} else {
+			nummerged++;
+			mergedranges[nummerged] = b;
+		}
+	}
+
+	for (uint16_t i = 0; i < nummerged+1; i++) {
+		if(RegisterFilterRXBuf(mergedranges[i].startmsgid, mergedranges[i].lastmsgid) != HAL_OK) {
+			return false;
+		}
+	}
+
+
+	 HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
+	 HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE |FDCAN_IT_TX_COMPLETE, 0);
+
+	 return HAL_FDCAN_Start(fdcan) == HAL_OK;
+
+}
+#endif
 
 
 bool FDCanController::DiscardLog(uint16_t index) {

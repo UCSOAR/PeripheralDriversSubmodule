@@ -11,11 +11,14 @@
 #include "stm32h7xx.h"
 
 // *********************** DEBUG:
-#define FDCAN_DEBUG
+//#define FDCAN_DEBUG
 //#define FDCAN_DEBUG_VERBOSE
 
+// will automatically merge hardware filters for consecutive can id ranges to lower
+// peripheral filter usage
+#define USE_MERGED_FILTERS
 constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;
-constexpr size_t MAX_FDCAN_LOGS = 8;
+constexpr size_t MAX_FDCAN_LOGS = 64;
 
 
 class FDCanController {
