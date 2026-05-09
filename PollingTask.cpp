@@ -10,7 +10,7 @@
 #include "timers.h"
 #include "DataBroker.hpp"
 #include "LoggingService.hpp"
-#include "CanAutoNodeDaughter.hpp"
+//#include "CanAutoNodeDaughter.hpp"
 
 extern FDCAN_HandleTypeDef hfdcan1;
 
@@ -54,11 +54,6 @@ void PollingTask::InitTask()
 
                 SOAR_ASSERT(rtValue == pdPASS, "PollingTask::InitTask() - xTaskCreate() failed");
 
-    //Init drivers
-	imu16.Init(hspi6_, LSM6DSO_CS_PIN,  LSM6DSO_CS_PORT );
-	imu32.Init(hspi2_, LSM6DSO32_CS_PORT, LSM6DSO32_CS_PIN);
-	magnetometer.Init(hspi4_, MMC_CS_PORT, MMC_CS_PIN);
-
 	pollTimerHandle = xTimerCreate("PollingTimer",
 			pdMS_TO_TICKS(kLaunchPollMs),
 			pdFALSE,
@@ -66,19 +61,6 @@ void PollingTask::InitTask()
 			PollingTask::PollTimerCallback);
 
 	SOAR_ASSERT(pollTimerHandle != nullptr, "PollingTask::InitTask() - xTimerCreate() failed");
-
-	CanAutoNodeDaughter::LogInit daughterLogs[] = {
-		{kRocketStateRxLogSizeBytes},
-	};
-	canNode = new CanAutoNodeDaughter(&hfdcan1,
-			daughterLogs,
-			sizeof(daughterLogs) / sizeof(daughterLogs[0]),
-			kDaqBoardType,
-			kDaqSlotNumber,
-			"DAQ");
-	SOAR_ASSERT(canNode != nullptr, "PollingTask::InitTask() - CAN node alloc failed");
-
-	ApplyRocketState();
 }
 
 void PollingTask::SetRocketState(RocketState newState)
@@ -162,7 +144,6 @@ void PollingTask::Run(void * pvParams){
 
         	HandleCommand(cm);
         }
-		ServiceCanNetwork();
 
     }
 }
@@ -212,45 +193,6 @@ bool PollingTask::DecodeRocketStateFromCan(uint8_t rawState, RocketState& outSta
 	}
 }
 
-void PollingTask::ServiceCanNetwork()
-{
-	if (canNode == nullptr)
-	{
-		SOAR_PRINT("null cannode\n");
-		return;
-	}
-	if(canNode->GetCurrentState() == CanAutoNodeDaughter::ERROR){
-		//SOAR_PRINT("error can\n");
-		return;
-	}
-
-	(void)canNode->CheckCANCommands();
-
-	if(canNode->GetCurrentState() == CanAutoNodeDaughter::UNINITIALIZED) {
-			canNode->TryRequestingJoiningNetwork();
-	}
-
-	if(canNode->GetCurrentState() == CanAutoNodeDaughter::READY) {
-
-		uint8_t rawRocketState = 0;
-		if (canNode->ReadMessageByLogIndex(kRocketStateRxLogIndex, &rawRocketState, sizeof(rawRocketState)))
-		{
-			RocketState decodedState = RocketState::RS_PRELAUNCH;
-			if (!DecodeRocketStateFromCan(rawRocketState, decodedState))
-			{
-				SOAR_PRINT("PollingTask CAN | Unknown rocket state byte: %u\n", (unsigned int)rawRocketState);
-				return;
-			}
-
-			if (decodedState != rocketState)
-			{
-				SetRocketState(decodedState);
-				SOAR_PRINT("PollingTask CAN | Rocket state updated to %u\n", (unsigned int)rawRocketState);
-			}
-		}
-	}
-}
-
 void PollingTask::HandleCommand(Command& cm){
 	switch(cm.GetCommand()){
 	case DATA_COMMAND:
@@ -267,35 +209,6 @@ void PollingTask::HandleCommand(Command& cm){
 
 void PollingTask::HandleRequestCommand(uint16_t taskCommand){
 	switch(taskCommand){
-	case POLL_SENSORS_AND_LOG:
-		PollSensors();
-		LogData();
-		break;
-	case GPS_TEST:
-		if (gpsInitialized)
-		{
-			if (gps.getGGALine(gpsData.buffer_))
-			{
-				SOAR_PRINT("GPS RAW | %s\n", gpsData.buffer_);
-				GPSData rawGps = gpsData;
-				DataBroker::Publish<GPSData>(&rawGps);
-				gps.ParseGpsData(&gpsData);
-				SOAR_PRINT("GPS GGA | time=%d lat_deg=%d lat_min=%d lon_deg=%d lon_min=%d antAlt=%d antUnit=%d geoidAlt=%d geoidUnit=%d totalAlt=%d totalUnit=%d\n",
-						   (int32_t)gpsData.time_,
-						   (int32_t)gpsData.latitude_.degrees_,
-						   (int32_t)gpsData.latitude_.minutes_,
-						   (int32_t)gpsData.longitude_.degrees_,
-						   (int32_t)gpsData.longitude_.minutes_,
-						   (int32_t)gpsData.antennaAltitude_.altitude_,
-						   (int32_t)gpsData.antennaAltitude_.unit_,
-						   (int32_t)gpsData.geoidAltitude_.altitude_,
-						   (int32_t)gpsData.geoidAltitude_.unit_,
-						   (int32_t)gpsData.totalAltitude_.altitude_,
-						   (int32_t)gpsData.totalAltitude_.unit_);
-			}
-
-		}
-
 	default:
 		break;
 	}
@@ -314,39 +227,6 @@ void PollingTask::PollTimerCallback(TimerHandle_t xTimer)
 }
 
 
-void PollingTask::PollSensors()
-{
-	uint8_t data[14] = {0};
-
-	baro07Data = barometer07.getSample();
-	baro07Data.id = 0;
-
-	baro11Data = barometer11.getSample();
-	baro11Data.id = 1;
-
-	imu16.readSensors(data);
-	imu16Data = imu16.bytesToStruct(data, true, true, true);
-	imu16Data.id = 0;
-
-	imu32.ReadSensors(data);
-	imu32Data = imu32.ConvertRawMeasurementToStruct(data);
-	imu32Data.id = 1;
-
-	magnetometer.triggerMeasurement();
-	magnetometer.readData(driverData);
-
-	magData.magX = driverData.scaledX;
-	magData.magY = driverData.scaledY;
-	magData.magZ = driverData.scaledZ;
-
-	static const char kMockGga[83] ="$GNGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*59\r\n";
-	memset(gpsData.buffer_, 0, sizeof(gpsData.buffer_));
-	strncpy(gpsData.buffer_, kMockGga, sizeof(gpsData.buffer_) - 1);
-	GPSData parsedGps = gpsData;
-	gps.ParseGpsData(&parsedGps);
-
-
-}
 
 
 void PollingTask::LogData(){
