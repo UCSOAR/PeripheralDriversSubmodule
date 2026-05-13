@@ -18,7 +18,7 @@ public:
 	bool SetTargetDutyCycle(float current);
 	uint32_t ReadRawADC();
 	float ReadVoltsADC();
-	bool Adjust();
+	bool TickControlLoop();
 
 	inline bool IsEnabled() const {
 		return enabled;
