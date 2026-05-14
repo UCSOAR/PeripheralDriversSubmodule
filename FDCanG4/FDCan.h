@@ -57,6 +57,7 @@ class FDCanController {
 
   struct RXBuffer {
 	  uint8_t data[64];
+	  volatile uint32_t stamp = 0;
 	  volatile bool available = false;
   };
 

@@ -253,6 +253,7 @@ HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
 		}
 		uint8_t* pRxData = buf->data;
 		buf->available = true;
+		buf->stamp = HAL_GetTick();
 		static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 
 		//    for (ByteCounter = 0; ByteCounter < DLCtoBytes[pRxHeader->DataLength]; ByteCounter++)
@@ -500,6 +501,7 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 	SelectedBuffer currentBack = (currentFront == Buf_A ? Buf_B : Buf_A);
 	RXBuffer* backbuf = (currentBack == Buf_A) ? buffersA : buffersB;
 
+	uint32_t thisTick = HAL_GetTick();
 	// check if all ready
 	__disable_irq();
 	bool allReady = true;
@@ -511,6 +513,16 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 			allReady = false;
 			break;
 		}
+
+		if(thisTick - backbuf[b].stamp > BUFFER_AVAILABILITY_TIMEOUT_TICKS) {
+			backbuf[b].available = false;
+#ifdef FDCAN_DEBUG_VERBOSE
+			SOAR_PRINT("buffer %d of %d/%d timed out ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
+#endif
+			break;
+		}
+
+
 	}
 
 	if(!allReady) {

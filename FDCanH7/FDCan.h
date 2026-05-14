@@ -18,7 +18,8 @@
 // peripheral filter usage
 #define USE_MERGED_FILTERS
 constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;
-constexpr size_t MAX_FDCAN_LOGS = 64;
+constexpr size_t MAX_FDCAN_LOGS = 24;
+constexpr uint32_t BUFFER_AVAILABILITY_TIMEOUT_TICKS = 30;
 
 
 class FDCanController {
@@ -58,6 +59,7 @@ class FDCanController {
 
   struct RXBuffer {
 	  uint8_t data[64];
+	  volatile uint32_t stamp = 0;
 	  volatile bool available = false;
   };
 
