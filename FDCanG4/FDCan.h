@@ -18,6 +18,7 @@
 #define USE_MERGED_FILTERS
 constexpr size_t MAX_FDCAN_RX_BUFFERS = 128;
 constexpr size_t MAX_FDCAN_LOGS = 64;
+constexpr uint32_t BUFFER_AVAILABILITY_TIMEOUT_TICKS = 30;
 
 
 class FDCanController {
