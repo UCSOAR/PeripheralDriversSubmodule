@@ -450,7 +450,7 @@ uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logInd
 	SelectedBuffer currentFront = selectedBufsForLog[logIndex];
 	SelectedBuffer currentBack = (currentFront == Buf_A ? Buf_B : Buf_A);
 	RXBuffer* backbuf = (currentBack == Buf_A) ? buffersA : buffersB;
-
+	uint32_t thisTick = HAL_GetTick();
 	// check if all ready
 	__disable_irq();
 	bool allReady = true;
