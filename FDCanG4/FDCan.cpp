@@ -9,7 +9,7 @@
 
 #include <cstdio>
 #include <cstring>
-
+#include <algorithm>
 #include "main.h"
 
 //#define VERBOSE_FDCAN_DEBUG
@@ -17,15 +17,15 @@
 FDCanController *callbackcontroller = nullptr;
 
 void CANError() {
-  while (1) {
-    HAL_Delay(100);  //
-  }
+	while (1) {
+		HAL_Delay(100);  //
+	}
 }
 
 FDCanController::~FDCanController() {
-  if (callbackcontroller == this) {
-    callbackcontroller = nullptr;
-  }
+	if (callbackcontroller == this) {
+		callbackcontroller = nullptr;
+	}
 }
 
 #define MIN(a, b) (((a) > (b)) ? (b) : (a))
@@ -40,7 +40,7 @@ bool FDCanController::SendStringByLogIndex(const char *msg, uint16_t logIndex) {
 		return false;
 	}
 	return SendByMsgID((const uint8_t *)msg, strlen(msg),
-                     registeredLogs[logIndex].startingMsgID);
+			registeredLogs[logIndex].startingMsgID);
 }
 
 /* @brief Send a message through CANBus, in multiple frames and incrementing the
@@ -52,67 +52,67 @@ bool FDCanController::SendStringByLogIndex(const char *msg, uint16_t logIndex) {
  * @return Success
  */
 bool FDCanController::SendByMsgID(const uint8_t *msg, size_t len, uint16_t ID, uint16_t timeout) {
-  size_t framesToSend = (len - 1) / 64 + 1;
+	size_t framesToSend = (len - 1) / 64 + 1;
 
-  if(framesToSend > 2048) {
-	  return false;
-  }
-  if (ID >= 2048 - framesToSend) {
-    // ID too large
-    return false;
-  }
+	if(framesToSend > 2048) {
+		return false;
+	}
+	if (ID >= 2048 - framesToSend) {
+		// ID too large
+		return false;
+	}
 
-  FDCAN_TxHeaderTypeDef txheader = {0};
-  txheader.IdType = FDCAN_STANDARD_ID;
-  txheader.TxFrameType = FDCAN_DATA_FRAME;
-  txheader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	FDCAN_TxHeaderTypeDef txheader = {0};
+	txheader.IdType = FDCAN_STANDARD_ID;
+	txheader.TxFrameType = FDCAN_DATA_FRAME;
+	txheader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 
-  if(fdcan->Init.FrameFormat == FDCAN_FRAME_CLASSIC) {
-	  txheader.BitRateSwitch = FDCAN_BRS_OFF;
-	  txheader.FDFormat = FDCAN_CLASSIC_CAN;
-  } else {
-	  txheader.BitRateSwitch = FDCAN_BRS_ON;
-	  txheader.FDFormat = FDCAN_FD_CAN;
-  }
+	if(fdcan->Init.FrameFormat == FDCAN_FRAME_CLASSIC) {
+		txheader.BitRateSwitch = FDCAN_BRS_OFF;
+		txheader.FDFormat = FDCAN_CLASSIC_CAN;
+	} else {
+		txheader.BitRateSwitch = FDCAN_BRS_ON;
+		txheader.FDFormat = FDCAN_FD_CAN;
+	}
 
-  txheader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  txheader.MessageMarker = 0;
-  txheader.DataLength = FDCAN_DLC_BYTES_64;
+	txheader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	txheader.MessageMarker = 0;
+	txheader.DataLength = FDCAN_DLC_BYTES_64;
 
-  size_t remaining = len;
-  for (size_t frame = 0; frame < framesToSend; frame++) {
-	  size_t frameLen = remaining > 64 ? 64 : remaining;
-    txheader.Identifier = ID + frame;
+	size_t remaining = len;
+	for (size_t frame = 0; frame < framesToSend; frame++) {
+		size_t frameLen = remaining > 64 ? 64 : remaining;
+		txheader.Identifier = ID + frame;
 
-    // Length will be 64 bytes, except for the final frame,
-    // which will be minimum required for the remaining data
-    if (frame == framesToSend - 1) txheader.DataLength = FDGetModDLC(frameLen);
+		// Length will be 64 bytes, except for the final frame,
+		// which will be minimum required for the remaining data
+		if (frame == framesToSend - 1) txheader.DataLength = FDGetModDLC(frameLen);
 
 
 
-    const uint8_t* thisFrameData = msg + 64 * frame;
+		const uint8_t* thisFrameData = msg + 64 * frame;
 
-    remaining -= frameLen;
+		remaining -= frameLen;
 
-    uint32_t starting = HAL_GetTick();
-    while (HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < 1) {
-    	if(HAL_GetTick() - starting > timeout) {
+		uint32_t starting = HAL_GetTick();
+		while (HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < 1) {
+			if(HAL_GetTick() - starting > timeout) {
 #ifdef FDCAN_DEBUG
-    		SOAR_PRINT("timed out on waiting for TX FIFO free!\n");
+				SOAR_PRINT("timed out on waiting for TX FIFO free!\n");
 #endif
-    		return false;
-    	}
-    }
+				return false;
+			}
+		}
 
-    HAL_StatusTypeDef stat =
-        HAL_FDCAN_AddMessageToTxFifoQ(fdcan, &txheader, thisFrameData);
+		HAL_StatusTypeDef stat =
+				HAL_FDCAN_AddMessageToTxFifoQ(fdcan, &txheader, thisFrameData);
 
-    if (stat != HAL_OK) {
-      return false;
-    }
-  }
+		if (stat != HAL_OK) {
+			return false;
+		}
+	}
 
-  return true;
+	return true;
 }
 
 /* @brief Get a pointer to the RX buffer at an index.
@@ -156,98 +156,99 @@ FDCanController::RXBuffer* FDCanController::GetBackBufferFromCanID(uint16_t cani
 }
 
 /**
-  * @brief  Get an FDCAN frame from the Rx FIFO zone directly into the controller's back RX buf.
-  * Adapted from the HAL_GetRxMessage function
-  * @param  pRxHeader pointer to an output FDCAN_RxHeaderTypeDef structure.
-  * @retval HAL status
-  */
+ * @brief  Get an FDCAN frame from the Rx FIFO zone directly into the controller's back RX buf.
+ * Adapted from the HAL_GetRxMessage function
+ * @param  pRxHeader pointer to an output FDCAN_RxHeaderTypeDef structure.
+ * @retval HAL status
+ */
 HAL_StatusTypeDef FDCanController::GetRxMessageDirect(
-          FDCAN_RxHeaderTypeDef *pRxHeader)
+		FDCAN_RxHeaderTypeDef *pRxHeader)
 {
-  uint32_t *RxAddress;
-  uint8_t  *pData;
-  uint32_t ByteCounter;
-  uint32_t GetIndex = 0;
-  HAL_FDCAN_StateTypeDef state = fdcan->State;
+	uint32_t *RxAddress;
+	uint8_t  *pData;
+	uint32_t ByteCounter;
+	uint32_t GetIndex = 0;
+	HAL_FDCAN_StateTypeDef state = fdcan->State;
 
-  if (state == HAL_FDCAN_STATE_BUSY)
-  {
-      /* Check that the Rx FIFO 0 is not empty */
-      if ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0FL) == 0U)
-      {
-        /* Update error code */
-    	  fdcan->ErrorCode |= HAL_FDCAN_ERROR_FIFO_EMPTY;
+	if (state == HAL_FDCAN_STATE_BUSY)
+	{
+		/* Check that the Rx FIFO 0 is not empty */
+		if ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0FL) == 0U)
+		{
+			/* Update error code */
+			fdcan->ErrorCode |= HAL_FDCAN_ERROR_FIFO_EMPTY;
 
-        return HAL_ERROR;
-      }
-      else
-      {
+			return HAL_ERROR;
+		}
+		else
+		{
 
-        /* Check that the Rx FIFO 0 is full & overwrite mode is on */
-        if (((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0F) >> FDCAN_RXF0S_F0F_Pos) == 1U)
-        {
+			/* Check that the Rx FIFO 0 is full & overwrite mode is on */
+			if (((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0F) >> FDCAN_RXF0S_F0F_Pos) == 1U)
+			{
 
-          if (((fdcan->Instance->RXGFC & FDCAN_RXGFC_F0OM) >> FDCAN_RXGFC_F0OM_Pos) == FDCAN_RX_FIFO_OVERWRITE)
-          {
-            /* When overwrite status is on discard first message in FIFO */
-            GetIndex = 1U;
-          }
-        }
+				if (((fdcan->Instance->RXGFC & FDCAN_RXGFC_F0OM) >> FDCAN_RXGFC_F0OM_Pos) == FDCAN_RX_FIFO_OVERWRITE)
+				{
+					/* When overwrite status is on discard first message in FIFO */
+					GetIndex = 1U;
+				}
+			}
 
-        /* Calculate Rx FIFO 0 element index */
-        GetIndex += ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos);
+			/* Calculate Rx FIFO 0 element index */
+			GetIndex += ((fdcan->Instance->RXF0S & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos);
 
-        /* Calculate Rx FIFO 0 element address */
-        RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * (18U * 4U)));
-      }
+			/* Calculate Rx FIFO 0 element address */
+			RxAddress = (uint32_t *)(fdcan->msgRam.RxFIFO0SA + (GetIndex * (18U * 4U)));
+		}
 
-    // assume standard ID
-      pRxHeader->Identifier = ((*RxAddress & ((uint32_t)0x1FFC0000U)) >> 18U);
+		// assume standard ID
+		pRxHeader->Identifier = ((*RxAddress & ((uint32_t)0x1FFC0000U)) >> 18U);
 
 
-    /* Increment RxAddress pointer to second word of Rx FIFO element */
-    RxAddress++;
+		/* Increment RxAddress pointer to second word of Rx FIFO element */
+		RxAddress++;
 
-    /* Retrieve DataLength */
-    pRxHeader->DataLength = ((*RxAddress & ((uint32_t)0x000F0000U)) >> 16U);
+		/* Retrieve DataLength */
+		pRxHeader->DataLength = ((*RxAddress & ((uint32_t)0x000F0000U)) >> 16U);
 
-    /* Increment RxAddress pointer to payload of Rx FIFO element */
-    RxAddress++;
+		/* Increment RxAddress pointer to payload of Rx FIFO element */
+		RxAddress++;
 
-    /* Retrieve Rx payload */
-    pData = (uint8_t *)RxAddress;
-    RXBuffer* buf = GetBackBufferFromCanID(pRxHeader->Identifier);
-    uint8_t* pRxData = buf->data;
-    buf->available = true;
-    static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
-    for (ByteCounter = 0; ByteCounter < DLCtoBytes[pRxHeader->DataLength]; ByteCounter++)
-    {
-      pRxData[ByteCounter] = pData[ByteCounter];
-    }
+		/* Retrieve Rx payload */
+		pData = (uint8_t *)RxAddress;
+		RXBuffer* buf = GetBackBufferFromCanID(pRxHeader->Identifier);
+		uint8_t* pRxData = buf->data;
+		buf->available = true;
+		buf->stamp = HAL_GetTick();
+		static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
+		for (ByteCounter = 0; ByteCounter < DLCtoBytes[pRxHeader->DataLength]; ByteCounter++)
+		{
+			pRxData[ByteCounter] = pData[ByteCounter];
+		}
 
 #ifdef VERBOSE_FDCAN_DEBUG
-				SOAR_PRINT("got can msg id %lu\n",pRxHeader->Identifier);
-				SOAR_PRINT("putting in back rxbuf %p\n",((void*)rxbuf));
+		SOAR_PRINT("got can msg id %lu\n",pRxHeader->Identifier);
+		SOAR_PRINT("putting in back rxbuf %p\n",((void*)rxbuf));
 #endif
 
-      /* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
-    fdcan->Instance->RXF0A = GetIndex;
+		/* Acknowledge the Rx FIFO 0 that the oldest element is read so that it increments the GetIndex */
+		fdcan->Instance->RXF0A = GetIndex;
 
 #ifdef FDCAN_DEBUG
-    idReceiveTracker[pRxHeader->Identifier]++;
+		idReceiveTracker[pRxHeader->Identifier]++;
 #endif
 
-    RaiseFXFlag();
-    /* Return function status */
-    return HAL_OK;
-  }
-  else
-  {
-    /* Update error code */
-	  fdcan->ErrorCode |= HAL_FDCAN_ERROR_NOT_STARTED;
+		RaiseFXFlag();
+		/* Return function status */
+		return HAL_OK;
+	}
+	else
+	{
+		/* Update error code */
+		fdcan->ErrorCode |= HAL_FDCAN_ERROR_NOT_STARTED;
 
-    return HAL_ERROR;
-  }
+		return HAL_ERROR;
+	}
 }
 
 /* Overridden callback that fires when an RX message is received.
@@ -259,7 +260,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
 	{
 		FDCAN_RxHeaderTypeDef header;
-		while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
+		if(callbackcontroller) {
+			while(callbackcontroller->GetRxMessageDirect(&header) == HAL_OK);
+		}
 	}
 
 }
@@ -270,20 +273,20 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
  * @param fdcan Handle to FDCAN peripheral
  */
 FDCanController::FDCanController(FDCAN_HandleTypeDef *fdcan,
-                                 FDCanController::LogInitStruct *logs,
-                                 uint16_t numLogs) {
-  this->fdcan = fdcan;
+		FDCanController::LogInitStruct *logs,
+		uint16_t numLogs) {
+	this->fdcan = fdcan;
 
-  for(uint8_t i = 0; i < MAX_FDCAN_LOGS; i++) {
-	  selectedBufsForLog[i] = Buf_A;
-  }
-  RegisterLogs(logs, numLogs);
+	for(uint8_t i = 0; i < MAX_FDCAN_LOGS; i++) {
+		selectedBufsForLog[i] = Buf_A;
+	}
+	RegisterLogs(logs, numLogs);
 
 #ifdef FDCAN_DEBUG
-  memset(idReceiveTracker,0,sizeof(idReceiveTracker));
+	memset(idReceiveTracker,0,sizeof(idReceiveTracker));
 #endif
 
-  callbackcontroller = this;
+	callbackcontroller = this;
 }
 
 /* @brief Registers a filter that directs an FDCAN message ID to the FIFO, which
@@ -294,20 +297,20 @@ FDCanController::FDCanController(FDCAN_HandleTypeDef *fdcan,
  * @return HAL_OK on success.
  */
 HAL_StatusTypeDef FDCanController::RegisterFilterRXBuf(uint16_t startingID, uint16_t endingID) {
-  if (nextUnregisteredFilterID >= numFDFilters) {
-    return HAL_ERROR;
-  }
-  FDCAN_FilterTypeDef filter;
+	if (nextUnregisteredFilterID >= numFDFilters) {
+		return HAL_ERROR;
+	}
+	FDCAN_FilterTypeDef filter;
 
-  filter.IdType = FDCAN_STANDARD_ID;
-  filter.FilterType = FDCAN_FILTER_RANGE;
-  filter.FilterIndex = nextUnregisteredFilterID;
-  filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-  filter.FilterID1 = startingID;
-  filter.FilterID2 = endingID;
+	filter.IdType = FDCAN_STANDARD_ID;
+	filter.FilterType = FDCAN_FILTER_RANGE;
+	filter.FilterIndex = nextUnregisteredFilterID;
+	filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+	filter.FilterID1 = startingID;
+	filter.FilterID2 = endingID;
 
-  nextUnregisteredFilterID++;
-  return HAL_FDCAN_ConfigFilter(fdcan, &filter);
+	nextUnregisteredFilterID++;
+	return HAL_FDCAN_ConfigFilter(fdcan, &filter);
 }
 
 
@@ -317,26 +320,26 @@ HAL_StatusTypeDef FDCanController::RegisterFilterRXBuf(uint16_t startingID, uint
  * @return Total byte size representable by series of valid FDCAN frame sizes.
  */
 uint16_t FDCanController::FDRoundDataSize(uint16_t unroundedLen) {
-  uint8_t mod = (unroundedLen - 1) % 64 + 1;
+	uint8_t mod = (unroundedLen - 1) % 64 + 1;
 
-  // Round up remainder
-  if (mod <= 8) {
-  } else if (mod <= 12)
-    mod = 12;
-  else if (mod <= 16)
-    mod = 16;
-  else if (mod <= 20)
-    mod = 20;
-  else if (mod <= 24)
-    mod = 24;
-  else if (mod <= 32)
-    mod = 32;
-  else if (mod <= 48)
-    mod = 48;
-  else
-    mod = 64;
+	// Round up remainder
+	if (mod <= 8) {
+	} else if (mod <= 12)
+		mod = 12;
+	else if (mod <= 16)
+		mod = 16;
+	else if (mod <= 20)
+		mod = 20;
+	else if (mod <= 24)
+		mod = 24;
+	else if (mod <= 32)
+		mod = 32;
+	else if (mod <= 48)
+		mod = 48;
+	else
+		mod = 64;
 
-  return (unroundedLen - 1) / 64 * 64 + mod;
+	return (unroundedLen - 1) / 64 * 64 + mod;
 }
 
 /* @brief Returns the FDCAN DLC code of the final frame required to send a msg
@@ -345,16 +348,16 @@ uint16_t FDCanController::FDRoundDataSize(uint16_t unroundedLen) {
  * @return Valid FDCAN_DLC_BYTES value capable of containing final frame size
  */
 uint32_t FDCanController::FDGetModDLC(uint16_t unroundedLen) {
-  uint8_t mod = (unroundedLen - 1) % 64 + 1;
+	uint8_t mod = (unroundedLen - 1) % 64 + 1;
 
-  if (mod <= 8) return mod;
-  if (mod <= 12) return FDCAN_DLC_BYTES_12;
-  if (mod <= 16) return FDCAN_DLC_BYTES_16;
-  if (mod <= 20) return FDCAN_DLC_BYTES_20;
-  if (mod <= 24) return FDCAN_DLC_BYTES_24;
-  if (mod <= 32) return FDCAN_DLC_BYTES_32;
-  if (mod <= 48) return FDCAN_DLC_BYTES_48;
-  return FDCAN_DLC_BYTES_64;
+	if (mod <= 8) return mod;
+	if (mod <= 12) return FDCAN_DLC_BYTES_12;
+	if (mod <= 16) return FDCAN_DLC_BYTES_16;
+	if (mod <= 20) return FDCAN_DLC_BYTES_20;
+	if (mod <= 24) return FDCAN_DLC_BYTES_24;
+	if (mod <= 32) return FDCAN_DLC_BYTES_32;
+	if (mod <= 48) return FDCAN_DLC_BYTES_48;
+	return FDCAN_DLC_BYTES_64;
 }
 
 /* @brief Returns the length in bytes corresponding to a given FDCAN DLC value.
@@ -398,23 +401,23 @@ inline void FDCanController::RaiseFXFlag() { RXFlag = true; }
  * is unmodified.
  */
 uint16_t FDCanController::ReceiveFirstLogFromRXBuf(uint8_t *out,
-                                                   uint16_t *logID) {
-  if (!RXFlag) {
-    return 0;
-  }
-  for (uint8_t i = 0; i < numRegisteredLogs; i++) {
-    uint16_t len = ReceiveLogIndexFromRXBuf(out, i);
-    if (len > 0) {
-      // data now contains entire multi-frame log, potentially padded with
-      // some 0s
-      // Received full log
-      *logID = i;
-      return len;
-    }
-  }
-  // Found nothing
-  RXFlag = false;
-  return 0;
+		uint16_t *logID) {
+	if (!RXFlag) {
+		return 0;
+	}
+	for (uint8_t i = 0; i < numRegisteredLogs; i++) {
+		uint16_t len = ReceiveLogIndexFromRXBuf(out, i);
+		if (len > 0) {
+			// data now contains entire multi-frame log, potentially padded with
+			// some 0s
+			// Received full log
+			*logID = i;
+			return len;
+		}
+	}
+	// Found nothing
+	RXFlag = false;
+	return 0;
 }
 
 
@@ -426,68 +429,76 @@ uint16_t FDCanController::ReceiveFirstLogFromRXBuf(uint8_t *out,
  * @return The size of the data returned in bytes, or zero if no log was read.
  */
 uint16_t FDCanController::ReceiveLogIndexFromRXBuf(uint8_t *out, uint16_t logIndex) {
-  if (!RXFlag || logIndex >= numRegisteredLogs)  {
+	if (!RXFlag || logIndex >= numRegisteredLogs)  {
 #ifdef VERBOSE_FDCAN_DEBUG
 
-	  SOAR_PRINT("didn't receive. rxflag: %d, logindex: %d\n",RXFlag,logIndex);
+		SOAR_PRINT("didn't receive. rxflag: %d, logindex: %d\n",RXFlag,logIndex);
 
 #endif
-	  return 0;
-  }
+		return 0;
+	}
 
-  const LogRegister &thisRegisteredLog = registeredLogs[logIndex];
-  if (thisRegisteredLog.byteLength == 0)  {
+	const LogRegister &thisRegisteredLog = registeredLogs[logIndex];
+	if (thisRegisteredLog.byteLength == 0)  {
 #ifdef VERBOSE_FDCAN_DEBUG
-	  SOAR_PRINT("didn't receive. bytelength was zero\n");
+		SOAR_PRINT("didn't receive. bytelength was zero\n");
 #endif
-	  return 0;
-  }
+		return 0;
+	}
 
 
-  SelectedBuffer currentFront = selectedBufsForLog[logIndex];
-  SelectedBuffer currentBack = (currentFront == Buf_A ? Buf_B : Buf_A);
-  RXBuffer* backbuf = (currentBack == Buf_A) ? buffersA : buffersB;
-
-  // check if all ready
-  __disable_irq();
-  bool allReady = true;
-  for(uint8_t b = thisRegisteredLog.startingRXBuf; b <= thisRegisteredLog.endingRXBuf; b++) {
-    if(!backbuf[b].available) {
+	SelectedBuffer currentFront = selectedBufsForLog[logIndex];
+	SelectedBuffer currentBack = (currentFront == Buf_A ? Buf_B : Buf_A);
+	RXBuffer* backbuf = (currentBack == Buf_A) ? buffersA : buffersB;
+	uint32_t thisTick = HAL_GetTick();
+	// check if all ready
+	__disable_irq();
+	bool allReady = true;
+	for(uint8_t b = thisRegisteredLog.startingRXBuf; b <= thisRegisteredLog.endingRXBuf; b++) {
+		if(!backbuf[b].available) {
 #ifdef VERBOSE_FDCAN_DEBUG
-    	SOAR_PRINT("buffer %d of %d/%d wasnt ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
+			SOAR_PRINT("buffer %d of %d/%d wasnt ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
 #endif
-      allReady = false;
-      break;
-    }
-  }
+			allReady = false;
+			break;
+		}
 
-  if(!allReady) {
-    __enable_irq();
+		if(thisTick - backbuf[b].stamp > BUFFER_AVAILABILITY_TIMEOUT_TICKS) {
+			backbuf[b].available = false;
+#ifdef FDCAN_DEBUG_VERBOSE
+			SOAR_PRINT("buffer %d of %d/%d timed out ready, waiting for canid %d\n",b,thisRegisteredLog.startingRXBuf,thisRegisteredLog.endingRXBuf, thisRegisteredLog.startingMsgID+b-thisRegisteredLog.startingRXBuf);
+#endif
+			break;
+		}
+	}
+
+	if(!allReady) {
+		__enable_irq();
 #ifdef VERBOSE_FDCAN_DEBUG
 
-    SOAR_PRINT("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
+		SOAR_PRINT("didn't receive, wasnt all ready in log %d. frontbuf: %d, backbuf: %d\n",logIndex, currentFront, currentBack);
 
 #endif
-    return 0;
-  }
+		return 0;
+	}
 
-  // swap!!!!!!!
-  selectedBufsForLog[logIndex] = currentBack;
-  __enable_irq();
+	// swap!!!!!!!
+	selectedBufsForLog[logIndex] = currentBack;
+	__enable_irq();
 
-  uint8_t *d = out;
-  for (uint8_t b = thisRegisteredLog.startingRXBuf; b <= thisRegisteredLog.endingRXBuf; b++) {
-    uint8_t copyLen = (b == thisRegisteredLog.endingRXBuf)
-                      ? ((thisRegisteredLog.byteLength - 1) % 64 + 1)
-                      : 64;
-    memcpy(d, backbuf[b].data, copyLen);
+	uint8_t *d = out;
+	for (uint8_t b = thisRegisteredLog.startingRXBuf; b <= thisRegisteredLog.endingRXBuf; b++) {
+		uint8_t copyLen = (b == thisRegisteredLog.endingRXBuf)
+                    				  ? ((thisRegisteredLog.byteLength - 1) % 64 + 1)
+                    						  : 64;
+		memcpy(d, backbuf[b].data, copyLen);
 
-    // Mark as consumed so it can be used again when the ISR eventually swaps back
-    backbuf[b].available = false;
-    d += 64;
-  }
+		// Mark as consumed so it can be used again when the ISR eventually swaps back
+		backbuf[b].available = false;
+		d += 64;
+	}
 
-  return thisRegisteredLog.byteLength;
+	return thisRegisteredLog.byteLength;
 }
 
 /* @brief Sends a log message to a registered buffer.
@@ -500,8 +511,8 @@ bool FDCanController::SendByLogIndex(const uint8_t *msg, uint16_t logIndex) {
 		return false;
 	}
 	//SOAR_PRINT("in controller, sending message length %d message ID %d\n",registeredLogs[logIndex].byteLength,registeredLogs[logIndex].startingMsgID);
-  return SendByMsgID(msg, registeredLogs[logIndex].byteLength,
-                     registeredLogs[logIndex].startingMsgID);
+	return SendByMsgID(msg, registeredLogs[logIndex].byteLength,
+			registeredLogs[logIndex].startingMsgID);
 }
 
 /* @brief Registers log types to the driver so that they can be sent and received.
@@ -510,14 +521,14 @@ bool FDCanController::SendByLogIndex(const uint8_t *msg, uint16_t logIndex) {
  * @return HAL_OK if successful
  */
 HAL_StatusTypeDef FDCanController::RegisterLogs(LogInitStruct *logs, uint16_t numLogs) {
+	if(numRegisteredLogs + numLogs > MAX_FDCAN_LOGS) return HAL_ERROR;
+	for(uint16_t i = 0; i < numLogs; i++) {
+		registeredLogs[numRegisteredLogs].startingMsgID = logs[i].startingMsgID;
+		registeredLogs[numRegisteredLogs].byteLength = logs[i].byteLength;
+		numRegisteredLogs++;
+	}
 
-	  for(uint16_t i = 0; i < numLogs; i++) {
-		  if(!AddLogType(logs[i])) {
-			  return HAL_ERROR;
-		  }
-	  }
-
-	  return HAL_OK;
+	return RebuildFilters() ? HAL_OK : HAL_ERROR;
 }
 
 
@@ -551,7 +562,7 @@ bool FDCanController::AddLogType(LogInitStruct log) {
 
 	numRegisteredLogs++;
 
-	return RebuildFilters();
+	return true;
 }
 
 bool FDCanController::RemoveLogIndices(const uint8_t* indices, uint8_t count) {
@@ -566,19 +577,24 @@ bool FDCanController::RemoveLogIndices(const uint8_t* indices, uint8_t count) {
 			}
 		}
 		if(!istoberemoved) {
-		registeredLogsMutable[c++] = registeredLogs[i];
+			registeredLogsMutable[c++] = registeredLogs[i];
 		}
 	}
 
 	numRegisteredLogs = c;
 
+	memcpy(registeredLogs, registeredLogsMutable, c * sizeof(LogRegister));
+
 	return RebuildFilters();
 }
 
+#ifndef USE_MERGED_FILTERS
 /* @brief Rebuilds the FDCAN peripheral filters and restarts it.
  * @return true on success.
  */
 bool FDCanController::RebuildFilters() {
+	while(HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < fdcan->Init.TxFifoQueueElmtsNbr);
+
 	numFDFilters = numRegisteredLogs;
 	memset(buffersByCanID,0x00,sizeof(buffersByCanID));
 
@@ -620,13 +636,93 @@ bool FDCanController::RebuildFilters() {
 		}
 
 	}
-	 HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
-	 HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
-	 HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_TX_COMPLETE, 0);
+	HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
+	HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE |FDCAN_IT_TX_COMPLETE, 0);
 
-	 return HAL_FDCAN_Start(fdcan) == HAL_OK;
+	return HAL_FDCAN_Start(fdcan) == HAL_OK;
 
 }
+#else
+/* @brief Rebuilds the FDCAN peripheral filters and restarts it.
+ * @return true on success.
+ */
+bool FDCanController::RebuildFilters() {
+	uint32_t start = HAL_GetTick();
+	while(HAL_FDCAN_GetTxFifoFreeLevel(fdcan) < 3 && HAL_GetTick()-start < 500);
+
+	numFDFilters = numRegisteredLogs;
+	memset(buffersByCanID,0x00,sizeof(buffersByCanID));
+
+	fdcan->Init.StdFiltersNbr = numFDFilters;
+
+	if(HAL_FDCAN_DeInit(fdcan) != HAL_OK) {
+		CANError();
+	}
+	if(HAL_FDCAN_Init(fdcan) != HAL_OK) {
+		CANError();
+	}
+	nextUnregisteredFilterID = 0;
+	uint8_t nextRXBuf = 0;
+
+	for(uint8_t i = 0; i < numRegisteredLogs; i++) {
+		uint16_t msgID = registeredLogs[i].startingMsgID;
+		uint16_t len = registeredLogs[i].byteLength;
+
+		uint8_t frames = (len-1)/64+1;
+
+		registeredLogs[i].startingRXBuf = nextRXBuf;
+		registeredLogs[i].endingRXBuf = nextRXBuf+frames-1;
+
+		for(uint16_t canid = msgID; canid <= msgID+frames-1; canid++) {
+			buffersByCanID[canid].A = &buffersA[registeredLogs[i].startingRXBuf + canid - msgID];
+			buffersByCanID[canid].B = &buffersB[registeredLogs[i].startingRXBuf + canid - msgID];
+			buffersByCanID[canid].logOwnerSelection = &selectedBufsForLog[i];
+		}
+
+		nextRXBuf += frames;
+		if(nextRXBuf > MAX_FDCAN_RX_BUFFERS) {
+			return false;
+		}
+
+	}
+
+	struct RangeForSorting {
+		uint16_t startmsgid;
+		uint16_t lastmsgid;
+	};
+	RangeForSorting logsforsorting[numRegisteredLogs];
+	for(uint16_t i = 0; i < numRegisteredLogs; i++) {
+		logsforsorting[i] = {registeredLogs[i].startingMsgID,registeredLogs[i].startingMsgID+registeredLogs[i].endingRXBuf-registeredLogs[i].startingRXBuf};
+	}
+	std::sort(logsforsorting, logsforsorting + numRegisteredLogs, [](const RangeForSorting a, const RangeForSorting b) {return a.lastmsgid < b.startmsgid;});
+
+	RangeForSorting mergedranges[numRegisteredLogs];
+	mergedranges[0] = logsforsorting[0];
+	uint16_t nummerged = 0;
+	for(uint16_t i = 1; i < numRegisteredLogs; i++) {
+		const RangeForSorting b = logsforsorting[i];
+		if(mergedranges[nummerged].lastmsgid == b.startmsgid - 1) {
+			mergedranges[nummerged].lastmsgid = b.lastmsgid;
+		} else {
+			nummerged++;
+			mergedranges[nummerged] = b;
+		}
+	}
+
+	for (uint16_t i = 0; i < nummerged+1; i++) {
+		if(RegisterFilterRXBuf(mergedranges[i].startmsgid, mergedranges[i].lastmsgid) != HAL_OK) {
+			return false;
+		}
+	}
+
+
+	HAL_FDCAN_ConfigGlobalFilter(fdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
+	HAL_FDCAN_ActivateNotification(fdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE |FDCAN_IT_TX_COMPLETE, 0);
+
+	return HAL_FDCAN_Start(fdcan) == HAL_OK;
+
+}
+#endif
 
 
 bool FDCanController::DiscardLog(uint16_t index) {
