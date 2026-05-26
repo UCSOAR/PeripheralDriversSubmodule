@@ -18,6 +18,9 @@ AirbrakesDriver::AirbrakesDriver(TIM_HandleTypeDef* servoPWMTimerHandle,
  * Resets current latch and monitors for runaway current for 250ms.
  */
 void AirbrakesDriver::Enable() {
+	if(enabled) {
+		return;
+	}
 	HAL_TIM_PWM_Start(servoPWMTimer, TIM_CHANNEL_1);
 	HAL_ADC_Start(servoADCHandle);
 
@@ -41,16 +44,21 @@ void AirbrakesDriver::Enable() {
 		}
 		HAL_Delay(1);
 	}
+	vel = 0;
 	enabled = true;
 }
 
 /* @brief Disables the driver. Stops ADC sampling and PWM output and disables current.
  */
 void AirbrakesDriver::Disable() {
+	if(!enabled) {
+		return;
+	}
 	HAL_GPIO_WritePin(servoENPort, servoENPin, GPIO_PIN_RESET);
 	HAL_TIM_PWM_Stop(servoPWMTimer, TIM_CHANNEL_1);
 	HAL_ADC_Stop(servoADCHandle);
 	HAL_GPIO_WritePin(servoLatchResetPort, servoLatchResetPin, GPIO_PIN_RESET);
+	vel = 0;
 	enabled = false;
 }
 
@@ -63,7 +71,9 @@ bool AirbrakesDriver::SetTargetLevel(uint8_t level) {
 		return false;
 	}
 
-	return SetTargetDutyCycle(static_cast<float>(level)/(AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1)*(0.0025*hz-0.0005*hz)+0.0005*hz);
+	hit = false;
+	vel = 0;
+	return SetTargetDutyCycle(static_cast<float>(level)/(AIRBRAKES_NUM_DEPLOYMENT_LEVELS-1)*(0.0025*hz-0.0005*hz)/2.1+0.0005*hz);
 }
 
 /* @brief Set the airbrake target duty cycle directly.
@@ -76,6 +86,8 @@ bool AirbrakesDriver::SetTargetDutyCycle(float dutyFrac) {
 		return false;
 	}
 	targetDutyCycle = dutyFrac;
+	hit = false;
+	vel = 0;
 	return true;
 }
 
@@ -98,17 +110,27 @@ float AirbrakesDriver::ReadVoltsADC() {
  */
 bool AirbrakesDriver::TickControlLoop() {
 
-	if(!CurrentGood() || !IsEnabled()) {
+	if(!IsEnabled()) {
+		return false;
+	}
+	if(!CurrentGood()) {
 		Disable();
 		return false;
 	}
 
+	if(hit) {
+		return true;
+	}
 
-    const static float MAX_VELOCITY = 0.04;
-    const static float MAX_ACCEL = 0.0007;
+
+    const static float MAX_VELOCITY = 0.0008;
+    const static float MAX_ACCEL = 0.000035;
+
+    const static float ABS_MIN = 0.000515;
+    const static float ABS_MAX = 0.002485 / 2.1;
 
     float distance = targetDutyCycle - currentDutyCycle;
-    float ideal_vel = sqrtf(2.0 * MAX_ACCEL * fabsf(distance))-MAX_ACCEL;
+    float ideal_vel = sqrtf(2.0 * MAX_ACCEL * fabsf(distance));
 
     if (distance < 0) {
         ideal_vel = -ideal_vel;
@@ -134,7 +156,19 @@ bool AirbrakesDriver::TickControlLoop() {
 
     currentDutyCycle += vel;
 
+    if(currentDutyCycle < ABS_MIN*hz) {
+    	currentDutyCycle = ABS_MIN*hz;
+    }
+    if(currentDutyCycle > ABS_MAX*hz) {
+    	currentDutyCycle = ABS_MAX*hz;
+    }
+
 	servoPWMTimer->Instance->CCR1 = round(servoPWMTimer->Instance->ARR * currentDutyCycle);
+
+	if(abs(currentDutyCycle-targetDutyCycle) < MAX_VELOCITY) {
+		hit = true;
+		vel = 0;
+	}
 
 	return true;
 

@@ -2,8 +2,8 @@
 #define _AIRBRAKES_HPP_
 
 #include "stm32g4xx.h"
-#define AIRBRAKES_NUM_DEPLOYMENT_LEVELS 10
-#define AIRBRAKES_MAX_CURRENT_AMPS 3.0
+#define AIRBRAKES_NUM_DEPLOYMENT_LEVELS 9
+#define AIRBRAKES_MAX_CURRENT_AMPS 10.0
 
 class AirbrakesDriver {
 public:
@@ -56,6 +56,8 @@ private:
 	bool enabled = false;
 
 	const float hz;
+
+	bool hit = false;
 
 
 };
