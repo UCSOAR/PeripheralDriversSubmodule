@@ -1,7 +1,16 @@
 #ifndef MAX31856_DRIVER_HPP_
 #define MAX31856_DRIVER_HPP_
 
-#include "stm32h7xx_hal.h"
+#if __has_include("stm32g4xx_hal.h")
+    #include "stm32g4xx_hal.h"
+#elif __has_include("stm32h7xx_hal.h")
+    #include "stm32h7xx_hal.h"
+#else
+    #error "STM HAL Header found"
+#endif
+
+
+
 #include "MAX31856_regs.hpp"
 #include <stdint.h>
 
