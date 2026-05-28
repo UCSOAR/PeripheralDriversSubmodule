@@ -59,6 +59,17 @@ private:
 
 	bool hit = false;
 
+	void SetHardwareCycle() {
+		servoPWMTimer->Instance->CCR1 = round(servoPWMTimer->Instance->ARR * currentDutyCycle);
+	}
+
+
+    constexpr static float MAX_VELOCITY = 0.0008;
+    constexpr static float MAX_ACCEL = 0.000035;
+
+    constexpr static float ABS_MIN = 0.000515;
+    constexpr static float ABS_MAX = 0.002485 / 2.1;
+
 
 };
 

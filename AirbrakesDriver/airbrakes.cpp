@@ -21,6 +21,7 @@ void AirbrakesDriver::Enable() {
 	if(enabled) {
 		return;
 	}
+
 	HAL_TIM_PWM_Start(servoPWMTimer, TIM_CHANNEL_1);
 	HAL_ADC_Start(servoADCHandle);
 
@@ -37,7 +38,7 @@ void AirbrakesDriver::Enable() {
 	HAL_Delay(10);
 
 	// Immediately stop if current starts running away
-	for(uint16_t i = 0; i < 250; i++) {
+	for(uint16_t i = 0; i < 100; i++) {
 		if(!CurrentGood()) {
 			Disable();
 			return;
@@ -113,6 +114,7 @@ bool AirbrakesDriver::TickControlLoop() {
 	if(!IsEnabled()) {
 		return false;
 	}
+
 	if(!CurrentGood()) {
 		Disable();
 		return false;
@@ -123,11 +125,6 @@ bool AirbrakesDriver::TickControlLoop() {
 	}
 
 
-    const static float MAX_VELOCITY = 0.0008;
-    const static float MAX_ACCEL = 0.000035;
-
-    const static float ABS_MIN = 0.000515;
-    const static float ABS_MAX = 0.002485 / 2.1;
 
     float distance = targetDutyCycle - currentDutyCycle;
     float ideal_vel = sqrtf(2.0 * MAX_ACCEL * fabsf(distance));
@@ -163,7 +160,7 @@ bool AirbrakesDriver::TickControlLoop() {
     	currentDutyCycle = ABS_MAX*hz;
     }
 
-	servoPWMTimer->Instance->CCR1 = round(servoPWMTimer->Instance->ARR * currentDutyCycle);
+    SetHardwareCycle();
 
 	if(abs(currentDutyCycle-targetDutyCycle) < MAX_VELOCITY) {
 		hit = true;
