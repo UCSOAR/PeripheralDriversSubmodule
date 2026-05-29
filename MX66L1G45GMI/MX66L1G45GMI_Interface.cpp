@@ -12,7 +12,7 @@
  ************************************/
 #include "MX66L1G45GMI.hpp"
 #include "DMATransfer.hpp"
-#include "stm32g4xx_hal.h"
+#include "stm32h7xx.h"
 
 #include "main.h"
 
