@@ -1,7 +1,7 @@
 #include "IRCTramp.hpp"
+#include "stm32g4xx_ll_usart.h"
 
-
-bool IRCTramp::SetVTXFrequency(FREQUENCY freq, UART_HandleTypeDef* uart) {
+bool IRCTramp::SetVTXFrequency(FREQUENCY freq, USART_TypeDef* uart) {
 
 	uint8_t tx_buffer[16];
 	uint8_t checksum = 0;
@@ -32,10 +32,15 @@ bool IRCTramp::SetVTXFrequency(FREQUENCY freq, UART_HandleTypeDef* uart) {
 	}
 	tx_buffer[15] = checksum;
 
-	return HAL_UART_Transmit(uart, tx_buffer, sizeof(tx_buffer), 1000) == HAL_OK;
+	for(uint8_t i = 0; i < sizeof(tx_buffer); i++) {
+		LL_USART_TransmitData8(uart, tx_buffer[i]);
+		while (!LL_USART_IsActiveFlag_TXE(uart));
+	}
+
+	return true;
 }
 
-bool IRCTramp::SetVTXPower(POWER power, UART_HandleTypeDef* uart) {
+bool IRCTramp::SetVTXPower(POWER power, USART_TypeDef* uart) {
 	uint8_t tx_buffer[16];
 	uint8_t checksum = 0;
 
@@ -74,6 +79,10 @@ bool IRCTramp::SetVTXPower(POWER power, UART_HandleTypeDef* uart) {
 	}
 	tx_buffer[15] = checksum;
 
-	return HAL_UART_Transmit(uart, tx_buffer, sizeof(tx_buffer), 1000) == HAL_OK;
+	for(uint8_t i = 0; i < sizeof(tx_buffer); i++) {
+		LL_USART_TransmitData8(uart, tx_buffer[i]);
+		while (!LL_USART_IsActiveFlag_TXE(uart));
+	}
+	return true;
 }
 

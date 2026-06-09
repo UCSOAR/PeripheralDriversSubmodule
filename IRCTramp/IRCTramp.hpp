@@ -29,8 +29,8 @@ enum POWER {
 	POWER_4W
 };
 
-bool SetVTXFrequency(FREQUENCY freq, UART_HandleTypeDef* uart);
-bool SetVTXPower(POWER power, UART_HandleTypeDef* uart);
+bool SetVTXFrequency(FREQUENCY freq, USART_TypeDef* uart);
+bool SetVTXPower(POWER power, USART_TypeDef* uart);
 
 }
 
