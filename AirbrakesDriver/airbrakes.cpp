@@ -166,6 +166,14 @@ bool AirbrakesDriver::CurrentGood() {
 	return CheckComparatorGood() && (ADCVoltsToCurrent(ReadVoltsADC()) <= AIRBRAKES_MAX_CURRENT_AMPS);
 }
 
+bool AirbrakesDriver::OverrideCurrentLevel(uint16_t lvl) {
+	if(SetTargetLevel(lvl)) {
+		currentDutyCycle = targetDutyCycle;
+		SetHardwareCycle();
+		return true;
+	}
+	return false;
+}
 
 /* @brief Checks the state of the hardware failsafe latch.
  * @return true if the latch is good, i.e. current limit has not been triggered
