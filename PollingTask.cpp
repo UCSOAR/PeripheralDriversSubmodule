@@ -97,8 +97,9 @@ uint32_t PollingTask::GetPollingPeriodMs(RocketState state)
 		LoggingService::StopLogging();
 		return 0;
 	case RocketState::RS_FILL:
+		// During fill, sample sensors at a conservative high rate (100 Hz = 10 ms)
 		LoggingService::StartLogging();
-		return kGroundPollMs;
+		return 10;
 	case RocketState::RS_PRELAUNCH:
 		LoggingService::StartLogging();
 		return kGroundPollMs;
@@ -123,6 +124,13 @@ uint32_t PollingTask::GetPollingPeriodMs(RocketState state)
 	case RocketState::RS_DESCENT:
 		LoggingService::StartLogging();
 		return kDescentPollMs;
+	case RocketState::RS_TOUCHDOWN:
+		// On touchdown, stop high-rate logging and let higher-level recovery handle transfers
+		LoggingService::StopLogging();
+		return 0;
+	case RocketState::RS_BRAKING:
+		LoggingService::StartLogging();
+		return kCoastPollMs;
 	case RocketState::RS_RECOVERY:
 		LoggingService::StartLogging();
 		return kRecoveryPollMs;
@@ -192,9 +200,15 @@ bool PollingTask::DecodeRocketStateFromCan(uint8_t rawState, RocketState& outSta
 	case static_cast<uint8_t>(RocketState::RS_COAST):
 		outState = RocketState::RS_COAST;
 		return true;
+    case static_cast<uint8_t>(RocketState::RS_BRAKING):
+        outState = RocketState::RS_BRAKING;
+        return true;
 	case static_cast<uint8_t>(RocketState::RS_DESCENT):
 		outState = RocketState::RS_DESCENT;
 		return true;
+    case static_cast<uint8_t>(RocketState::RS_TOUCHDOWN):
+        outState = RocketState::RS_TOUCHDOWN;
+        return true;
 	case static_cast<uint8_t>(RocketState::RS_RECOVERY):
 		outState = RocketState::RS_RECOVERY;
 		return true;

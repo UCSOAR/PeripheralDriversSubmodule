@@ -32,14 +32,14 @@ enum RocketState
 
     //-- GROUND --
     // Manual venting allowed at all times
-    RS_PRELAUNCH = 0,   // Idle state, waiting for command to proceeding sequences
-    RS_FILL,        // N2 Prefill/Purge/Leak-check/Load-cell Tare check sub-sequences, full control of valves (except MEV) allowed
-    RS_ARM,         // We don't allow fill etc. 1-2 minutes before launch : Cannot fill rocket with N2 etc. unless you return to FILL
+	RS_PRELAUNCH = 0,   // Idle state, waiting for command to proceeding sequences
+	RS_FILL = 1,        // N2 Prefill/Purge/Leak-check/Load-cell Tare check sub-sequences, full control of valves (except MEV) allowed
+	RS_ARM = 2,         // We don't allow fill etc. 1-2 minutes before launch : Cannot fill rocket with N2 etc. unless you return to FILL
                     // Power Transition, Fill-Arm Disconnect Sub-sequences (you should be able to revert the power transition)
 
     //-- IGNITION -- Manual venting NOT ALLOWED
-    RS_IGNITION,    // Ignition of the ignitors
-    RS_LAUNCH,      // Launch triggered by confirmation of ignition (from ignitor) is nominal : MEV Open Sequence
+	RS_IGNITION = 3,    // Ignition of the ignitors
+	RS_LAUNCH = 4,      // Launch triggered by confirmation of ignition (from ignitor) is nominal : MEV Open Sequence
 
     //-- BURN --
     // Vents should stay closed, manual venting NOT ALLOWED
@@ -47,24 +47,27 @@ enum RocketState
     // (can we maybe have the code change the true default state by overwriting EEPROM?)
     // Ideally we don't want to EVER exceed 7 seconds of burn time (we should store this time at the very least - split into 1 sub-stage for each second if necessary).
     // For timing we want ~1/10th of a second or better.
-    RS_BURN,        // Main burn (vents closed MEV open) - 5-6 seconds (TBD) :
+	RS_BURN = 5,        // Main burn (vents closed MEV open) - 5-6 seconds (TBD) :
 
 
     //-- COAST --
     // Manual venting NOT ALLOWED -- Note: MEV never closes!
-    RS_COAST,       // Coasting (MEV closed, vents closed) - 30 seconds (TBD) ^ Vents closed applies here too, in part. Includes APOGEE
+	RS_COAST = 6,       // Coasting (MEV closed, vents closed) - 30 seconds (TBD) ^ Vents closed applies here too, in part. Includes APOGEE
 
-    //-- DESCENT / POSTAPOGEE --
-    // Automatic Venting AND Vent Control ALLOWED
-    RS_DESCENT,  // Vents open (well into the descent)
-    RS_RECOVERY,  // Vents open, MEV closed, transmit all data over radio and accept vent commands
+	RS_BRAKING = 7,     // Air Brakes Open - Transition to Descent after apogee event
+
+	//-- DESCENT / POSTAPOGEE --
+	// Automatic Venting AND Vent Control ALLOWED
+	RS_DESCENT = 8,  // Vents open (well into the descent)
+	RS_TOUCHDOWN = 9,  // Vents open, transmit all data over radio and accept vent commands
+	RS_RECOVERY = 10,  // Vents open, MEV closed, transmit all data over radio and accept vent commands
                   // Supports general commands (e.g. venting) and logs/transmits slowly (maybe stop logging after close to full memory?)
 
     //-- RECOVERY / TECHNICAL --
-    RS_ABORT,       // Abort sequence, vents open, MEV closed, ignitors off
-    RS_TEST,        // Test, between ABORT and PRE-LAUNCH, has full control of all GPIOs
+	RS_ABORT = 11,       // Abort sequence, vents open, MEV closed, ignitors off
+	RS_TEST = 12,        // Test, between ABORT and PRE-LAUNCH, has full control of all GPIOs
 
-    RS_NONE         // Invalid state, must be last
+	RS_NONE = 13         // Invalid state, must be last
 };
 
 
