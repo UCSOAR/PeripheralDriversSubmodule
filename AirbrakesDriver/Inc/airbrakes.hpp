@@ -2,8 +2,8 @@
 #define _AIRBRAKES_HPP_
 
 #include "stm32g4xx.h"
-#define AIRBRAKES_NUM_DEPLOYMENT_LEVELS 10
-#define AIRBRAKES_MAX_CURRENT_AMPS 3.0
+#define AIRBRAKES_NUM_DEPLOYMENT_LEVELS 9
+#define AIRBRAKES_MAX_CURRENT_AMPS 10.0
 
 class AirbrakesDriver {
 public:
@@ -23,6 +23,8 @@ public:
 	inline bool IsEnabled() const {
 		return enabled;
 	}
+
+	bool OverrideCurrentLevel(uint16_t lvl);
 
 
 private:
@@ -56,6 +58,19 @@ private:
 	bool enabled = false;
 
 	const float hz;
+
+	bool hit = false;
+
+	void SetHardwareCycle() {
+		servoPWMTimer->Instance->CCR1 = round(servoPWMTimer->Instance->ARR * currentDutyCycle);
+	}
+
+
+    constexpr static float MAX_VELOCITY = 0.0008;
+    constexpr static float MAX_ACCEL = 0.00002;
+
+    constexpr static float ABS_MIN = 0.000515;
+    constexpr static float ABS_MAX = 0.002485 / 2.1;
 
 
 };
