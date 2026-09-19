@@ -8,7 +8,6 @@
 #define MMC5983MA_HPP
 #include "SensorDataTypes.hpp"
 #include "mmc5983ma_regs.hpp"
-#include "spi_wrapper.hpp" 
 #include <cstdint>
 // if needed: fw declaration for the SPIClass from HAL/SPI wrapper, 
 // class SPIClass; 

@@ -6,7 +6,6 @@
 
 #include "mmc5983ma.hpp"
 #include "mmc5983ma_regs.hpp"
-#include "spi_wrapper.hpp" 
 #include "stm32h7xx_hal_gpio.h"
 #include "SensorDataTypes.hpp"
 #include "main.h"
