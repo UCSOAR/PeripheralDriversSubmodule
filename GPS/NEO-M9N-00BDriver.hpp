@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "SensorDataTypes.hpp"
+#include "cmsis_os.h"
 
 
 #define CFG_SPI_CPOL 0x10640002 //KeyID to Configure Clock Polarity
@@ -35,7 +36,7 @@ public:
 	NEOM9N00B();
 
 	bool Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, uint16_t csPin);
-	bool getGGALine(char* lineBuf);
+	bool getGGALine(char* lineBuf, uint32_t timeoutMs = 5000);
 	void ParseGpsData(GPSData* data);
 
 private:
