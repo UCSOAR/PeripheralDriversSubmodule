@@ -1,5 +1,6 @@
 
 #include "NEO-M9N-00BDriver.hpp"
+#include "SystemDefines.hpp"
 #include <cstring>
 #include <cstdlib>
 
@@ -53,13 +54,25 @@ bool NEOM9N00B::valSetLType(uint32_t keyId, uint8_t value){
 	msg[sizeof(msg) - 1] = ckB;
 
 	csLow();
-	HAL_SPI_Transmit(_hspi, msg, sizeof(msg), HAL_MAX_DELAY);
+	HAL_StatusTypeDef status = HAL_SPI_Transmit(_hspi, msg, sizeof(msg), 100);
 	csHigh();
 
-	return true;
-	//return waitForAck(0x06, 0x8A, 1000);
+	if (status != HAL_OK) {
+		SOAR_PRINT("GPS VALSET key=0x%08lX failed: HAL=%d spiState=%d spiErr=0x%08lX\n",
+				   (unsigned long)keyId, (int)status, (int)_hspi->State, (unsigned long)_hspi->ErrorCode);
+		return false;
+	}
 
+	// DEBUG: check that the receiver accepted this VALSET (prints ACK / NAK / timeout).
+	// Only once the scheduler runs (e.g. "gps_init"): before that the tick is stopped and
+	// a full print queue would block forever.
+	if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+		bool acked = waitForAck(0x06, 0x8A, 1000);
+		SOAR_PRINT("GPS VALSET key=0x%08lX val=%u -> %s\n",
+				   (unsigned long)keyId, (unsigned int)value, acked ? "ACK" : "no ACK");
+	}
 
+	return true; // TODO: return acked once the receiver is confirmed to respond
 }
 
 bool NEOM9N00B::valSetU1Type(uint32_t keyId, uint8_t value){
@@ -90,9 +103,14 @@ bool NEOM9N00B::valSetU1Type(uint32_t keyId, uint8_t value){
 		msg[sizeof(msg) - 1] = ckB;
 
 		csLow();
-		HAL_SPI_Transmit(_hspi, msg, sizeof(msg), HAL_MAX_DELAY);
+		HAL_StatusTypeDef status = HAL_SPI_Transmit(_hspi, msg, sizeof(msg), 100);
 		csHigh();
 
+		if (status != HAL_OK) {
+			SOAR_PRINT("GPS VALSET key=0x%08lX failed: HAL=%d spiState=%d spiErr=0x%08lX\n",
+					   (unsigned long)keyId, (int)status, (int)_hspi->State, (unsigned long)_hspi->ErrorCode);
+			return false;
+		}
 		return true;
 		//return waitForAck(0x06, 0x8A, 1000);
 
@@ -110,46 +128,69 @@ void NEOM9N00B::computeUBXChecksum(const uint8_t* data, uint16_t len, uint8_t& c
 }
 
 bool NEOM9N00B::waitForAck(uint8_t expectedClass, uint8_t expectedId, uint32_t timeoutMs){
+	constexpr uint16_t ACK_LEN = 10;        // B5 62 05 0x 02 00 cls id ckA ckB
+	constexpr uint16_t CHUNK = 32;
+	constexpr uint16_t MAX_READS = 500;     // HAL tick does not advance before the scheduler starts, so also bound by reads
+
 	uint32_t start = HAL_GetTick();
-	uint8_t txDummy[32];
-	uint8_t rxBuf[32];
+	uint8_t txDummy[CHUNK];
+	uint8_t window[CHUNK + ACK_LEN - 1];    // last ACK_LEN-1 bytes of the previous read + new chunk
+	uint16_t carry = 0;
+
+	uint32_t zeroBytes = 0, ffBytes = 0, otherBytes = 0;
 
 	memset(txDummy, 0xFF, sizeof(txDummy));
 
-	while ((HAL_GetTick() - start) < timeoutMs) {
+	for (uint16_t reads = 0; reads < MAX_READS && (HAL_GetTick() - start) < timeoutMs; reads++) {
 		csLow();
-		HAL_SPI_TransmitReceive(_hspi, txDummy, rxBuf, sizeof(rxBuf), 1000);
+		HAL_StatusTypeDef st = HAL_SPI_TransmitReceive(_hspi, txDummy, &window[carry], CHUNK, 100);
 		csHigh();
+		if (st != HAL_OK) {
+			SOAR_PRINT("GPS ACK wait: SPI read failed HAL=%d\n", (int)st);
+			return false;
+		}
 
-		 for (uint8_t i = 0; i <= sizeof(rxBuf) - 10; i++) {
+		for (uint16_t i = carry; i < carry + CHUNK; i++) {
+			if (window[i] == 0x00) zeroBytes++;
+			else if (window[i] == 0xFF) ffBytes++;
+			else otherBytes++;
+		}
+
+		uint16_t len = carry + CHUNK;
+		// Scan every position where a full ACK/NAK frame fits, including frames split across reads
+		for (uint16_t i = 0; i + ACK_LEN <= len; i++) {
 			// Look for UBX sync chars
-			if (rxBuf[i] == 0xB5 && rxBuf[i + 1] == 0x62) {
-				uint8_t msgClass = rxBuf[i + 2];
-				uint8_t msgId    = rxBuf[i + 3];
-				uint16_t length  = rxBuf[i + 4] | (rxBuf[i + 5] << 8);
+			if (window[i] == 0xB5 && window[i + 1] == 0x62) {
+				uint8_t msgClass = window[i + 2];
+				uint8_t msgId    = window[i + 3];
+				uint16_t length  = window[i + 4] | (window[i + 5] << 8);
 
 				// ACK/NAK messages have class 0x05 and length 2
-				if (msgClass == 0x05 && length == 2) {
-					uint8_t ackedClass = rxBuf[i + 6];
-					uint8_t ackedId    = rxBuf[i + 7];
+				if (msgClass == 0x05 && length == 2 &&
+					window[i + 6] == expectedClass && window[i + 7] == expectedId) {
 
 					// ACK-ACK
-					if (msgId == 0x01 &&
-						ackedClass == expectedClass &&
-						ackedId == expectedId) {
+					if (msgId == 0x01) {
 						return true;
 					}
 
 					// ACK-NAK
-					if (msgId == 0x00 &&
-						ackedClass == expectedClass &&
-						ackedId == expectedId) {
+					if (msgId == 0x00) {
+						SOAR_PRINT("GPS ACK wait: NAK for class=0x%02X id=0x%02X\n", expectedClass, expectedId);
 						return false;
 					}
 				}
 			}
-		 }
+		}
+
+		// Keep the tail so a frame split across two reads is still found
+		carry = ACK_LEN - 1;
+		memmove(window, &window[len - carry], carry);
 	}
+
+	// Timed out: summarize what was on MISO (all 0x00 = nothing driving MISO, all 0xFF = receiver idle/no data)
+	SOAR_PRINT("GPS ACK wait: timeout, MISO bytes 0x00=%lu 0xFF=%lu other=%lu\n",
+			   (unsigned long)zeroBytes, (unsigned long)ffBytes, (unsigned long)otherBytes);
 	return false;
 
 }
@@ -233,16 +274,21 @@ bool NEOM9N00B::collectNMEALine(char* lineBuf){
 
 }
 
-bool NEOM9N00B::getGGALine(char* lineBuf){
-	//collects the NMEALine until notified of terminator
-	while (true) {
+bool NEOM9N00B::getGGALine(char* lineBuf, uint32_t timeoutMs){
+	//collects the NMEALine until notified of terminator, gives up after timeoutMs
+	uint32_t start = HAL_GetTick();
+	while ((HAL_GetTick() - start) < timeoutMs) {
 		if (collectNMEALine(lineBuf)) {
 			if (strncmp(lineBuf, "$GPGGA", 6) == 0 ||
 				strncmp(lineBuf, "$GNGGA", 6) == 0) {
 				return true;
 			}
 		}
+		else {
+			osDelay(1); // yield so lower priority tasks (UART/Debug) are not starved
+		}
 	}
+	return false;
 }
 
 void NEOM9N00B::ParseGpsData(GPSData* data)
