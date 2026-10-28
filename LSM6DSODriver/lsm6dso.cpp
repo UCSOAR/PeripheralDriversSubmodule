@@ -34,10 +34,10 @@ void LSM6DSO_Driver::Init(SPI_HandleTypeDef *hspi_, uint8_t cs_pin_, GPIO_TypeDe
 	/*set CTRL3_C reg disable continuous update for predictable reads, as well enable
 	 * automatic increment of register addresses with multiple byte reads*/
 	setRegister(LSM6DSO_REG::CTRL3_C, 0b01000100);
-	// set CTRL1_XL reg 208Hz and 2g for Accel
+	// set CTRL1_XL reg 208Hz and 16g for Accel (FS_XL = 01)
 	setRegister(LSM6DSO_REG::CTRL1_XL, 0b01010100);
-	// set CTRL2_G reg 208Hz and 250dps for Gyro
-	setRegister(LSM6DSO_REG::CTRL2_G, 0b01010000);
+	// set CTRL2_G reg 208Hz and 2000dps for Gyro (FS_G = 11)
+	setRegister(LSM6DSO_REG::CTRL2_G, 0b01011100);
 	// bypass FIFO mode
 	setRegister(LSM6DSO_REG::FIFO_CTRL_4, 0b00000000);
 
@@ -161,10 +161,11 @@ IMUData LSM6DSO_Driver::bytesToStruct(const uint8_t *raw_bytes, bool accel, bool
 
 	if (gyro)
 	{
-		// Store angular rate as integer mdps.
-		out.gyro.x = scaleToInt16(rawGx, 875, 100);
-		out.gyro.y = scaleToInt16(rawGy, 875, 100);
-		out.gyro.z = scaleToInt16(rawGz, 875, 100);
+		// Store angular rate as integer 0.1 dps (+/-2000 dps range, 70 mdps/LSB = 0.7 x 0.1 dps).
+		// int16 milli-dps clipped at 32.8 dps, far below rocket roll rates
+		out.gyro.x = scaleToInt16(rawGx, 7, 10);
+		out.gyro.y = scaleToInt16(rawGy, 7, 10);
+		out.gyro.z = scaleToInt16(rawGz, 7, 10);
 	}
 
 	if (temp)

@@ -29,8 +29,10 @@ void LSM6DO32_Driver::Init(SPI_HandleTypeDef *hspi_, GPIO_TypeDef *cs_gpio_, uin
 	}
 
 	SetRegister(LSM6DSO32_REG::CTRL3_C, 0b01000100);
-	SetRegister(LSM6DSO32_REG::CTRL1_XL, 0b01011100);
-	SetRegister(LSM6DSO32_REG::CTRL2_G, 0b01010000);
+	// 208 Hz, accel +/-32 g (FS_XL = 01), was +/-16 g: a hot boost clipped both IMUs
+	SetRegister(LSM6DSO32_REG::CTRL1_XL, 0b01010100);
+	// 208 Hz, gyro +/-2000 dps (FS_G = 11)
+	SetRegister(LSM6DSO32_REG::CTRL2_G, 0b01011100);
 	SetRegister(LSM6DSO32_REG::FIFO_CTRL4, 0b00000000);
 
 	CalibrateGyroBias();
@@ -161,17 +163,19 @@ const IMUData LSM6DO32_Driver::ConvertRawMeasurementToStruct(const uint8_t *buf,
 	if (accel)
 	{
 
-		out.accel.x = scaleToInt16(rawAx, 488, 1000);
-		out.accel.y = scaleToInt16(rawAy, 488, 1000);
-		out.accel.z = scaleToInt16(rawAz, 488, 1000);
+		// mg, +/-32 g range: 0.976 mg/LSB
+		out.accel.x = scaleToInt16(rawAx, 976, 1000);
+		out.accel.y = scaleToInt16(rawAy, 976, 1000);
+		out.accel.z = scaleToInt16(rawAz, 976, 1000);
 	}
 
 	if (gyro)
 	{
-		// Store angular rate as integer mdps.
-		out.gyro.x = scaleToInt16(rawGx, 875, 100);
-		out.gyro.y = scaleToInt16(rawGy, 875, 100);
-		out.gyro.z = scaleToInt16(rawGz, 875, 100);
+		// Store angular rate as integer 0.1 dps (+/-2000 dps range, 70 mdps/LSB = 0.7 x 0.1 dps).
+		// int16 milli-dps clipped at 32.8 dps, far below rocket roll rates
+		out.gyro.x = scaleToInt16(rawGx, 7, 10);
+		out.gyro.y = scaleToInt16(rawGy, 7, 10);
+		out.gyro.z = scaleToInt16(rawGz, 7, 10);
 	}
 
 	if (temp)

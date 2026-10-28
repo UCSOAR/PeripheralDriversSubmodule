@@ -36,6 +36,16 @@ private:
 	uint32_t getTemperatureReading();
 	uint32_t getPressureReading();
 	void resetBarometer();
+	void loadCalibration();
+
+	// Calibration PROM, read once
+	uint16_t prom[6] = {0, 0, 0, 0, 0, 0};
+	bool promLoaded = false;
+
+	// Temperature is refreshed every BARO_TEMP_EVERY samples
+	static constexpr uint8_t BARO_TEMP_EVERY = 10;
+	uint32_t lastTemperatureReading = 0;
+	uint8_t temperatureCountdown = 0;
 };
 
 /************************************ * FUNCTION DECLARATIONS ************************************/
