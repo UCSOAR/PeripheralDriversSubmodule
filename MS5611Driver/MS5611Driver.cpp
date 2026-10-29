@@ -12,8 +12,8 @@
 /************************************ * PRIVATE MACROS AND DEFINES ************************************/
 /************************************ * VARIABLES ************************************/
 // Barometer Commands (should not be modified, non-const due to HAL and C++ strictness)
-static uint8_t ADC_D1_512_CONV_CMD = 0x42;
-static uint8_t ADC_D2_512_CONV_CMD = 0x52;
+static uint8_t ADC_D1_2048_CONV_CMD = 0x46;
+static uint8_t ADC_D2_2048_CONV_CMD = 0x56;
 static uint8_t ADC_READ_CMD = 0x00;
 static uint8_t PROM_READ_SENS_CMD = 0xA2;
 static uint8_t PROM_READ_OFF_CMD = 0xA4;
@@ -193,12 +193,12 @@ uint32_t MS5611_Driver::getTemperatureReading()
 	uint32_t temperatureReading = 0;    // Stores a 24 bit value
 	uint8_t dataInBuffer;
 
-	// Tell the barometer to convert the temperature to a digital value with an over-sampling ratio of 512
+	// Tell the barometer to convert the temperature to a digital value with an over-sampling ratio of 2048
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, &ADC_D2_512_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
+	HAL_SPI_Transmit(hspi, &ADC_D2_2048_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
 
-	osDelay(2); // 1.17ms max conversion time for an over-sampling ratio of 512
+	osDelay(6); // 4.54ms max conversion time for an over-sampling ratio of 2048 (osDelay(n) can return after n-1 ms)
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
 
@@ -234,12 +234,12 @@ uint32_t MS5611_Driver::getPressureReading()
 	uint32_t pressureReading = 0;    // Stores a 24 bit value
 	uint8_t dataInBuffer;
 
-	// Tell the barometer to convert the pressure to a digital value with an over-sampling ratio of 512
+	// Tell the barometer to convert the pressure to a digital value with an over-sampling ratio of 2048
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, &ADC_D1_512_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
+	HAL_SPI_Transmit(hspi, &ADC_D1_2048_CONV_CMD, CMD_SIZE, CMD_TIMEOUT);
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_SET);
 
-	osDelay(2); // 1.17ms max conversion time for an over-sampling ratio of 512
+	osDelay(6); // 4.54ms max conversion time for an over-sampling ratio of 2048 (osDelay(n) can return after n-1 ms)
 
 	HAL_GPIO_WritePin(cs_gpio, cs_pin, GPIO_PIN_RESET);
 
