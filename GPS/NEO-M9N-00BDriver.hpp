@@ -37,6 +37,9 @@ public:
 
 	bool Init(SPI_HandleTypeDef* hspi, GPIO_TypeDef* csPort, uint16_t csPin);
 	bool getGGALine(char* lineBuf, uint32_t timeoutMs = 5000);
+	// Non-blocking GGA read for a task with its own loop (GpsTask): at most one SPI read per call
+	bool pollGGALine(char* lineBuf);
+	bool lastPollHadData() const { return pollHadData; }	// last read had bytes other than 0xFF (idle)
 	void ParseGpsData(GPSData* data);
 
 private:
@@ -56,6 +59,14 @@ private:
 	 SPI_HandleTypeDef* _hspi;
 	 uint16_t _csPin;
 	 GPIO_TypeDef* _csPort;
+
+	 // pollGGALine: the last SPI read (bytes not used yet stay for the next call) and the sentence state
+	 static constexpr uint8_t POLL_CHUNK = 32;
+	 uint8_t pollRx[POLL_CHUNK] = {};
+	 uint8_t pollPos = POLL_CHUNK;
+	 uint16_t pollIdx = 0;
+	 bool pollCollecting = false;
+	 bool pollHadData = false;
 
 
 };

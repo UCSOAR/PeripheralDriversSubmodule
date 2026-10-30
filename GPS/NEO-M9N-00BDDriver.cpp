@@ -291,6 +291,58 @@ bool NEOM9N00B::getGGALine(char* lineBuf, uint32_t timeoutMs){
 	return false;
 }
 
+/**
+ * @brief Non-blocking GGA read for a task that runs its own loop (the caller holds the SPI bus
+ *        lock around each call). Reads at most one 32 byte chunk. Bytes after the end of a sentence
+ *        stay for the next call, so a GGA that starts in the same read as the previous sentence is
+ *        kept. 0xFF (receiver has nothing to send) is skipped. Pass the same lineBuf every call
+ * @return true when lineBuf holds a whole GGA sentence, null terminated
+ */
+bool NEOM9N00B::pollGGALine(char* lineBuf){
+	if (pollPos >= POLL_CHUNK) {
+		if (!readBytes(pollRx, POLL_CHUNK)) {
+			pollHadData = false;
+			return false;
+		}
+		pollPos = 0;
+		pollHadData = false;
+		for (uint8_t i = 0; i < POLL_CHUNK; i++) {
+			if (pollRx[i] != 0xFF) {
+				pollHadData = true;
+				break;
+			}
+		}
+	}
+
+	while (pollPos < POLL_CHUNK) {
+		const uint8_t b = pollRx[pollPos++];
+		if (b == 0xFF) {
+			continue;
+		}
+		const char c = static_cast<char>(b);
+		if (c == '$') {
+			pollIdx = 0;
+			pollCollecting = true;
+		}
+		if (!pollCollecting) {
+			continue;
+		}
+		if (pollIdx >= NMEA_MAX_LENGTH) {	// no terminator: corrupt, wait for the next '$'
+			pollCollecting = false;
+			continue;
+		}
+		lineBuf[pollIdx++] = c;
+		if (c == '\n') {
+			lineBuf[pollIdx] = '\0';
+			pollCollecting = false;
+			if (strncmp(lineBuf, "$GPGGA", 6) == 0 || strncmp(lineBuf, "$GNGGA", 6) == 0) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 void NEOM9N00B::ParseGpsData(GPSData* data)
 {
 
